@@ -1,0 +1,25 @@
+WORKER
+HP 50
+AP 10
+BaseDmg 6
+Range 2
+
+DmgModifier
+{
+    WHATEVERUNIT +10
+}
+
+UIActions
+{
+    ATTACK
+    DEStroy
+    FORTIFY
+}
+
+build
+{
+    CITY
+    FARM
+    LUMBERMILL
+}
+ENDUNIT

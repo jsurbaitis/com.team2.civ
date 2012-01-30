@@ -1,0 +1,24 @@
+CITY
+MetalCost 10
+DefensiveBonus 50
+MovementCost 1
+
+name
+{
+    Istambul
+    New_York
+}
+
+build
+{
+    WORKER
+    FIGHTER
+    ARCHER    
+}
+
+ENDOBJ
+
+FLATLAND
+MovementCost 1
+ENDOBJ
+
