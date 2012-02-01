@@ -3,13 +3,13 @@ package com.team2.civ.Map;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 import javax.imageio.ImageIO;
 
 import com.team2.civ.Data.AnimData;
+import com.team2.civ.Game.GameController;
 
 public class MovingMapObject extends MapObject {
 	
@@ -58,7 +58,7 @@ public class MovingMapObject extends MapObject {
 	public void startMovement(HashMap<CoordObject, WalkableTile> map, CoordObject target, 
 			 				  boolean walkOnTarget, int lengthLimit) {
 		if(!isMoving) {
-			path = findPath(map, target, walkOnTarget, lengthLimit);
+			path = GameController.findPath(map, this, target, walkOnTarget, lengthLimit);
 			if(path != null) {
 				movingAnim.reset();
 				
@@ -151,128 +151,5 @@ public class MovingMapObject extends MapObject {
 
 			speedY = - dy / Math.abs(dx) * 2;
 		}
-	}
-	
-	private ArrayList<WalkableTile> findPath(HashMap<CoordObject, WalkableTile> walkableMap, CoordObject targetObj, 
-											 boolean walkOnTarget, int lengthLimit)
-	{
-		//for(int i = 0; i < returnList.size(); i++) {
-		//	returnList.get(i).inRange = false;
-		//}
-		HashMap<CoordObject, PathNode> nodeList = new HashMap<CoordObject, PathNode>();
-		ArrayList<PathNode> openList = new ArrayList<PathNode>();
-		ArrayList<PathNode> closedList = new ArrayList<PathNode>();
-		ArrayList<WalkableTile> returnList = new ArrayList<WalkableTile>();
-		
-		//ISO
-		//int[][] nextPos = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-		//HEX
-		int[][] nextPos = {{-1, 1}, {0, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, 0}};
-
-		for(WalkableTile tile: walkableMap.values()) {
-			if(!tile.occupied) {
-				nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
-			}
-		}
-		nodeList.put(this, new PathNode(mapX, mapY));
-		
-		boolean nextToTarget = true;
-		if(walkOnTarget)
-			nextToTarget = false;
-		else if(!walkableMap.get(targetObj).occupied)
-				nextToTarget = false;
-		
-		PathNode target = null;
-		PathNode nextTile = null;
-		PathNode minTile = null;
-		PathNode current = nodeList.get(this);
-		current.heuristic = getHeuristic(current.mapX, current.mapY, targetObj.mapX, targetObj.mapY);
-		current.cost = 0;
-		current.parent = null;
-		openList.add(current);
-		
-		while(openList.size() != 0) {
-			if(!nextToTarget) {
-				if(current.mapX == targetObj.mapX && current.mapY == targetObj.mapY) {
-					target = current;
-					break;
-				}
-			} else {
-				if(Math.abs(current.mapX - targetObj.mapX) < 2 && Math.abs(current.mapY - targetObj.mapY) < 2) {
-					target = current;
-					break;
-				}
-			}
-			closedList.add(current);
-			openList.remove(current);
-
-			for(int i = 0; i < nextPos.length; i++) {
-				nextTile = nodeList.get(new CoordObject(current.mapX + nextPos[i][0], current.mapY + nextPos[i][1]));
-				if(nextTile == null || closedList.contains(nextTile))
-					continue;
-				
-				int tentativeScore = current.cost + getTentativeScore(current.mapX, current.mapY, nextTile.mapX, nextTile.mapY);
-				
-				boolean isBetter = false;
-				if(!openList.contains(nextTile)) {
-					nextTile.heuristic = getHeuristic(nextTile.mapX, nextTile.mapY, targetObj.mapX, targetObj.mapY);
-					openList.add(nextTile);
-					isBetter = true;
-				} else if(tentativeScore < nextTile.cost)
-					isBetter = true;
-
-				if(isBetter) {
-					nextTile.parent = current;
-					nextTile.cost = tentativeScore;
-				}
-			}
-			
-			minTile = null;
-			for(int i = 0; i < openList.size(); i++) {
-				if(minTile == null || minTile.cost + minTile.heuristic > openList.get(i).cost + openList.get(i).heuristic)
-					minTile = openList.get(i);
-			}
-			
-			current = minTile;
-		}
-
-		if(target == null) {
-			return null;
-		}
-		
-		if(lengthLimit == -1) {
-			while(target != null) {
-				returnList.add(walkableMap.get(new CoordObject(target.mapX, target.mapY)));
-				target = target.parent;
-			}
-		} else {
-			int length = 0;
-			PathNode tempTarget = target;
-			while(tempTarget != null) {
-				tempTarget = tempTarget.parent;
-				length++;
-			}
-			length -= lengthLimit;
-			while(target != null) {
-				if(length < 1)
-					returnList.add(walkableMap.get(new CoordObject(target.mapX, target.mapY)));
-				target = target.parent;
-				length--;
-			}
-		}
-
-		return returnList;
-	}
-	
-	private int getTentativeScore(int x, int y, int tx, int ty) {
-		return Math.abs(x - tx) + Math.abs(y - ty);
-	}
-	
-	private int getHeuristic(int x, int y, int tx, int ty) {		
-		int dx = tx - x;
-		int dy = ty - y;
-		
-		int result = (dx*dx)+(dy*dy);
-		return result;
 	}
 }
