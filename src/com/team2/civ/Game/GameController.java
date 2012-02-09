@@ -7,7 +7,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +14,7 @@ import java.util.Random;
 import java.util.TreeMap;
 
 import com.team2.civ.Team2Civ;
+import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
 import com.team2.civ.Map.CoordObject;
 import com.team2.civ.Map.MapObject;
@@ -63,11 +63,20 @@ public class GameController {
 
 	public GameController(GraphicsConfiguration config) {
 		//BS map creation
-		MapObjectImage.highlightImg = Resources.get(new File("assets/highlight.png"), config);
-		BufferedImage tileImg = Resources.get(new File("assets/empty_tile.png"), config);
-		BufferedImage moveImg = Resources.get(new File("assets/move_test.png"), config);
-		BufferedImage wallImg = Resources.get(new File("assets/wall.png"), config);
+		res = new Resources(config);
 		
+		BufferedImage wallImg = null;
+		BufferedImage tileImg = null;
+		BufferedImage moveImg = null;
+		try {
+			MapObjectImage.highlightImg = res.getImage("highlight");
+			tileImg = res.getImage("empty_tile");
+			moveImg = res.getImage("move_test");
+			wallImg = res.getImage("wall");
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
+
 		TILE_WIDTH = tileImg.getWidth();
 		TILE_HEIGHT = tileImg.getHeight();
 		
@@ -143,7 +152,7 @@ public class GameController {
 		g.setColor(Color.BLACK);
         g.fillRect(0, 0, Team2Civ.WINDOW_WIDTH, Team2Civ.WINDOW_HEIGHT);
         
-        //g.scale(scale, scale);
+        g.scale(scale, scale);
 
         for(MapObjectImage i: lowDraw.values())
         	i.draw(g, (int)(offsetX*(1/scale)), (int)(offsetY*(1/scale)), scale);
@@ -152,7 +161,7 @@ public class GameController {
         for(MapObjectImage i: temp.values())
         	i.draw(g, (int)(offsetX*(1/scale)), (int)(offsetY*(1/scale)), scale);
         
-        //g.scale(1/scale, 1/scale);
+        g.scale(1/scale, 1/scale);
 	}
 	
 	private void zoomIn() {
