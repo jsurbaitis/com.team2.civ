@@ -10,17 +10,28 @@ import java.util.HashMap;
 import javax.imageio.ImageIO;
 
 public class Resources {
-	private HashMap<String, BufferedImage> images;
+	private HashMap<String, BufferedImage> images = new HashMap<String, BufferedImage>();
 	
-	public BufferedImage getImage(String tag) throws Exception {
+	public Resources(GraphicsConfiguration config) {
+		loadImages(config);
+	}
+	
+	private void loadImages(GraphicsConfiguration config) {
+		images.put("highlight", Resources.get(new File("assets/highlight.png"), config));
+		images.put("empty_tile", Resources.get(new File("assets/empty_tile.png"), config));
+		images.put("move_test", Resources.get(new File("assets/move_test.png"), config));
+		images.put("wall", Resources.get(new File("assets/wall.png"), config));
+	}
+	
+	public BufferedImage getImage(String tag) throws ResNotFoundException {
 		BufferedImage rtn = images.get(tag);
 		if(rtn == null)
-			throw new Exception("Image " + tag + " does not exist.");
+			throw new ResNotFoundException(tag, "Image");
 		
 		return rtn;
 	}
 	
-	public static final BufferedImage get(final File file, GraphicsConfiguration config) {
+	private static final BufferedImage get(final File file, GraphicsConfiguration config) {
     	try {
         	return compatible(ImageIO.read(file), config);
     	} catch (IOException e) {
