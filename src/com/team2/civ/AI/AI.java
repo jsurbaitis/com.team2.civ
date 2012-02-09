@@ -7,8 +7,6 @@ import com.team2.civ.Game.GameController;
 import com.team2.civ.Map.CoordObject;
 import com.team2.civ.Map.WalkableTile;
 
-
-
 public class AI {
 	private GameController game;
 	private Resources res;
