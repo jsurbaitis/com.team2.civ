@@ -1,3 +1,5 @@
+package com.team2.civ.AI;
+
 public class Bit {
 	int value = 0;
 	Bit(boolean input){
@@ -14,10 +16,10 @@ public class Bit {
 			value = 1;
 		}
 	}		
-	public static int val(){
+	public int value(){
 		return value;
 	}
-	public static boolean truth(){
+	public boolean truth(){
 		if (value == 1){
 			return true;
 		} else {

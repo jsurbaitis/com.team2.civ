@@ -1,10 +1,14 @@
 package com.team2.civ.AI;
 
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.Random;
 
 import com.team2.civ.Data.Resources;
 import com.team2.civ.Game.GameController;
+import com.team2.civ.Map.CoordObject;
+import com.team2.civ.Map.WalkableTile;
+import com.team2.civ.AI.Bit;
 
 public class AI {
 	private GameController game;
@@ -19,20 +23,20 @@ public class AI {
 		HashMap<CoordObject, WalkableTile> walkableMap = game.getWalkableTilesCopy();
 		walkableMap.get(new CoordObject(0, 0));}
 	
-	private static byte[] makeNewGenome(){
-		byte[] actions = new byte[(int) Math.pow(2, condition_bits)];
+	private static Bit[] makeNewGenome(){
+		Bit[] actions = new Bit[(int) Math.pow(2, condition_bits)];
 		Random rng = new SecureRandom();
-		rng.nextBytes(actions);
 		for (int i = 0; i < actions.length; i++){
-			System.out.print(actions[i]);
+			actions[i] = new Bit(rng.nextBoolean());
+			System.out.print(actions[i].value());
 		}
-		byte[] tolerances = new byte[tolerance_bits];
-		rng.nextBytes(tolerances);
+		Bit[] tolerances = new Bit[tolerance_bits];
 		for (int i = 0; i < tolerances.length; i++){
+			tolerances[i] = new Bit(rng.nextBoolean());
 			System.out.print(tolerances[i]);
 		}
 		System.out.println();
-		byte[] genome = new byte[tolerances.length + actions.length];
+		Bit[] genome = new Bit[tolerances.length + actions.length];
 		for (int i = 0; i < tolerances.length; i++){
 			genome[i] = tolerances[i];
 		}
