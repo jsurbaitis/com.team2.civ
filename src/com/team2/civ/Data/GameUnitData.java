@@ -17,7 +17,7 @@ public class GameUnitData {
 	
 	private HashMap<String, Integer> dmgModifiers;
 	private ArrayList<UIEvent> uiActions;
-	private ArrayList<String> build;
+	private ArrayList<String> buildIDs;
 	
 	public GameUnitData(String id) {
 		name = id.toLowerCase();
