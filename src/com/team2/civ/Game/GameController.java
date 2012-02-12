@@ -39,7 +39,7 @@ public class GameController {
 	private int lastMouseY;
 	
 	private static final double SCALE_MAX = 1.0;
-	private static final double SCALE_MIN = 0.4;
+	private static final double SCALE_MIN = 0.2;
 	private static final double ZOOM_DELTA = 0.2;
 	private static final double ZOOM_FACTOR = 0.02;
 	
@@ -66,13 +66,15 @@ public class GameController {
 		res = new Resources(config);
 		
 		BufferedImage wallImg = null;
+		BufferedImage waterImg = null;
 		BufferedImage tileImg = null;
 		BufferedImage moveImg = null;
 		try {
 			MapObjectImage.highlightImg = res.getImage("highlight");
-			tileImg = res.getImage("empty_tile");
+			tileImg = res.getImage("tile_grass");
 			moveImg = res.getImage("move_test");
 			wallImg = res.getImage("wall");
+			waterImg = res.getImage("water");
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -80,7 +82,33 @@ public class GameController {
 		TILE_WIDTH = tileImg.getWidth();
 		TILE_HEIGHT = tileImg.getHeight();
 		
-		Random rnd = new Random();
+		int[][] map = HeightmapGenerator.generateMap(30, 30);
+		for(int x = 1; x < 29; x++) {
+			for(int y = 1; y < 29; y++) {
+				if(map[x][y] == -1)
+					continue;
+				if(map[x][y] == 0) {
+					WallTile wt = new WallTile(x, y, waterImg);
+					highDraw.put(wt, wt.getImage());
+				} else if(map[x][y] == 1) {
+					WalkableTile t = new WalkableTile(x, y, tileImg);
+					walkableMap.put(t, t);
+					lowDraw.put(t, t.getImage());
+				//} else if(map[x][y] < 70) {
+				//	WalkableTile t = new WalkableTile(x, y, tileImg);
+				//	walkableMap.put(t, t);
+				//	lowDraw.put(t, t.getImage());
+				} else {
+					WallTile wt = new WallTile(x, y, wallImg);
+					highDraw.put(wt, wt.getImage());
+				}
+			}
+		}
+		
+		test = new MovingMapObject(15, 15, moveImg);
+		highDraw.put(test, test.getImage());
+		
+		/*Random rnd = new Random();
 		
 		for(int i = 0; i < 10; i++) {
 			for(int j = 0; j < 10; j++) {
@@ -94,10 +122,8 @@ public class GameController {
 					lowDraw.put(t, t.getImage());
 				}
 			}
-		}
-		
-		test = new MovingMapObject(0, 0, moveImg);
-		highDraw.put(test, test.getImage());
+		}*/
+
 	}
 
 	public void update(long timeElapsedMillis) {

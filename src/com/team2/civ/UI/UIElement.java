@@ -3,6 +3,7 @@ package com.team2.civ.UI;
 public class UIElement {
 	public int x, y;
 	public int width, height;
+	public UIElement parent;
 
 	public UIElement(int x, int y, int width, int height) {
 		this.x = x;

@@ -19,6 +19,7 @@ public class UISlider extends UIElement {
 
 	public void draw(Graphics2D g) {
 		g.drawImage(img, null, this.x, this.y);
+		//draw children
 	}
 	
 	public UIEvent onClick(MouseEvent ev) {

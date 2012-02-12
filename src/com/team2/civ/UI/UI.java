@@ -17,6 +17,8 @@ public class UI {
 	
 	public UI(Resources res) {
 		this.res = res;
+		
+		
 	}
 
 	private void initBtn(int x, int y, int width, int height, UIEvent command,
@@ -45,13 +47,11 @@ public class UI {
 		return inarea;
 	}
 
-	public UIButton checkbuttons(int mx, int my) {
-		for (int i = 0; i < buttons.size(); i++)
-			if (mx >= buttons.get(i).x
-					&& mx <= buttons.get(i).x + buttons.get(i).width
-					&& my <= buttons.get(i).y
-					&& my >= buttons.get(i).y + buttons.get(i).height)
-				return buttons.get(i);
+	public UIEvent checkbuttons(int mx, int my) {
+		for(UIButton b: buttons) {
+			if(b.picked(mx, my))
+				return b.commandID;
+		}
 		return null;
 	}
 

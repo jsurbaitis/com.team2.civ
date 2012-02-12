@@ -18,9 +18,10 @@ public class Resources {
 	
 	private void loadImages(GraphicsConfiguration config) {
 		images.put("highlight", Resources.get(new File("assets/highlight.png"), config));
-		images.put("empty_tile", Resources.get(new File("assets/empty_tile.png"), config));
 		images.put("move_test", Resources.get(new File("assets/move_test.png"), config));
 		images.put("wall", Resources.get(new File("assets/wall.png"), config));
+		images.put("tile_grass", Resources.get(new File("assets/tile_grass.png"), config));
+		images.put("water", Resources.get(new File("assets/water.png"), config));
 	}
 	
 	public BufferedImage getImage(String tag) throws ResNotFoundException {

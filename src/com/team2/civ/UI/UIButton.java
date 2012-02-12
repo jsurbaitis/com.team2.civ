@@ -6,9 +6,8 @@ import java.awt.image.BufferedImage;
 import com.team2.civ.UI.UI.UIEvent;
 
 public class UIButton extends UIElement {
-	private UIEvent commandID;
+	public UIEvent commandID;
 	private BufferedImage img;
-	private UIElement parent;
 
 	public UIButton(int x, int y, int width, int height, UIEvent commandID, BufferedImage img) {
 		super(x, y, width,height);
