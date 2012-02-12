@@ -8,13 +8,13 @@ import com.team2.civ.Data.Resources;
 import com.team2.civ.Game.GameController;
 import com.team2.civ.Map.CoordObject;
 import com.team2.civ.Map.WalkableTile;
+import com.team2.civ.AI.Bit;
 
 public class AI {
 	private GameController game;
 	private Resources res;
 	final static int condition_bits = 21;
 	final static int tolerance_bits = 26;
-	final static int action_points = 5;
 	
 	public AI(GameController game, Resources res) {
 		this.game = game;
@@ -23,20 +23,20 @@ public class AI {
 		HashMap<CoordObject, WalkableTile> walkableMap = game.getWalkableTilesCopy();
 		walkableMap.get(new CoordObject(0, 0));}
 	
-	private static boolean[] makeNewGenome(){
-		boolean[] actions = new boolean[(int) Math.pow(2, condition_bits) * action_points];
+	private static Bit[] makeNewGenome(){
+		Bit[] actions = new Bit[(int) Math.pow(2, condition_bits)];
 		Random rng = new SecureRandom();
 		for (int i = 0; i < actions.length; i++){
-			actions[i] = rng.nextBoolean();
-			System.out.print(actions[i]);
+			actions[i] = new Bit(rng.nextBoolean());
+			System.out.print(actions[i].value());
 		}
-		boolean[] tolerances = new boolean[tolerance_bits];
+		Bit[] tolerances = new Bit[tolerance_bits];
 		for (int i = 0; i < tolerances.length; i++){
-			tolerances[i] = rng.nextBoolean();
+			tolerances[i] = new Bit(rng.nextBoolean());
 			System.out.print(tolerances[i]);
 		}
 		System.out.println();
-		boolean[] genome = new boolean[tolerances.length + actions.length];
+		Bit[] genome = new Bit[tolerances.length + actions.length];
 		for (int i = 0; i < tolerances.length; i++){
 			genome[i] = tolerances[i];
 		}
@@ -45,13 +45,23 @@ public class AI {
 		}
 		return genome;
 	}
-	private static int bitsToInt(boolean[] bits){
+	private static int bitsToInt(byte[] bytes){
 		int output = 0;
 		int bit = 0;
-		for (int i = bits.length-1; i >= 0; i--){
-			int val = bits[i]? 1 : 0;
-			output += val * Math.pow(2, bit);
+		for (int i = bytes.length-1; i >= 0; i--){
+			output += bytes[i] * Math.pow(2, bit);
 			bit++;
+		}
+		return output;
+	}
+	private static byte[] valuesToBits(boolean[] bools){
+		byte[] output = new byte[bools.length];
+		for (int i = 0; i < bools.length; i++){
+			if (bools[i]){
+				output[i] = (byte) 1;
+			} else {
+				output[i] = (byte) 0;
+			}
 		}
 		return output;
 	}
