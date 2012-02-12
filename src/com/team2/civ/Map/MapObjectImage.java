@@ -4,11 +4,11 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import com.team2.civ.Team2Civ;
-import com.team2.civ.Game.GameController;
-import com.team2.civ.Map.MapObject;
+import com.team2.civ.Data.Resources;
 
 public class MapObjectImage implements Comparable<MapObjectImage> {
 	public static BufferedImage highlightImg;
+	public static BufferedImage selectedImg;
 	
 	private BufferedImage defaultImg;
 	private BufferedImage img;
@@ -53,12 +53,17 @@ public class MapObjectImage implements Comparable<MapObjectImage> {
 		visible = checkVisibility(offsetX, offsetY, scale);
 
 		if(visible) {
-			g.drawImage(img, null, (int) parent.x + offsetX + (GameController.TILE_WIDTH - getWidth())/2, 
-					         	   		 parent.y - (getHeight() - GameController.TILE_HEIGHT) + offsetY);
+			if(parent.selected) {
+				g.drawImage(selectedImg, null, (int) parent.x + offsetX + (Resources.TILE_WIDTH - selectedImg.getWidth())/2, 
+	         	   		 parent.y - (selectedImg.getHeight() - Resources.TILE_HEIGHT) + offsetY);	
+			}
 			
+			g.drawImage(img, null, (int) parent.x + offsetX + (Resources.TILE_WIDTH - getWidth())/2, 
+					         	   		 parent.y - (getHeight() - Resources.TILE_HEIGHT) + offsetY);
+
 			if(parent.highlighted) {
-				g.drawImage(highlightImg, null, (int) parent.x + offsetX + (GameController.TILE_WIDTH - highlightImg.getWidth())/2, 
-	         	   		 parent.y - (highlightImg.getHeight() - GameController.TILE_HEIGHT) + offsetY);	
+				g.drawImage(highlightImg, null, (int) parent.x + offsetX + (Resources.TILE_WIDTH - highlightImg.getWidth())/2, 
+	         	   		 parent.y - (highlightImg.getHeight() - Resources.TILE_HEIGHT) + offsetY);	
 			}
 		}
 	}

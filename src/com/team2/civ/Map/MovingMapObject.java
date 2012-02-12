@@ -3,16 +3,16 @@ package com.team2.civ.Map;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 import javax.imageio.ImageIO;
 
 import com.team2.civ.Data.AnimData;
-import com.team2.civ.Game.GameController;
+import com.team2.civ.Game.Player;
 
 public class MovingMapObject extends MapObject {
-	
 	protected float speedX = 0;
 	protected float speedY = 0;
 	protected boolean isMoving = false;
@@ -23,8 +23,8 @@ public class MovingMapObject extends MapObject {
 
 	protected List<WalkableTile> path;
 	
-	public MovingMapObject(int mapX, int mapY, BufferedImage bitmap) {
-		super(mapX, mapY, bitmap);
+	public MovingMapObject(int mapX, int mapY, BufferedImage bitmap, Player owner) {
+		super(mapX, mapY, bitmap, owner);
 		
 		//TEMPORARY ANIM STUFF
 		BufferedImage frames[] = new BufferedImage[7];
@@ -55,10 +55,9 @@ public class MovingMapObject extends MapObject {
 		}
 	}
 
-	public void startMovement(HashMap<CoordObject, WalkableTile> map, CoordObject target, 
-			 				  boolean walkOnTarget, int lengthLimit) {
+	public void startMovement(ArrayList<WalkableTile> path) {
 		if(!isMoving) {
-			path = GameController.findPath(map, this, target, walkOnTarget, lengthLimit);
+			this.path = path;
 			if(path != null) {
 				movingAnim.reset();
 				
@@ -74,8 +73,6 @@ public class MovingMapObject extends MapObject {
 	
 	private void updateMovement(HashMap<CoordObject, WalkableTile> map) {
 		if(speedX == 0 && speedY == 0) {
-			map.get(this).occupied = false; // not sure about this line
-			
 			setPos(path.get(path.size() - 1).mapX, path.get(path.size() - 1).mapY);
 
 			path.get(path.size() - 1).highlighted = false;
@@ -86,7 +83,6 @@ public class MovingMapObject extends MapObject {
 				determineSpeed();
 			}
 			else {
-				map.get(this).occupied = true;
 				isMoving = false;
 				img.resetImg();
 			}

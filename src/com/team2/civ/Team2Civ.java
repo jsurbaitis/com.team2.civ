@@ -26,8 +26,8 @@ import com.team2.civ.Game.GameController;
  */
 
 public class Team2Civ extends Thread {
-	public static final int WINDOW_WIDTH = 800;
-	public static final int WINDOW_HEIGHT = 600;
+	public static final int WINDOW_WIDTH = 1024;
+	public static final int WINDOW_HEIGHT = 768;
 	public static final int FPS_LIMIT = 60;
 	private static final long FPS_WAIT = (long) (1.0 / FPS_LIMIT * 1000);
 	

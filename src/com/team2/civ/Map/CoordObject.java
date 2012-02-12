@@ -1,6 +1,6 @@
 package com.team2.civ.Map;
 
-import com.team2.civ.Game.GameController;
+import com.team2.civ.Data.Resources;
 
 public class CoordObject implements Comparable<CoordObject> {
 	public int x, y;
@@ -31,8 +31,8 @@ public class CoordObject implements Comparable<CoordObject> {
 		//y = (mapX * GameController.TILE_HEIGHT / 2) - (mapY * GameController.TILE_HEIGHT / 2);
 		
 		//HEX - 30 is a messed up hard coded value
-		x = (mapY * (GameController.TILE_WIDTH - 31)) + (mapX * (GameController.TILE_WIDTH - 31));
-		y = (mapX * GameController.TILE_HEIGHT / 2) - (mapY * GameController.TILE_HEIGHT / 2);
+		x = (mapY * (Resources.TILE_WIDTH - 31)) + (mapX * (Resources.TILE_WIDTH - 31));
+		y = (mapX * Resources.TILE_HEIGHT / 2) - (mapY * Resources.TILE_HEIGHT / 2);
 	}
 
 	public void shiftPos(int offsetX, int offsetY) {

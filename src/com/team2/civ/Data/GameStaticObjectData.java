@@ -3,15 +3,14 @@ package com.team2.civ.Data;
 import java.util.ArrayList;
 
 public class GameStaticObjectData {
-	private String id;
+	public String id;
 	
-	private int metalCost, moveCost;
-	private int defensiveBonus;
-	private ArrayList<String> names;
-	private ArrayList<String> buildIDs;
+	public int metalCost, moveCost;
+	public int defensiveBonus;
+	public ArrayList<String> names = new ArrayList<String>();
+	public ArrayList<String> buildIDs = new ArrayList<String>();
 	
 	public GameStaticObjectData(String id) {
-		
+		this.id = id;
 	}
-	
 }

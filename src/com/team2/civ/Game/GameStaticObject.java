@@ -1,13 +1,25 @@
 package com.team2.civ.Game;
 
 import java.awt.image.BufferedImage;
+import java.util.Random;
 
+import com.team2.civ.Data.GameStaticObjectData;
 import com.team2.civ.Map.WalkableTile;
 
 public class GameStaticObject extends WalkableTile {
+	public GameStaticObjectData data;
+	public String name;
 
-	public GameStaticObject(int mapX, int mapY, BufferedImage bitmap) {
-		super(mapX, mapY, bitmap);
+	private int HP;
+
+	public GameStaticObject(int mapX, int mapY, BufferedImage bitmap, Player owner,
+			GameStaticObjectData data) {
+		super(mapX, mapY, bitmap, owner);
+
+		this.owner = owner;
+		this.data = data;
 		
+		Random rnd = new Random();
+		name = data.names.get(rnd.nextInt(data.names.size()));
 	}
 }

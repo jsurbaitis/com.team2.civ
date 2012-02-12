@@ -10,8 +10,9 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 import java.util.TreeMap;
+
+import javax.swing.SwingUtilities;
 
 import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.ResNotFoundException;
@@ -19,14 +20,12 @@ import com.team2.civ.Data.Resources;
 import com.team2.civ.Map.CoordObject;
 import com.team2.civ.Map.MapObject;
 import com.team2.civ.Map.MapObjectImage;
-import com.team2.civ.Map.MovingMapObject;
 import com.team2.civ.Map.PathNode;
 import com.team2.civ.Map.WalkableTile;
 import com.team2.civ.Map.WallTile;
+import com.team2.civ.UI.UI;
 
 public class GameController {
-	public static int TILE_WIDTH, TILE_HEIGHT;
-
 	private long gameTime = 0;
 
 	private int offsetX = 0;
@@ -47,10 +46,17 @@ public class GameController {
 	private double oldScale = scale;
 	private boolean zoomingIn = false;
 	private boolean zoomingOut = false;
+	
+	private boolean leftClick = true;
 
 	private Resources res;
+	private UI ui;
 	
+	private HashMap<CoordObject, WallTile> unwalkableMap = new HashMap<CoordObject, WallTile>();
 	private HashMap<CoordObject, WalkableTile> walkableMap = new HashMap<CoordObject, WalkableTile>();
+	
+	private HashMap<CoordObject, GameUnit> units = new HashMap<CoordObject, GameUnit>();
+	private HashMap<CoordObject, GameStaticObject> staticObjects = new HashMap<CoordObject, GameStaticObject>();
 	
 	private HashMap<CoordObject, MapObjectImage> highDraw = new HashMap<CoordObject, MapObjectImage>();
 	private HashMap<CoordObject, MapObjectImage> lowDraw = new HashMap<CoordObject, MapObjectImage>();
@@ -58,19 +64,25 @@ public class GameController {
 	public List<Player> players = new ArrayList<Player>();
 	private Player currentPlayer;
 	private MapObject target;
-
-	private MovingMapObject test;
+	
+	public int turnCount = 0;
+	public static final int MAX_TURNS = 500;
 
 	public GameController(GraphicsConfiguration config) {
-		//BS map creation
 		res = new Resources(config);
+		ui = new UI(res);
 		
+		createMap();
+	}
+	
+	private void createMap() {
 		BufferedImage wallImg = null;
 		BufferedImage waterImg = null;
 		BufferedImage tileImg = null;
 		BufferedImage moveImg = null;
 		try {
 			MapObjectImage.highlightImg = res.getImage("highlight");
+			MapObjectImage.selectedImg = res.getImage("selected");
 			tileImg = res.getImage("tile_grass");
 			moveImg = res.getImage("move_test");
 			wallImg = res.getImage("wall");
@@ -78,9 +90,6 @@ public class GameController {
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
-
-		TILE_WIDTH = tileImg.getWidth();
-		TILE_HEIGHT = tileImg.getHeight();
 		
 		int[][] map = HeightmapGenerator.generateMap(30, 30);
 		for(int x = 1; x < 29; x++) {
@@ -89,9 +98,10 @@ public class GameController {
 					continue;
 				if(map[x][y] == 0) {
 					WallTile wt = new WallTile(x, y, waterImg);
+					unwalkableMap.put(wt, wt);
 					highDraw.put(wt, wt.getImage());
 				} else if(map[x][y] == 1) {
-					WalkableTile t = new WalkableTile(x, y, tileImg);
+					WalkableTile t = new WalkableTile(x, y, tileImg, null);
 					walkableMap.put(t, t);
 					lowDraw.put(t, t.getImage());
 				//} else if(map[x][y] < 70) {
@@ -100,34 +110,34 @@ public class GameController {
 				//	lowDraw.put(t, t.getImage());
 				} else {
 					WallTile wt = new WallTile(x, y, wallImg);
+					unwalkableMap.put(wt, wt);
 					highDraw.put(wt, wt.getImage());
 				}
 			}
 		}
 		
-		test = new MovingMapObject(15, 15, moveImg);
-		highDraw.put(test, test.getImage());
-		
-		/*Random rnd = new Random();
-		
-		for(int i = 0; i < 10; i++) {
-			for(int j = 0; j < 10; j++) {
-				int r = rnd.nextInt(4);
-				if(!(i == 0 && j == 0) && r == 0) {
-					WallTile wt = new WallTile(i, j, wallImg);
-					highDraw.put(wt, wt.getImage());
-				} else {
-					WalkableTile t = new WalkableTile(i, j, tileImg);
-					walkableMap.put(t, t);
-					lowDraw.put(t, t.getImage());
-				}
-			}
-		}*/
+		players.add(new Player("P1", "#FFFFFF", null));
 
+		try {
+			GameUnit test = new GameUnit(15, 15, moveImg, players.get(0), res.getUnit("WORKER"));
+			units.put(test, test);
+			highDraw.put(test, test.getImage());
+			
+			GameUnit test1 = new GameUnit(18, 18, moveImg, players.get(0), res.getUnit("WORKER"));
+			units.put(test1, test1);
+			highDraw.put(test1, test1.getImage());
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		
+		currentPlayer = players.get(0);
 	}
 
 	public void update(long timeElapsedMillis) {
 		gameTime++;
+		
+		ui.update(gameTime);
 		
 		if(zoomingIn || zoomingOut) {
 			double os = scale;
@@ -147,7 +157,8 @@ public class GameController {
 			}
 		}
 		
-		test.update(gameTime, walkableMap);
+		for(GameUnit u: units.values())
+			u.update(gameTime, walkableMap);
 	}
 	
 	public HashMap<CoordObject, WalkableTile> getWalkableTilesCopy() {
@@ -158,7 +169,7 @@ public class GameController {
 		
 	}
 	
-	private void addPlayer(Player p) {
+	private void addUnit(Player p, GameUnit u) {
 		
 	}
 	
@@ -188,6 +199,8 @@ public class GameController {
         	i.draw(g, (int)(offsetX*(1/scale)), (int)(offsetY*(1/scale)), scale);
         
         g.scale(1/scale, 1/scale);
+        
+        ui.draw(g);
 	}
 	
 	private void zoomIn() {
@@ -211,6 +224,11 @@ public class GameController {
 			
 			pressStartX = lastMouseX;
 			pressStartY = lastMouseY;
+			
+			if(SwingUtilities.isLeftMouseButton(ev))
+				leftClick = true;
+			else
+				leftClick = false;
 		}
 		else if(ev.getID() == MouseEvent.MOUSE_DRAGGED) {
 			offsetX += ev.getX() - lastMouseX;
@@ -218,13 +236,34 @@ public class GameController {
 			
 			lastMouseX = ev.getX();
 			lastMouseY = ev.getY();
-		} else if(ev.getID() == MouseEvent.MOUSE_RELEASED) {
-			if(Math.abs(ev.getX() - pressStartX) < 5 && Math.abs(ev.getY() - pressStartY) < 5) {
+		} else if(ev.getID() == MouseEvent.MOUSE_RELEASED && !leftClick && target != null && target instanceof GameUnit) {
+			GameUnit movingUnit = (GameUnit) target;
+			if(movingUnit.owner == currentPlayer && Math.abs(ev.getX() - pressStartX) < 5 && Math.abs(ev.getY() - pressStartY) < 5) {
 				for(WalkableTile t: walkableMap.values()) {
-					if(!t.occupied && t.picked((int)((ev.getX() - offsetX)*(1/scale)), (int)((ev.getY() - offsetY)*(1/scale)))) {
-						test.startMovement(walkableMap, t, true, -1);
+					if(t.picked((int)((ev.getX() - offsetX)*(1/scale)), (int)((ev.getY() - offsetY)*(1/scale)))) {
+						movingUnit.startMovement(findPath(movingUnit, t, true, -1));
 					}
 				}
+			}
+		} else if(ev.getID() == MouseEvent.MOUSE_RELEASED && leftClick) {
+			if(Math.abs(ev.getX() - pressStartX) < 5 && Math.abs(ev.getY() - pressStartY) < 5) {
+				for(GameUnit u: units.values())
+					if(u.picked((int)((ev.getX() - offsetX)*(1/scale)), (int)((ev.getY() - offsetY)*(1/scale)))) {
+						if(target != null)
+							target.selected = false;
+						target = u;
+						target.selected = true;
+						ui.showUnitInfo((GameUnit)target);
+					}
+				
+				for(GameStaticObject so: staticObjects.values())
+					if(so.picked((int)((ev.getX() - offsetX)*(1/scale)), (int)((ev.getY() - offsetY)*(1/scale)))) {
+						if(target != null)
+							target.selected = false;
+						target = so;
+						target.selected = true;
+						
+					}
 			}
 		}
 	}
@@ -251,8 +290,7 @@ public class GameController {
 		}
 	}
 	
-	public static ArrayList<WalkableTile> findPath(HashMap<CoordObject, WalkableTile> walkableMap, CoordObject startObj,
-			CoordObject targetObj, boolean walkOnTarget, int lengthLimit)
+	public ArrayList<WalkableTile> findPath(GameUnit startObj, CoordObject targetObj, boolean walkOnTarget, int lengthLimit)
 	{
 		HashMap<CoordObject, PathNode> nodeList = new HashMap<CoordObject, PathNode>();
 		ArrayList<PathNode> openList = new ArrayList<PathNode>();
@@ -265,17 +303,15 @@ public class GameController {
 		int[][] nextPos = {{-1, 1}, {0, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, 0}};
 
 		for(WalkableTile tile: walkableMap.values()) {
-			if(!tile.occupied) {
+			GameUnit u = units.get(tile);
+			if(u == null || u.owner == startObj.owner)
 				nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
-			}
 		}
 		nodeList.put(startObj, new PathNode(startObj.mapX, startObj.mapY));
 		
 		boolean nextToTarget = true;
 		if(walkOnTarget)
 			nextToTarget = false;
-		else if(!walkableMap.get(targetObj).occupied)
-				nextToTarget = false;
 		
 		PathNode target = null;
 		PathNode nextTile = null;

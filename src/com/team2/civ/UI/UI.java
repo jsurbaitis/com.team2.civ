@@ -1,37 +1,59 @@
 package com.team2.civ.UI;
 
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 
+import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
+import com.team2.civ.Game.GameUnit;
 
 public class UI {
 	private Resources res;
 
-	private ArrayList<UIButton> buttons = new ArrayList();
-	private ArrayList<UISlider> sliders = new ArrayList();
+	final int WW=Team2Civ.WINDOW_WIDTH;
+	final int WH=Team2Civ.WINDOW_HEIGHT;
+	private ArrayList<UISlider> sliders = new ArrayList<UISlider>();
+	
+	private UISlider selectionInfo;
 
 	public static enum UIEvent {
-		ACTION_ATTACK, BUILD_CITY, HANDLED
-	};
+		ACTION_ATTACK, BUILD_CITY, ACTION_DESTROY, ACTION_FORTIFY, BUILD_LUMBER, BUILD_FARM, HANDLED
+	}
 	
 	public UI(Resources res) {
 		this.res = res;
-		
-		
 	}
-
-	private void initBtn(int x, int y, int width, int height, UIEvent command,
-			String imageID) {
+	
+	public void update(long gameTime) {
+		for(UISlider s: sliders)
+			s.update(gameTime);
+	}
+	
+	public void draw(Graphics2D g) {
+		for(UISlider s: sliders) {
+			s.draw(g);
+		}
+	}
+	
+	public void showUnitInfo(GameUnit unit){
+		sliders.remove(selectionInfo);
 		try {
-			buttons.add(new UIButton(x, y, width, height, command, res.getImage(imageID)));
+			selectionInfo = new UISlider(WW,WH-WH*2/10,WW*6/10,WH*2/10,false, res.getImage("slider_horizontal_bg"));
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
-	}
-
-	private void initSldr(int x, int y, int width, int height) {
-		sliders.add(new UISlider(x, y, width, height));
+		
+		selectionInfo.addChild(new UIText(0, 0, (unit.HP+"/"+unit.data.HP)));
+		selectionInfo.addChild(new UIText(0, 0, (unit.HP+"/"+unit.data.HP)));
+		selectionInfo.addChild(new UIText(0, 0, (unit.AP+"/"+unit.data.AP)));
+	//	for (int i=0; i<unit.data.uiActions.size();i++)
+//		{
+//		 unitbar.addChild(initBtn(WW*(i*10+40)/100,WH/20,WW/10,WH/10,unit.data.uiActions.get(i)));
+//		} 
+		
+		selectionInfo.slideOut();
+		sliders.add(selectionInfo);
 	}
 
 	public boolean checkpanels(int mx, int my) {
@@ -47,23 +69,5 @@ public class UI {
 		return inarea;
 	}
 
-	public UIEvent checkbuttons(int mx, int my) {
-		for(UIButton b: buttons) {
-			if(b.picked(mx, my))
-				return b.commandID;
-		}
-		return null;
-	}
 
 }
-// MOUSE STUFF
-
-/*
- * private UI eventChecker;
- * 
- * @Override public void mouseClicked(MouseEvent ev) { UIButton chosenbutton;
- * boolean inUI = eventChecker.checkpanels(ev.getY(), ev.getY()); if (inUI)
- * {chosenbutton = eventChecker.checkbuttons(ev.getX(), ev.getY()); if
- * (chosenbutton != null) chosenbutton.pressed(); } else ; // send back to main
- * program mouse is not in UI section, it's in // game area
- */

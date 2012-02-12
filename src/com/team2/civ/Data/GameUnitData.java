@@ -6,32 +6,22 @@ import java.util.HashMap;
 import com.team2.civ.UI.UI.UIEvent;
 
 public class GameUnitData {
-	private String id, name, description;
+	public String id, name, description;
 	
-	private int metalCost, moveCost;
+	public int metalCost, moveCost;
 	
-	private int HP;
-	private int AP;
-	private int baseDmg;
-	private int range;
+	public int HP;
+	public int AP;
+	public int baseDmg;
+	public int range;
 	
-	private HashMap<String, Integer> dmgModifiers;
-	private ArrayList<UIEvent> uiActions;
-	private ArrayList<String> buildIDs;
+	public HashMap<String, Integer> dmgModifiers = new HashMap<String, Integer>();
+	public ArrayList<UIEvent> uiActions = new ArrayList<UIEvent>();
+	public ArrayList<String> buildIDs = new ArrayList<String>();
 	
 	public GameUnitData(String id) {
+		this.id = id;
 		name = id.toLowerCase();
-	}
-	
-	public void die() {
-		
-	}
-	
-	public void takeDmg(int dmg) {
-		HP -= dmg;
-		
-		if(HP <= 0)
-			die();
 	}
 
 }
