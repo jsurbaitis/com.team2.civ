@@ -22,5 +22,16 @@ public class GameUnitData {
 	public GameUnitData(String id) {
 		name = id.toLowerCase();
 	}
+	
+	public void die() {
+		
+	}
+	
+	public void takeDmg(int dmg) {
+		HP -= dmg;
+		
+		if(HP <= 0)
+			die();
+	}
 
 }
