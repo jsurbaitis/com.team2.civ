@@ -80,6 +80,7 @@ public class GameController {
 		BufferedImage waterImg = null;
 		BufferedImage tileImg = null;
 		BufferedImage moveImg = null;
+		BufferedImage hillImg = null;
 		try {
 			MapObjectImage.highlightImg = res.getImage("highlight");
 			MapObjectImage.selectedImg = res.getImage("selected");
@@ -87,13 +88,14 @@ public class GameController {
 			moveImg = res.getImage("move_test");
 			wallImg = res.getImage("wall");
 			waterImg = res.getImage("water");
+			hillImg = res.getImage("hill");
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
 		
 		int[][] map = HeightmapGenerator.generateMap(30, 30);
-		for(int x = 1; x < 29; x++) {
-			for(int y = 1; y < 29; y++) {
+		for(int x = 0; x < 30; x++) {
+			for(int y = 0; y < 30; y++) {
 				if(map[x][y] == -1)
 					continue;
 				if(map[x][y] == 0) {
@@ -104,10 +106,10 @@ public class GameController {
 					WalkableTile t = new WalkableTile(x, y, tileImg, null);
 					walkableMap.put(t, t);
 					lowDraw.put(t, t.getImage());
-				//} else if(map[x][y] < 70) {
-				//	WalkableTile t = new WalkableTile(x, y, tileImg);
-				//	walkableMap.put(t, t);
-				//	lowDraw.put(t, t.getImage());
+				} else if(map[x][y] == 2) {
+					WalkableTile t = new WalkableTile(x, y, hillImg, null);
+					walkableMap.put(t, t);
+					lowDraw.put(t, t.getImage());
 				} else {
 					WallTile wt = new WallTile(x, y, wallImg);
 					unwalkableMap.put(wt, wt);
@@ -122,6 +124,9 @@ public class GameController {
 			GameUnit test = new GameUnit(15, 15, moveImg, players.get(0), res.getUnit("WORKER"));
 			units.put(test, test);
 			highDraw.put(test, test.getImage());
+			
+			offsetX = -test.x;
+			offsetY = -test.y;
 			
 			GameUnit test1 = new GameUnit(18, 18, moveImg, players.get(0), res.getUnit("WORKER"));
 			units.put(test1, test1);
@@ -147,10 +152,12 @@ public class GameController {
 			} else {
 				scale -= ZOOM_FACTOR;
 			}
-
-			offsetX += Team2Civ.WINDOW_WIDTH * (os - scale) / 2;
-			offsetY += Team2Civ.WINDOW_HEIGHT * (os - scale) / 2;
 			
+			offsetX += ((float)Team2Civ.WINDOW_WIDTH) * (os - scale) / 2 * (1/scale);
+			offsetY += ((float)Team2Civ.WINDOW_HEIGHT) * (os - scale) / 2 * (1/scale);
+			
+			System.out.println(""+(((float)Team2Civ.WINDOW_WIDTH) * (os - scale) / 2 * (1/os)));
+
 			if(Math.abs(oldScale - scale) >= ZOOM_DELTA) {
 				zoomingIn = false;
 				zoomingOut = false;
@@ -188,18 +195,18 @@ public class GameController {
 	public  void draw(Graphics2D g) {
 		g.setColor(Color.BLACK);
         g.fillRect(0, 0, Team2Civ.WINDOW_WIDTH, Team2Civ.WINDOW_HEIGHT);
-        
+
         g.scale(scale, scale);
 
         for(MapObjectImage i: lowDraw.values())
-        	i.draw(g, (int)(offsetX*(1/scale)), (int)(offsetY*(1/scale)), scale);
+        	i.draw(g, (int)(offsetX), (int)(offsetY), scale);
 
         TreeMap<CoordObject, MapObjectImage> temp = new TreeMap<CoordObject, MapObjectImage>(highDraw);
         for(MapObjectImage i: temp.values())
-        	i.draw(g, (int)(offsetX*(1/scale)), (int)(offsetY*(1/scale)), scale);
-        
+        	i.draw(g, (int)(offsetX), (int)(offsetY), scale);
+
         g.scale(1/scale, 1/scale);
-        
+
         ui.draw(g);
 	}
 	
@@ -231,8 +238,8 @@ public class GameController {
 				leftClick = false;
 		}
 		else if(ev.getID() == MouseEvent.MOUSE_DRAGGED) {
-			offsetX += ev.getX() - lastMouseX;
-			offsetY += ev.getY() - lastMouseY;
+			offsetX += (ev.getX() - lastMouseX)*(1/scale);
+			offsetY += (ev.getY() - lastMouseY)*(1/scale);
 			
 			lastMouseX = ev.getX();
 			lastMouseY = ev.getY();
@@ -240,7 +247,7 @@ public class GameController {
 			GameUnit movingUnit = (GameUnit) target;
 			if(movingUnit.owner == currentPlayer && Math.abs(ev.getX() - pressStartX) < 5 && Math.abs(ev.getY() - pressStartY) < 5) {
 				for(WalkableTile t: walkableMap.values()) {
-					if(t.picked((int)((ev.getX() - offsetX)*(1/scale)), (int)((ev.getY() - offsetY)*(1/scale)))) {
+					if(t.picked((int)(ev.getX()*(1/scale)-offsetX), (int)(ev.getY()*(1/scale)-offsetY))) {
 						movingUnit.startMovement(findPath(movingUnit, t, true, -1));
 					}
 				}
@@ -248,7 +255,7 @@ public class GameController {
 		} else if(ev.getID() == MouseEvent.MOUSE_RELEASED && leftClick) {
 			if(Math.abs(ev.getX() - pressStartX) < 5 && Math.abs(ev.getY() - pressStartY) < 5) {
 				for(GameUnit u: units.values())
-					if(u.picked((int)((ev.getX() - offsetX)*(1/scale)), (int)((ev.getY() - offsetY)*(1/scale)))) {
+					if(u.picked((int)(ev.getX()*(1/scale)-offsetX), (int)(ev.getY()*(1/scale)-offsetY))) {
 						if(target != null)
 							target.selected = false;
 						target = u;
@@ -257,7 +264,7 @@ public class GameController {
 					}
 				
 				for(GameStaticObject so: staticObjects.values())
-					if(so.picked((int)((ev.getX() - offsetX)*(1/scale)), (int)((ev.getY() - offsetY)*(1/scale)))) {
+					if(so.picked((int)(ev.getX()*(1/scale)-offsetX), (int)(ev.getY()*(1/scale)-offsetY))) {
 						if(target != null)
 							target.selected = false;
 						target = so;
