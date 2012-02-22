@@ -14,12 +14,15 @@ public class Population {
 	public Population(int pop_size, GameController gc){
 		population_size = pop_size;
 		game = gc;
-		AI[] genomes = new AI[pop_size];
+		genomes = new AI[pop_size];
 		this.populate();
 	}
 	
 	public Population(int pop_size, GameController gc, HashMap<AI,Integer> fit, AI[] genome_array) {
-		
+		population_size = pop_size;
+		game = gc;
+		genomes = genome_array;
+		fitness = fit;
 	}
 	
 	public void populate(){
@@ -38,6 +41,15 @@ public class Population {
 	}
 	
 	public void compete(AI ai1, AI ai2) throws Exception{
+		if (! times_used.containsKey(ai1)){
+			times_used.put(ai1, 0);
+		}
+		if (! times_used.containsKey(ai2)){
+			times_used.put(ai2, 0);
+		}
+		if (times_used.get(ai1) > 5 || times_used.get(ai2) > 5){
+			throw new Exception("AI has already competed 5 times.");
+		}
 		//AI winner = rungame(ai1, ai2);
 		/* put two AIs in game, fuck some shit up, returns the winner */
 		//fitness.put(winner, (fitness.get(winner) + 1));
