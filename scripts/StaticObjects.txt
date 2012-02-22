@@ -22,3 +22,13 @@ FLATLAND
 MovementCost 1
 ENDOBJ
 
+METAL
+MovementCost 1
+
+name
+{
+	Metal_Resource
+}
+
+ENDOBJ
+

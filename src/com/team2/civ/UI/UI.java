@@ -1,7 +1,8 @@
 package com.team2.civ.UI;
 
 import java.awt.Graphics2D;
-import java.util.ArrayList;
+import java.awt.event.MouseEvent;
+import java.util.Vector;
 
 import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.ResNotFoundException;
@@ -10,64 +11,133 @@ import com.team2.civ.Game.GameUnit;
 
 public class UI {
 	private Resources res;
+	MiniMap miniMap;
+	UIButton endButton;
+	final int WW = Team2Civ.WINDOW_WIDTH;
+	final int WH = Team2Civ.WINDOW_HEIGHT;
+	private Vector<UISlider> sliders = new Vector<UISlider>();
 
-	final int WW=Team2Civ.WINDOW_WIDTH;
-	final int WH=Team2Civ.WINDOW_HEIGHT;
-	private ArrayList<UISlider> sliders = new ArrayList<UISlider>();
-	
+	private GameUnit currentunit;
 	private UISlider selectionInfo;
+	private UISlider buildSlider;
 
 	public static enum UIEvent {
-		ACTION_ATTACK, BUILD_CITY, ACTION_DESTROY, ACTION_FORTIFY, BUILD_LUMBER, BUILD_FARM, HANDLED
+		BUILD, ACTION_ATTACK, BUILD_CITY,BUILD_WORKER, ACTION_DESTROY, ACTION_FORTIFY, BUILD_LUMBER, BUILD_FARM, HANDLED, END_TURN
 	}
-	
+
 	public UI(Resources res) {
 		this.res = res;
-	}
-	
-	public void update(long gameTime) {
-		for(UISlider s: sliders)
-			s.update(gameTime);
-	}
-	
-	public void draw(Graphics2D g) {
-		for(UISlider s: sliders) {
-			s.draw(g);
-		}
-	}
-	
-	public void showUnitInfo(GameUnit unit){
-		sliders.remove(selectionInfo);
+
+		miniMap = new MiniMap(WW * 4 / 5 + 10, WH * 4 / 5, WW / 5, WH / 5);
 		try {
-			selectionInfo = new UISlider(WW,WH-WH*2/10,WW*6/10,WH*2/10,false, res.getImage("slider_horizontal_bg"));
+			endButton = new UIButton(miniMap.x, miniMap.y - 100, 100,
+					miniMap.width, UIEvent.END_TURN, res.getImage("END_TURN"));
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void update(long gameTime) {
+		for (UISlider s : sliders)
+			s.update(gameTime);
+	}
+
+	public void draw(Graphics2D g) {
+		for (UISlider s : sliders) {
+			s.draw(g);
+		}
+		endButton.draw(g);
+		miniMap.draw(g);
+
+	}
+
+	public UIEvent toEvent(String s)
+	{
+		for (UIEvent event : UIEvent.values()) {  
+		if (("BUILD_"+s).equals(event.toString())) return event;
+		}
+		return null;
+	}
+	public void showBuildInfo(GameUnit unit) {
+		sliders.remove(buildSlider);
+		try {
+			buildSlider = new UISlider(0, -WH/2, WW / 4, WH, true,
+					res.getImage("slider_vertical_bg"));
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
+		for (int i = 0; i < unit.data.buildIDs.size(); i++) {	
+				try {
+					buildSlider.addChild(new UIText (0,i*100+85,unit.data.buildIDs.get(i)));
+					buildSlider.addChild(new UIButton(0, (i * 100) + 100,	100, 50, toEvent(unit.data.buildIDs.get(i)), res.getImage(unit.data.buildIDs.get(i))));
+				} catch (ResNotFoundException e) {
+					e.printStackTrace();
+				}
+			}
 		
-		selectionInfo.addChild(new UIText(0, 0, (unit.HP+"/"+unit.data.HP)));
-		selectionInfo.addChild(new UIText(0, 0, (unit.HP+"/"+unit.data.HP)));
-		selectionInfo.addChild(new UIText(0, 0, (unit.AP+"/"+unit.data.AP)));
-	//	for (int i=0; i<unit.data.uiActions.size();i++)
-//		{
-//		 unitbar.addChild(initBtn(WW*(i*10+40)/100,WH/20,WW/10,WH/10,unit.data.uiActions.get(i)));
-//		} 
-		
+		buildSlider.slideOut();
+		sliders.add(buildSlider);
+
+	}
+
+	public void showUnitInfo(GameUnit unit) {
+		sliders.remove(selectionInfo);
+		try {
+			selectionInfo = new UISlider(miniMap.x, WH * 8 / 10, WW
+					- miniMap.width, WH * 2 / 10, false,
+					res.getImage("slider_horizontal_bg"));
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
+		currentunit = unit;
+		selectionInfo.addChild(new UIText(10, 15, (unit.data.name))); //
+		// selectionInfo.addChild(new UIText(10, 35, (unit.data.description)));
+
+		selectionInfo.addChild(new UIText(10, 55,
+				(unit.HP + "/" + unit.data.HP)));
+		selectionInfo.addChild(new UIText(10, 75,
+				(unit.AP + "/" + unit.data.AP)));
+     
+		for (int i = 0; i < unit.data.uiActions.size(); i++) {
+			
+				try {
+					selectionInfo.addChild(new UIButton((i * 100 + 200),
+							selectionInfo.height / 4, 100, 50,
+							unit.data.uiActions.get(i), res
+									.getImage(unit.data.uiActions.get(i)
+											.toString())));
+				} catch (ResNotFoundException e) {
+					e.printStackTrace();
+				}
+			}
+		if (!unit.data.buildIDs.isEmpty()) try {
+			selectionInfo.addChild(new UIButton(100, selectionInfo.height / 4, 100, 50,UIEvent.BUILD, res.getImage(UIEvent.BUILD.toString())));
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
 		selectionInfo.slideOut();
+		showBuildInfo(unit);
 		sliders.add(selectionInfo);
+
 	}
 
-	public boolean checkpanels(int mx, int my) {
-		boolean inarea = false;
-		for (int i = 0; i < sliders.size(); i++)
-			if (!inarea)
-				inarea = mx >= sliders.get(i).x
-						&& mx <= sliders.get(i).x + sliders.get(i).width
-						&& my <= sliders.get(i).y
-						&& my >= sliders.get(i).y + sliders.get(i).height;
-			else
-				break;
-		return inarea;
-	}
+	public UIEvent onClick(MouseEvent ev) {
+		UIEvent event = null;
+		for (int i = 0; i < sliders.size(); i++) {
+			UIEvent temp = sliders.get(i).onClick(ev);
+			if (temp != null)
+				event = temp;
+		}
+		if (ev.getX() > miniMap.x && ev.getX() < miniMap.x + miniMap.width
+				&& ev.getY() > miniMap.height + miniMap.y
+				&& ev.getY() < miniMap.y)
+			return UIEvent.HANDLED;
+		if (event == UIEvent.BUILD) {
+			showBuildInfo(currentunit);
+			return UIEvent.HANDLED;
+		}
 
+		return event;
+	}
 
 }

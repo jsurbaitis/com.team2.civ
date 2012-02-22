@@ -28,23 +28,23 @@ public class UISlider extends UIElement {
 
 	public void update(long gameTime) {
 		if (slidingOut && gameTime % 1 == 0 && !vertical) {
-			x -= 16;
+			x -= 4;
 			if (initialx > x + width)
 				slidingOut = false;
 		}
 		else if (slidingIn && gameTime % 1 == 0 && !vertical) {
-			x += 16;
+			x += 4;
 			if (initialx < x + width)
 				slidingIn = false;
 		}
 		else if (slidingOut && gameTime % 1 == 0 && vertical) {
-			y += 16;
-			if (initialy < y + height)
+			y += 4;
+			if ( y>0)
 				slidingOut = false;
 		}
 		else if (slidingIn && gameTime % 1 == 0 && vertical) {
-			y -= 16;
-			if (initialy > y + height)
+			y -= 4;
+			if (initialy < y - height)
 				slidingIn = false;
 		}
 	}
@@ -77,9 +77,12 @@ public class UISlider extends UIElement {
 
 			temp = this.children.get(i).clicked(ev.getX(), ev.getY());
 
-			if (temp != null)
+			if (temp != null||temp!= UIEvent.BUILD)
 				return temp;
 		}
+		
 		return temp;
+		
 	}
+
 }

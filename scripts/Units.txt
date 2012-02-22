@@ -12,14 +12,12 @@ DmgModifier
 UIActions
 {
     ATTACK
-    DEStroy
+    DESTROY
     FORTIFY
 }
 
 build
 {
     CITY
-    FARM
-    LUMBERMILL
 }
 ENDUNIT

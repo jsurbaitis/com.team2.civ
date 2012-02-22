@@ -1,5 +1,6 @@
 package com.team2.civ.UI;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 
 public class UIText extends UIElement {
@@ -13,6 +14,7 @@ public class UIText extends UIElement {
 
 	@Override
 	public void draw(Graphics2D g) {
+		g.setColor(Color.PINK);
 		if (parent == null)
 	 		g.drawString(text, x, y);
 		else

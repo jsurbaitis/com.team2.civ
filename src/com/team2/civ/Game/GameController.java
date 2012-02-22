@@ -59,7 +59,7 @@ public class GameController {
 	private HashMap<CoordObject, GameStaticObject> staticObjects = new HashMap<CoordObject, GameStaticObject>();
 	
 	private HashMap<CoordObject, MapObjectImage> highDraw = new HashMap<CoordObject, MapObjectImage>();
-	private HashMap<CoordObject, MapObjectImage> lowDraw = new HashMap<CoordObject, MapObjectImage>();
+	private TreeMap<CoordObject, MapObjectImage> lowDraw = new TreeMap<CoordObject, MapObjectImage>();
 
 	public List<Player> players = new ArrayList<Player>();
 	private Player currentPlayer;
@@ -67,33 +67,36 @@ public class GameController {
 	
 	public int turnCount = 0;
 	public static final int MAX_TURNS = 500;
+	
+	/*
+	 * Make it so that units are always on top of all objects, basically separate hashmap for them that is sorted
+	 */
 
 	public GameController(GraphicsConfiguration config) {
 		res = new Resources(config);
 		ui = new UI(res);
 		
-		createMap();
-	}
-	
-	private void createMap() {
-		BufferedImage wallImg = null;
-		BufferedImage waterImg = null;
-		BufferedImage tileImg = null;
-		BufferedImage moveImg = null;
-		BufferedImage hillImg = null;
 		try {
-			MapObjectImage.highlightImg = res.getImage("highlight");
-			MapObjectImage.selectedImg = res.getImage("selected");
-			tileImg = res.getImage("tile_grass");
-			moveImg = res.getImage("move_test");
-			wallImg = res.getImage("wall");
-			waterImg = res.getImage("water");
-			hillImg = res.getImage("hill");
+			createMap();
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private void createMap() throws ResNotFoundException {
+		MapObjectImage.selectedImg = res.getImage("selected");
+		BufferedImage tileImg = res.getImage("tile_grass");
+		BufferedImage moveImg = res.getImage("move_test");
+		BufferedImage wallImg = res.getImage("wall");
+		BufferedImage waterImg = res.getImage("water");
+		BufferedImage hillImg = res.getImage("hill");
+		BufferedImage metalImg = res.getImage("metal");
+		BufferedImage cityImg = res.getImage("CITY");
 		
-		int[][] map = HeightmapGenerator.generateMap(30, 30);
+		String[] colors = { "#FFFFFF", "#FF5400", "#545454", "#000FFF" };
+		int playerIndex = 1;
+		
+		int[][] map = HeightmapGenerator.generateMap(30, 30, 4);
 		for(int x = 0; x < 30; x++) {
 			for(int y = 0; y < 30; y++) {
 				if(map[x][y] == -1)
@@ -110,30 +113,37 @@ public class GameController {
 					WalkableTile t = new WalkableTile(x, y, hillImg, null);
 					walkableMap.put(t, t);
 					lowDraw.put(t, t.getImage());
-				} else {
+				} else if(map[x][y] == 3) {
 					WallTile wt = new WallTile(x, y, wallImg);
 					unwalkableMap.put(wt, wt);
 					highDraw.put(wt, wt.getImage());
+				} else if(map[x][y] == 4) {
+					GameStaticObject metal = new GameStaticObject(x, y, metalImg, null, res.getStaticObject("METAL"));
+					staticObjects.put(metal, metal);
+					walkableMap.put(metal, metal);
+					lowDraw.put(metal, metal.getImage());
+				} else if(map[x][y] == 5) {
+					Player p = new Player("Player "+playerIndex, colors[playerIndex-1], null);
+					players.add(p);
+					GameStaticObject city = new GameStaticObject(x, y, cityImg, p, res.getStaticObject("CITY"));
+					staticObjects.put(city, city);
+					walkableMap.put(city, city);
+					lowDraw.put(city, city.getImage());
+					playerIndex++;
 				}
 			}
 		}
-		
-		players.add(new Player("P1", "#FFFFFF", null));
 
-		try {
-			GameUnit test = new GameUnit(15, 15, moveImg, players.get(0), res.getUnit("WORKER"));
-			units.put(test, test);
-			highDraw.put(test, test.getImage());
+		GameUnit test = new GameUnit(15, 15, moveImg, players.get(0), res.getUnit("WORKER"));
+		units.put(test, test);
+		highDraw.put(test, test.getImage());
 			
-			offsetX = -test.x;
-			offsetY = -test.y;
+		offsetX = -test.x;
+		offsetY = -test.y;
 			
-			GameUnit test1 = new GameUnit(18, 18, moveImg, players.get(0), res.getUnit("WORKER"));
-			units.put(test1, test1);
-			highDraw.put(test1, test1.getImage());
-		} catch (ResNotFoundException e) {
-			e.printStackTrace();
-		}
+		GameUnit test1 = new GameUnit(18, 18, moveImg, players.get(0), res.getUnit("WORKER"));
+		units.put(test1, test1);
+		highDraw.put(test1, test1.getImage());
 		
 		
 		currentPlayer = players.get(0);
@@ -156,7 +166,7 @@ public class GameController {
 			offsetX += ((float)Team2Civ.WINDOW_WIDTH) * (os - scale) / 2 * (1/scale);
 			offsetY += ((float)Team2Civ.WINDOW_HEIGHT) * (os - scale) / 2 * (1/scale);
 			
-			System.out.println(""+(((float)Team2Civ.WINDOW_WIDTH) * (os - scale) / 2 * (1/os)));
+			//System.out.println(""+(((float)Team2Civ.WINDOW_WIDTH) * (os - scale) / 2 * (1/os)));
 
 			if(Math.abs(oldScale - scale) >= ZOOM_DELTA) {
 				zoomingIn = false;

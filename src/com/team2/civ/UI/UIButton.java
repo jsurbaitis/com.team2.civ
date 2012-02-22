@@ -9,8 +9,7 @@ public class UIButton extends UIElement {
 
 	private BufferedImage img;
 
-	public UIButton(int x, int y, int width, int height, UIEvent commandID,
-			BufferedImage img) {
+	public UIButton(int x, int y, int width, int height, UIEvent commandID,	BufferedImage img) {
 		super(x, y, width, height, commandID);
 
 		this.img = img;
