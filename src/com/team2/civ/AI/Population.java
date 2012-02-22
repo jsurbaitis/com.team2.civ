@@ -1,5 +1,7 @@
 package com.team2.civ.AI;
+import java.security.SecureRandom;
 import java.util.HashMap;
+import java.util.Random;
 
 import com.team2.civ.Game.GameController;
 
@@ -57,7 +59,37 @@ public class Population {
 		times_used.put(ai2, times_used.get(ai2) + 1);
 	}
 	
-	public void cullHerd(){
-		/* do shit, remove the weak, add until genome = pop_size */
+	public void competeAll(){
+		for (int i = genomes.length - 1; i > 0; i--){
+			Random random = new SecureRandom();
+			for (int j = 0; j < 5; j++){
+				try {
+					compete(genomes[i], genomes[random.nextInt(i-1)]);
+				} catch (Exception e) {
+				}
+			}
+		}
 	}
+	
+	public void cullHerd(){
+		AI[] newAI = new AI[population_size];
+		int j = 0;
+		for (int i = 0; i < genomes.length; i++){
+			if (fitness.get(genomes[i]) > fitness_level){
+				newAI[j] = genomes[i];
+				j++;
+			}
+		}
+		int k = j;
+		Random random = new SecureRandom();
+	    AI parent1 =newAI[random.nextInt(k)];
+	    AI parent2 =newAI[random.nextInt(k)];
+	    if (j < population_size){
+	    	for (int t = j; t < genomes.length; t++){
+	    		newAI[j] = new AI(game, parent1, parent2);
+	    		j++;
+	    	}
+	    }
+	}
+
 }

@@ -22,6 +22,17 @@ public class AI {
 		HashMap<CoordObject, WalkableTile> walkableMap = game.getWalkableTilesCopy();
 		walkableMap.get(new CoordObject(0, 0));}
 
+	public AI(GameController game, AI parent1, AI parent2){
+		this.game = game;
+		Random rng = new SecureRandom();
+		int num = rng.nextInt(1);
+		if (num == 0){
+			this.genome = mutation(mate(parent1.genome,parent2.genome));
+		} else {
+			this.genome = mutation(mate2(parent1.genome,parent2.genome));
+		}
+	}
+	
 	private static boolean[] generateNewGenome() {
 		boolean[] actions = new boolean[(int) Math.pow(2, condition_bits)
 				* action_points];
