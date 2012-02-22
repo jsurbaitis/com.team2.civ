@@ -1,6 +1,5 @@
 package com.team2.civ.Map;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
@@ -10,6 +9,7 @@ import com.team2.civ.Data.Resources;
 public class MapObjectImage implements Comparable<MapObjectImage> {
 	public static BufferedImage selectedImg;
 	
+	private BufferedImage fowImg;
 	private BufferedImage defaultImg;
 	private BufferedImage img;
 	private MapObject parent;
@@ -27,6 +27,10 @@ public class MapObjectImage implements Comparable<MapObjectImage> {
 	
 	public void resetImg() {
 		img = defaultImg;
+	}
+	
+	public void setFowImg(BufferedImage fowImg) {
+		this.fowImg = fowImg;
 	}
 	
 	public void setBitmap(BufferedImage img) {
@@ -53,20 +57,30 @@ public class MapObjectImage implements Comparable<MapObjectImage> {
 		visible = checkVisibility(offsetX, offsetY, scale);
 
 		if(visible) {
-			if(parent.selected) {
-				Graphics2D g2d = selectedImg.createGraphics();
-				g2d.setXORMode(Color.blue);
-				g.drawImage(selectedImg, null, (int) parent.x + offsetX + (Resources.TILE_WIDTH - selectedImg.getWidth())/2, 
-	         	   		 parent.y - (selectedImg.getHeight() - Resources.TILE_HEIGHT) + offsetY);	
-			}
-			
-			g.drawImage(img, null, (int) parent.x + offsetX + (Resources.TILE_WIDTH - getWidth())/2, 
-					         	   		 parent.y - (getHeight() - Resources.TILE_HEIGHT) + offsetY);
+			if(parent.beingSeen)
+				drawIsSeen(g, offsetX, offsetY, scale);
+			else if(parent.seen)
+				drawWasSeen(g, offsetX, offsetY, scale);
+		}
+	}
+	
+	private void drawWasSeen(Graphics2D g, int offsetX, int offsetY, double scale) {
+		g.drawImage(fowImg, null, (int) parent.x + offsetX + (Resources.TILE_WIDTH - getWidth())/2, 
+    	   		 parent.y - (getHeight() - Resources.TILE_HEIGHT) + offsetY);
+	}
+	
+	private void drawIsSeen(Graphics2D g, int offsetX, int offsetY, double scale) {
+		if(parent.selected) {
+			g.drawImage(selectedImg, null, (int) parent.x + offsetX + (Resources.TILE_WIDTH - selectedImg.getWidth())/2, 
+         	   		 parent.y - (selectedImg.getHeight() - Resources.TILE_HEIGHT) + offsetY);	
+		}
+		
+		g.drawImage(img, null, (int) parent.x + offsetX + (Resources.TILE_WIDTH - getWidth())/2, 
+				         	   		 parent.y - (getHeight() - Resources.TILE_HEIGHT) + offsetY);
 
-			if(parent.highlighted) {
-				g.drawImage(selectedImg, null, (int) parent.x + offsetX + (Resources.TILE_WIDTH - selectedImg.getWidth())/2, 
-	         	   		 parent.y - (selectedImg.getHeight() - Resources.TILE_HEIGHT) + offsetY);	
-			}
+		if(parent.highlighted) {
+			g.drawImage(selectedImg, null, (int) parent.x + offsetX + (Resources.TILE_WIDTH - selectedImg.getWidth())/2, 
+         	   		 parent.y - (selectedImg.getHeight() - Resources.TILE_HEIGHT) + offsetY);	
 		}
 	}
 	

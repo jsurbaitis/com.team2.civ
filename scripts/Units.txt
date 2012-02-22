@@ -3,6 +3,7 @@ HP 50
 AP 10
 BaseDmg 6
 Range 2
+FoWRange 2
 
 DmgModifier
 {

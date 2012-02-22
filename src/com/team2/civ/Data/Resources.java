@@ -70,6 +70,7 @@ public class Resources {
 		if(varName.equals("MetalCose")) u.metalCost = in.nextInt();
 		else if(varName.equals("DefensiveBonus")) u.defensiveBonus = in.nextInt();
 		else if(varName.equals("MovementCose")) u.moveCost = in.nextInt();
+		else if(varName.equals("FoWRange")) u.fowRange = in.nextInt();
 	}
 	
 	private void parseStaticObjectname(Scanner in, GameStaticObjectData u) throws IOException {
@@ -132,6 +133,7 @@ public class Resources {
 		else if(varName.equals("AP")) u.AP = in.nextInt();
 		else if(varName.equals("BaseDmg")) u.baseDmg = in.nextInt();
 		else if(varName.equals("Range")) u.range = in.nextInt();
+		else if(varName.equals("FoWRange")) u.fowRange = in.nextInt();
 	}
 
 	private void parseUnitDmgModifiers(Scanner in, GameUnitData u) throws IOException {

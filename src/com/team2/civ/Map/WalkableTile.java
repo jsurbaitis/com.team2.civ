@@ -6,8 +6,8 @@ import com.team2.civ.Game.Player;
 
 public class WalkableTile extends MapObject {
 
-	public WalkableTile(int mapX, int mapY, BufferedImage bitmap, Player owner) {
+	public WalkableTile(int mapX, int mapY, BufferedImage bitmap, BufferedImage fowImg, Player owner) {
 		super(mapX, mapY, bitmap, owner);
-		// TODO Auto-generated constructor stub
+		img.setFowImg(fowImg);
 	}
 }

@@ -24,6 +24,7 @@ import com.team2.civ.Map.PathNode;
 import com.team2.civ.Map.WalkableTile;
 import com.team2.civ.Map.WallTile;
 import com.team2.civ.UI.UI;
+import com.team2.civ.UI.UI.UIEvent;
 
 public class GameController {
 	private long gameTime = 0;
@@ -52,6 +53,8 @@ public class GameController {
 	private Resources res;
 	private UI ui;
 	
+	private final int[][] nextPos = {{-1, 1}, {0, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, 0}};
+	
 	private HashMap<CoordObject, WallTile> unwalkableMap = new HashMap<CoordObject, WallTile>();
 	private HashMap<CoordObject, WalkableTile> walkableMap = new HashMap<CoordObject, WalkableTile>();
 	
@@ -62,6 +65,7 @@ public class GameController {
 	private TreeMap<CoordObject, MapObjectImage> lowDraw = new TreeMap<CoordObject, MapObjectImage>();
 
 	public List<Player> players = new ArrayList<Player>();
+	public Player humanPlayer;
 	private Player currentPlayer;
 	private MapObject target;
 	
@@ -93,6 +97,13 @@ public class GameController {
 		BufferedImage metalImg = res.getImage("metal");
 		BufferedImage cityImg = res.getImage("CITY");
 		
+		BufferedImage tileFowImg = res.getImage("tile_grass_fow");
+		BufferedImage wallFowImg = res.getImage("wall_fow");
+		BufferedImage waterFowImg = res.getImage("water_fow");
+		BufferedImage hillFowImg = res.getImage("hill_fow");
+		BufferedImage metalFowImg = res.getImage("metal_fow");
+		BufferedImage cityFowImg = res.getImage("CITY_fow");
+		
 		String[] colors = { "#FFFFFF", "#FF5400", "#545454", "#000FFF" };
 		int playerIndex = 1;
 		
@@ -102,30 +113,30 @@ public class GameController {
 				if(map[x][y] == -1)
 					continue;
 				if(map[x][y] == 0) {
-					WallTile wt = new WallTile(x, y, waterImg);
+					WallTile wt = new WallTile(x, y, waterImg, waterFowImg);
 					unwalkableMap.put(wt, wt);
 					highDraw.put(wt, wt.getImage());
 				} else if(map[x][y] == 1) {
-					WalkableTile t = new WalkableTile(x, y, tileImg, null);
+					WalkableTile t = new WalkableTile(x, y, tileImg, tileFowImg, null);
 					walkableMap.put(t, t);
 					lowDraw.put(t, t.getImage());
 				} else if(map[x][y] == 2) {
-					WalkableTile t = new WalkableTile(x, y, hillImg, null);
+					WalkableTile t = new WalkableTile(x, y, hillImg, hillFowImg, null);
 					walkableMap.put(t, t);
 					lowDraw.put(t, t.getImage());
 				} else if(map[x][y] == 3) {
-					WallTile wt = new WallTile(x, y, wallImg);
+					WallTile wt = new WallTile(x, y, wallImg, wallFowImg);
 					unwalkableMap.put(wt, wt);
 					highDraw.put(wt, wt.getImage());
 				} else if(map[x][y] == 4) {
-					GameStaticObject metal = new GameStaticObject(x, y, metalImg, null, res.getStaticObject("METAL"));
+					GameStaticObject metal = new GameStaticObject(x, y, metalImg, metalFowImg, null, res.getStaticObject("METAL"));
 					staticObjects.put(metal, metal);
 					walkableMap.put(metal, metal);
 					lowDraw.put(metal, metal.getImage());
 				} else if(map[x][y] == 5) {
 					Player p = new Player("Player "+playerIndex, colors[playerIndex-1], null);
 					players.add(p);
-					GameStaticObject city = new GameStaticObject(x, y, cityImg, p, res.getStaticObject("CITY"));
+					GameStaticObject city = new GameStaticObject(x, y, cityImg, cityFowImg, p, res.getStaticObject("CITY"));
 					staticObjects.put(city, city);
 					walkableMap.put(city, city);
 					lowDraw.put(city, city.getImage());
@@ -134,6 +145,8 @@ public class GameController {
 			}
 		}
 
+		humanPlayer = players.get(0);
+		
 		GameUnit test = new GameUnit(15, 15, moveImg, players.get(0), res.getUnit("WORKER"));
 		units.put(test, test);
 		highDraw.put(test, test.getImage());
@@ -174,8 +187,58 @@ public class GameController {
 			}
 		}
 		
-		for(GameUnit u: units.values())
+		for(WalkableTile t: walkableMap.values())
+			t.beingSeen = false;
+		
+		for(WallTile t: unwalkableMap.values())
+			t.beingSeen = false;
+		
+		for(GameUnit u: units.values()) {
 			u.update(gameTime, walkableMap);
+			if(u.owner == humanPlayer) {
+				u.isSeen();
+				updateFow(u, u.data.fowRange);
+			}
+		}
+		
+		for(GameStaticObject so: staticObjects.values()) {
+			if(so.owner == humanPlayer) {
+				so.isSeen();
+				updateFow(so, so.data.fowRange);
+			}
+		}
+	}
+	
+	private void updateFow(CoordObject co, int range) {
+		MapObject o = walkableMap.get(co);
+		if(o != null) {
+			o.isSeen();
+		} else {
+			o = unwalkableMap.get(co);
+			if(o != null) o.isSeen();
+		}
+		
+		updateFowAround(co, range);
+	}
+
+	private void updateFowAround(CoordObject co, int range) {
+		if(range == 0)
+			return;
+
+		MapObject o;
+		for(int z = 0; z < nextPos.length; z++) {
+			o = walkableMap.get(new CoordObject(co.mapX + nextPos[z][0], co.mapY + nextPos[z][1]));
+			if(o != null) {
+				updateFowAround(o, range-1);
+				o.isSeen();
+			} else {
+				o = unwalkableMap.get(new CoordObject(co.mapX + nextPos[z][0], co.mapY + nextPos[z][1]));
+				if(o != null) {
+					updateFowAround(o, range-1);
+					o.isSeen();
+				}
+			}
+		}
 	}
 	
 	public HashMap<CoordObject, WalkableTile> getWalkableTilesCopy() {
@@ -235,6 +298,12 @@ public class GameController {
 	}
 	
 	public void onMouseInput(MouseEvent ev) {
+		UIEvent event = ui.onMouseInput(ev);
+		if(event == null)
+			onGameInput(ev);
+	}
+	
+	public void onGameInput(MouseEvent ev) {
 		if(ev.getID() == MouseEvent.MOUSE_PRESSED) {
 			lastMouseX = ev.getX();
 			lastMouseY = ev.getY();
@@ -313,11 +382,6 @@ public class GameController {
 		ArrayList<PathNode> openList = new ArrayList<PathNode>();
 		ArrayList<PathNode> closedList = new ArrayList<PathNode>();
 		ArrayList<WalkableTile> returnList = new ArrayList<WalkableTile>();
-		
-		//ISO
-		//int[][] nextPos = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-		//HEX
-		int[][] nextPos = {{-1, 1}, {0, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, 0}};
 
 		for(WalkableTile tile: walkableMap.values()) {
 			GameUnit u = units.get(tile);

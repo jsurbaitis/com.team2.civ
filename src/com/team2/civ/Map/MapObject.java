@@ -10,6 +10,10 @@ public class MapObject extends CoordObject {
 	public Player owner;
 	public boolean selected = false;
 	public boolean highlighted = false;
+	
+	public boolean seen = false;
+	public boolean beingSeen = false;
+	
 	protected MapObjectImage img;
 	
 	public MapObject(int mapX, int mapY, BufferedImage bitmap, Player owner) {
@@ -18,6 +22,14 @@ public class MapObject extends CoordObject {
 		this.owner = owner;
 	}
 	
+	public void isSeen() {
+		beingSeen = true;
+		seen = true;
+		
+		//check if it has been destroyed
+		//if yes, finally stop drawing it since player is aware of the change
+	}
+
 	public MapObjectImage getImage() {
 		return img;
 	}

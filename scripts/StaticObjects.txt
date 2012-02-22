@@ -2,6 +2,7 @@ CITY
 MetalCost 10
 DefensiveBonus 50
 MovementCost 1
+FoWRange 3
 
 name
 {

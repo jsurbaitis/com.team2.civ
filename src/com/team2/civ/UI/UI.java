@@ -4,6 +4,8 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.util.Vector;
 
+import javax.swing.SwingUtilities;
+
 import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
@@ -20,6 +22,14 @@ public class UI {
 	private GameUnit currentunit;
 	private UISlider selectionInfo;
 	private UISlider buildSlider;
+	
+	private int pressStartX;
+	private int pressStartY;
+	
+	private int lastMouseX;
+	private int lastMouseY;
+	
+	private boolean leftClick = true;
 
 	public static enum UIEvent {
 		BUILD, ACTION_ATTACK, BUILD_CITY,BUILD_WORKER, ACTION_DESTROY, ACTION_FORTIFY, BUILD_LUMBER, BUILD_FARM, HANDLED, END_TURN
@@ -48,7 +58,6 @@ public class UI {
 		}
 		endButton.draw(g);
 		miniMap.draw(g);
-
 	}
 
 	public UIEvent toEvent(String s)
@@ -116,9 +125,39 @@ public class UI {
 			e.printStackTrace();
 		}
 		selectionInfo.slideOut();
-		showBuildInfo(unit);
+		//showBuildInfo(unit);
 		sliders.add(selectionInfo);
 
+	}
+	
+	public UIEvent onMouseInput(MouseEvent ev) {
+		if(ev.getID() == MouseEvent.MOUSE_PRESSED) {
+			lastMouseX = ev.getX();
+			lastMouseY = ev.getY();
+			
+			pressStartX = lastMouseX;
+			pressStartY = lastMouseY;
+			
+			if(SwingUtilities.isLeftMouseButton(ev))
+				leftClick = true;
+			else
+				leftClick = false;
+		}
+		else if(ev.getID() == MouseEvent.MOUSE_DRAGGED) {
+			lastMouseX = ev.getX();
+			lastMouseY = ev.getY();
+			
+			//drag
+		} else if(ev.getID() == MouseEvent.MOUSE_RELEASED && !leftClick) {
+			if(Math.abs(ev.getX() - pressStartX) < 5 && Math.abs(ev.getY() - pressStartY) < 5) {
+				//rightClick
+			}
+		} else if(ev.getID() == MouseEvent.MOUSE_RELEASED && leftClick) {
+			if(Math.abs(ev.getX() - pressStartX) < 5 && Math.abs(ev.getY() - pressStartY) < 5) {
+				//leftClick
+			}
+		}
+		return null;
 	}
 
 	public UIEvent onClick(MouseEvent ev) {

@@ -12,9 +12,9 @@ public class GameStaticObject extends WalkableTile {
 
 	private int HP;
 
-	public GameStaticObject(int mapX, int mapY, BufferedImage bitmap, Player owner,
+	public GameStaticObject(int mapX, int mapY, BufferedImage bitmap, BufferedImage fowImg, Player owner,
 			GameStaticObjectData data) {
-		super(mapX, mapY, bitmap, owner);
+		super(mapX, mapY, bitmap, fowImg, owner);
 
 		this.owner = owner;
 		this.data = data;

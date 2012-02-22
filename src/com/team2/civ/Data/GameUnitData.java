@@ -14,6 +14,7 @@ public class GameUnitData {
 	public int AP;
 	public int baseDmg;
 	public int range;
+	public int fowRange;
 	
 	public HashMap<String, Integer> dmgModifiers = new HashMap<String, Integer>();
 	public ArrayList<UIEvent> uiActions = new ArrayList<UIEvent>();
