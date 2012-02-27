@@ -22,4 +22,8 @@ public class GameStaticObject extends WalkableTile {
 		Random rnd = new Random();
 		name = data.names.get(rnd.nextInt(data.names.size()));
 	}
+	
+	public int getHP() {
+		return HP;
+	}
 }

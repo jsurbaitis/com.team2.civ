@@ -30,7 +30,7 @@ public class UIElement {
 			my -= parent.y;
 		}
 		
-		if(x > mx && x < mx + width && y > my && y < my + height)
+		if(mx > x && mx < x + width && my > y && my < y + height)
 			return true;
 		
 		return false;

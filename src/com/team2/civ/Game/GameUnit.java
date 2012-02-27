@@ -8,7 +8,7 @@ import com.team2.civ.Map.MovingMapObject;
 public class GameUnit extends MovingMapObject {
 	public GameUnitData data;
 	public Player owner;
-	public int HP, AP;
+	private int HP, AP;
 
 	public GameUnit(int mapX, int mapY, BufferedImage bitmap, Player owner, GameUnitData data) {
 		super(mapX, mapY, bitmap, owner);
@@ -17,6 +17,14 @@ public class GameUnit extends MovingMapObject {
 		this.data = data;
 		HP = data.HP;
 	} 
+	
+	public int getHP() {
+		return HP;
+	}
+	
+	public int getAP() {
+		return AP;
+	}
 	
 	public void die() {
 

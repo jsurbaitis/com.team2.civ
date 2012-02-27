@@ -35,7 +35,7 @@ public class MovingMapObject extends MapObject {
 			frames[3] = ImageIO.read(new File("assets/enemy_s_torusknot_walk_3.png"));
 			frames[4] = ImageIO.read(new File("assets/enemy_s_torusknot_walk_4.png"));
 			frames[5] = ImageIO.read(new File("assets/enemy_s_torusknot_walk_5.png"));
-			frames[6] = ImageIO.read(new File("assets/move_test.png"));
+			frames[6] = ImageIO.read(new File("assets/WORKER.png"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

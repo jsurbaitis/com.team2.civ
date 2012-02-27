@@ -19,7 +19,7 @@ public class UISlider extends UIElement {
 	private final int initialy;
 
 	public UISlider(int x, int y, int width, int height, boolean isVertical, BufferedImage bg) {
-		super(x, y, width, height, null);
+		super(x, y, width, height, UIEvent.HANDLED);
 		initialx = x;
 		initialy = y;
         this.vertical = isVertical;
@@ -28,22 +28,22 @@ public class UISlider extends UIElement {
 
 	public void update(long gameTime) {
 		if (slidingOut && gameTime % 1 == 0 && !vertical) {
-			x -= 4;
+			x -= 16;
 			if (initialx > x + width)
 				slidingOut = false;
 		}
 		else if (slidingIn && gameTime % 1 == 0 && !vertical) {
-			x += 4;
+			x += 16;
 			if (initialx < x + width)
 				slidingIn = false;
 		}
 		else if (slidingOut && gameTime % 1 == 0 && vertical) {
-			y += 4;
+			y += 16;
 			if ( y>0)
 				slidingOut = false;
 		}
 		else if (slidingIn && gameTime % 1 == 0 && vertical) {
-			y -= 4;
+			y -= 16;
 			if (initialy < y - height)
 				slidingIn = false;
 		}
@@ -72,15 +72,18 @@ public class UISlider extends UIElement {
 	}
 
 	public UIEvent onClick(MouseEvent ev) {
-		UIEvent temp = null;
-		for (int i = 0; i < this.children.size(); i++) {
-
-			temp = this.children.get(i).clicked(ev.getX(), ev.getY());
-
-			if (temp != null||temp!= UIEvent.BUILD)
-				return temp;
-		}
+		UIEvent temp = clicked(ev.getX(), ev.getY());
 		
+		if(temp != null) {
+			for (int i = 0; i < this.children.size(); i++) {
+
+				UIEvent tempo = this.children.get(i).clicked(ev.getX(), ev.getY());
+
+				if (tempo != null)
+					return tempo;
+			}
+		}
+
 		return temp;
 		
 	}

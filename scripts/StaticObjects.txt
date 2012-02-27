@@ -12,9 +12,7 @@ name
 
 build
 {
-    WORKER
-    FIGHTER
-    ARCHER    
+    WORKER  
 }
 
 ENDOBJ
