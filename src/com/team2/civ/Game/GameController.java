@@ -94,9 +94,10 @@ public class GameController {
 	}
 
 	private void createMap() throws ResNotFoundException {
+		HashMap<CoordObject, MapObjectImage> lowDraw = new HashMap<CoordObject, MapObjectImage>();
+		
 		MapObjectImage.selectedImg = res.getImage("selected");
 		BufferedImage tileImg = res.getImage("tile_grass");
-		BufferedImage moveImg = res.getImage("WORKER");
 		BufferedImage wallImg = res.getImage("wall");
 		BufferedImage waterImg = res.getImage("water");
 		BufferedImage hillImg = res.getImage("hill");
@@ -165,12 +166,14 @@ public class GameController {
 
 		humanPlayer = players.get(0);
 
-		GameUnit test = new GameUnit(15, 15, moveImg, players.get(0),
+		GameUnit test = new GameUnit(15, 15, "WORKER", res, players.get(0),
 				res.getUnit("WORKER"));
 		units.put(test, test);
 		highDraw.put(test, test.getImage());
 
 		currentPlayer = players.get(0);
+		
+		this.lowDraw = new TreeMap<CoordObject, MapObjectImage>(lowDraw);
 	}
 
 	public void update(long timeElapsedMillis) {
@@ -415,7 +418,7 @@ public class GameController {
 		if(p.metal >= data.metalCost) {
 			p.metal -= data.metalCost;
 			
-			GameUnit u = new GameUnit(target.mapX, target.mapY, res.getImage(data.id), p, data);
+			GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res, p, data);
 			units.put(u, u);
 			highDraw.put(u, u.getImage());
 			

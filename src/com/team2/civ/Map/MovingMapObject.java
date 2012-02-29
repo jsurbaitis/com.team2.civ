@@ -1,15 +1,12 @@
 package com.team2.civ.Map;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.imageio.ImageIO;
-
-import com.team2.civ.Data.AnimData;
+import com.team2.civ.Data.ResNotFoundException;
+import com.team2.civ.Data.Resources;
 import com.team2.civ.Game.Player;
 
 public class MovingMapObject extends MapObject {
@@ -19,15 +16,19 @@ public class MovingMapObject extends MapObject {
 	
 	protected MapObject target;
 	
-	private Animation movingAnim;
+	private BufferedImage orientations[];
+	//private Animation movingAnim;
 
 	protected List<WalkableTile> path;
 	
-	public MovingMapObject(int mapX, int mapY, BufferedImage bitmap, Player owner) {
-		super(mapX, mapY, bitmap, owner);
+	public MovingMapObject(int mapX, int mapY, String imgId, Resources res, Player owner) throws ResNotFoundException {
+		super(mapX, mapY, res.getImage(imgId+"_0"), owner);
 		
-		//TEMPORARY ANIM STUFF
-		BufferedImage frames[] = new BufferedImage[7];
+		orientations = new BufferedImage[6];
+		for(int i = 0; i < 6; i++)
+			orientations[i] = res.getImage(imgId+"_"+i);
+		
+		/*BufferedImage frames[] = new BufferedImage[7];
 		try {
 			frames[0] = ImageIO.read(new File("assets/enemy_s_torusknot_walk_0.png"));
 			frames[1] = ImageIO.read(new File("assets/enemy_s_torusknot_walk_1.png"));
@@ -45,12 +46,12 @@ public class MovingMapObject extends MapObject {
 		a.loopCount = -1;
 		a.frames = frames;
 		
-		movingAnim = new Animation(a);
+		movingAnim = new Animation(a);*/
 	}
 	
 	public void update(long gameTime, HashMap<CoordObject, WalkableTile> map) {
 		if(isMoving) {
-			movingAnim.update(img, gameTime);
+			//movingAnim.update(img, gameTime);
 			updateMovement(map);
 		}
 	}
@@ -59,7 +60,7 @@ public class MovingMapObject extends MapObject {
 		if(!isMoving) {
 			this.path = path;
 			if(path != null) {
-				movingAnim.reset();
+				//movingAnim.reset();
 				
 				for(WalkableTile wt : path)
 					wt.highlighted = true;
@@ -81,15 +82,15 @@ public class MovingMapObject extends MapObject {
 			if(path.size() > 0) {	
 				target = path.get(path.size() - 1);
 				determineSpeed();
+				setOrientationImage();
 			}
 			else {
 				isMoving = false;
-				img.resetImg();
+				//img.resetImg();
 			}
 		}
 		else
 		{
-			//SET TO 1 FOR ISO
 			if(Math.abs(x - target.x) < 4)
 				speedX = 0;
 			else
@@ -103,18 +104,6 @@ public class MovingMapObject extends MapObject {
 	}
 	
 	private void determineSpeed() {
-		//ISO
-		/*if(x < target.x)
-			speedX = 4f;
-		else
-			speedX = -4f;
-		
-		if(y < target.y)
-			speedY = 2f;
-		else
-			speedY = -2f;*/
-		
-		//HEX (should work for iso as well)
 		int dx = x - target.x;
 		int dy = y - target.y;
 		
@@ -147,5 +136,26 @@ public class MovingMapObject extends MapObject {
 
 			speedY = - dy / Math.abs(dx) * 2;
 		}
+	}
+	
+	private void setOrientationImage() {
+		int orientationId = 0;
+		
+		if(speedX == 0) {
+			if(speedY > 0)
+				orientationId = 0;
+			else if(speedY < 0)
+				orientationId = 3;
+		}
+		else if(speedX < 0 && speedY < 0)
+			orientationId = 2;
+		else if(speedX < 0 && speedY > 0)
+			orientationId = 1;
+		else if(speedX > 0 && speedY < 0)
+			orientationId = 4;
+		else if(speedX > 0 && speedY > 0)
+			orientationId = 5;
+
+		this.getImage().setBitmap(orientations[orientationId]);
 	}
 }
