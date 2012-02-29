@@ -94,8 +94,6 @@ public class GameController {
 	}
 
 	private void createMap() throws ResNotFoundException {
-		HashMap<CoordObject, MapObjectImage> lowDraw = new HashMap<CoordObject, MapObjectImage>();
-		
 		MapObjectImage.selectedImg = res.getImage("selected");
 		BufferedImage tileImg = res.getImage("tile_grass");
 		BufferedImage wallImg = res.getImage("wall");
@@ -122,7 +120,7 @@ public class GameController {
 				if (map[x][y] == 0) {
 					WallTile wt = new WallTile(x, y, waterImg, waterFowImg);
 					unwalkableMap.put(wt, wt);
-					highDraw.put(wt, wt.getImage());
+					lowDraw.put(wt, wt.getImage());
 				} else if (map[x][y] == 1) {
 					WalkableTile t = new WalkableTile(x, y, tileImg,
 							tileFowImg, null);
@@ -136,7 +134,7 @@ public class GameController {
 				} else if (map[x][y] == 3) {
 					WallTile wt = new WallTile(x, y, wallImg, wallFowImg);
 					unwalkableMap.put(wt, wt);
-					highDraw.put(wt, wt.getImage());
+					lowDraw.put(wt, wt.getImage());
 				} else if (map[x][y] == 4) {
 					GameStaticObject metal = new GameStaticObject(x, y,
 							metalImg, metalFowImg, null,
@@ -172,8 +170,6 @@ public class GameController {
 		highDraw.put(test, test.getImage());
 
 		currentPlayer = players.get(0);
-		
-		this.lowDraw = new TreeMap<CoordObject, MapObjectImage>(lowDraw);
 	}
 
 	public void update(long timeElapsedMillis) {
@@ -274,8 +270,7 @@ public class GameController {
 		for (MapObjectImage i : lowDraw.values())
 			i.draw(g, (int) (offsetX), (int) (offsetY), scale);
 
-		TreeMap<CoordObject, MapObjectImage> temp = new TreeMap<CoordObject, MapObjectImage>(
-				highDraw);
+		TreeMap<CoordObject, MapObjectImage> temp = new TreeMap<CoordObject, MapObjectImage>(highDraw);
 		for (MapObjectImage i : temp.values())
 			i.draw(g, (int) (offsetX), (int) (offsetY), scale);
 
