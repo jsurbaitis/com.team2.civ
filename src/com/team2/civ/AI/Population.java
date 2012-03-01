@@ -42,7 +42,7 @@ public class Population {
 		return fitness.get(ai).intValue();
 	}
 	
-	public void compete(AI ai1, AI ai2) throws Exception{
+	public void compete(AI ai1, AI ai2) throws Exception{ //fails to apply competitive pressures to sections of genome dealing with players 3 and 4!
 		if (! times_used.containsKey(ai1)){
 			times_used.put(ai1, 0);
 		}
