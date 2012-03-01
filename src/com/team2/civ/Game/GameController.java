@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.SwingUtilities;
 
@@ -41,6 +42,11 @@ public class GameController {
 	private int lastMouseX;
 	private int lastMouseY;
 
+	private static final boolean FOW_ON = true;
+
+	private static final int MAP_WIDTH = 50;
+	private static final int MAP_HEIGHT = 50;
+
 	private static final double SCALE_MAX = 1.0;
 	private static final double SCALE_MIN = 0.2;
 	private static final double ZOOM_DELTA = 0.2;
@@ -62,10 +68,10 @@ public class GameController {
 	private HashMap<CoordObject, WallTile> unwalkableMap = new HashMap<CoordObject, WallTile>();
 	private HashMap<CoordObject, WalkableTile> walkableMap = new HashMap<CoordObject, WalkableTile>();
 
-	private ArrayList<GameUnit> units = new ArrayList<GameUnit>();
+	private Vector<GameUnit> units = new Vector<GameUnit>();
 	private HashMap<CoordObject, GameStaticObject> staticObjects = new HashMap<CoordObject, GameStaticObject>();
 
-	private ArrayList<MapObjectImage> highDraw = new ArrayList<MapObjectImage>();
+	private Vector<MapObjectImage> highDraw = new Vector<MapObjectImage>();
 	private ArrayList<MapObjectImage> lowDraw = new ArrayList<MapObjectImage>();
 
 	public List<Player> players = new ArrayList<Player>();
@@ -107,9 +113,9 @@ public class GameController {
 		String[] colors = { "#FFFFFF", "#FF5400", "#545454", "#000FFF" };
 		int playerIndex = 1;
 
-		int[][] map = HeightmapGenerator.generateMap(30, 30, 4);
-		for (int x = 0; x < 30; x++) {
-			for (int y = 0; y < 30; y++) {
+		int[][] map = HeightmapGenerator.generateMap(MAP_WIDTH, MAP_HEIGHT, 4);
+		for (int x = 0; x < MAP_WIDTH; x++) {
+			for (int y = 0; y < MAP_HEIGHT; y++) {
 				if (map[x][y] == -1)
 					continue;
 				if (map[x][y] == 0) {
@@ -192,23 +198,25 @@ public class GameController {
 		}
 
 		for (WalkableTile t : walkableMap.values())
-			t.beingSeen = false;
+			t.beingSeen = FOW_ON ? false : true;
 
 		for (WallTile t : unwalkableMap.values())
-			t.beingSeen = false;
+			t.beingSeen = FOW_ON ? false : true;
 
-		for (GameUnit u : units) {
-			u.update(gameTime, walkableMap);
-			if (u.owner == humanPlayer) {
-				u.isSeen();
-				updateFow(u, u.data.fowRange);
+		if (FOW_ON) {
+			for (GameUnit u : units) {
+				u.update(gameTime, walkableMap);
+				if (u.owner == humanPlayer) {
+					u.isSeen();
+					updateFow(u, u.data.fowRange);
+				}
 			}
-		}
 
-		for (GameStaticObject so : staticObjects.values()) {
-			if (so.owner == humanPlayer) {
-				so.isSeen();
-				updateFow(so, so.data.fowRange);
+			for (GameStaticObject so : staticObjects.values()) {
+				if (so.owner == humanPlayer) {
+					so.isSeen();
+					updateFow(so, so.data.fowRange);
+				}
 			}
 		}
 	}
@@ -378,8 +386,13 @@ public class GameController {
 
 	}
 
-	private void destroyTarget() {
+	public void destroyUnit(GameUnit u) {
+		synchronized (highDraw) {
+			highDraw.remove(u.getImage());
+		}
 
+		units.remove(u);
+		u.owner.metal += u.data.metalCost * 0.25;
 	}
 
 	private void fortifyTarget() {
@@ -432,7 +445,10 @@ public class GameController {
 			target = so;
 			ui.showStaticObjectInfo((GameStaticObject) target);
 
-			highDraw.remove(unit.getImage());
+			synchronized (highDraw) {
+				highDraw.remove(unit.getImage());
+			}
+
 			units.remove(unit);
 		}
 	}
@@ -474,9 +490,10 @@ public class GameController {
 
 		if (event == UIEvent.ACTION_ATTACK)
 			startCombat();
-		else if (event == UIEvent.ACTION_DESTROY)
-			destroyTarget();
-		else if (event == UIEvent.ACTION_FORTIFY)
+		else if (event == UIEvent.ACTION_DESTROY) {
+			destroyUnit((GameUnit) target);
+			target = null;
+		} else if (event == UIEvent.ACTION_FORTIFY)
 			fortifyTarget();
 		else if (event == UIEvent.END_TURN)
 			endTurn();
@@ -591,8 +608,8 @@ public class GameController {
 
 		for (WalkableTile tile : walkableMap.values()) {
 			for (GameUnit u : units) {
-				if(u.mapX == tile.mapX && u.mapY == tile.mapY) {
-					if(u.owner == startObj.owner)
+				if (u.mapX == tile.mapX && u.mapY == tile.mapY) {
+					if (u.owner == startObj.owner)
 						nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
 				} else {
 					nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
