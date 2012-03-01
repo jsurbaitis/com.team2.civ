@@ -7,7 +7,7 @@ FoWRange 2
 
 DmgModifier
 {
-    WHATEVERUNIT +10
+    WHATEVERUNIT 10
 }
 
 UIActions

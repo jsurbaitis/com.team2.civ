@@ -9,9 +9,9 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.TreeMap;
 
 import javax.swing.SwingUtilities;
 
@@ -62,11 +62,11 @@ public class GameController {
 	private HashMap<CoordObject, WallTile> unwalkableMap = new HashMap<CoordObject, WallTile>();
 	private HashMap<CoordObject, WalkableTile> walkableMap = new HashMap<CoordObject, WalkableTile>();
 
-	private HashMap<CoordObject, GameUnit> units = new HashMap<CoordObject, GameUnit>();
+	private ArrayList<GameUnit> units = new ArrayList<GameUnit>();
 	private HashMap<CoordObject, GameStaticObject> staticObjects = new HashMap<CoordObject, GameStaticObject>();
 
-	private HashMap<CoordObject, MapObjectImage> highDraw = new HashMap<CoordObject, MapObjectImage>();
-	private TreeMap<CoordObject, MapObjectImage> lowDraw = new TreeMap<CoordObject, MapObjectImage>();
+	private ArrayList<MapObjectImage> highDraw = new ArrayList<MapObjectImage>();
+	private ArrayList<MapObjectImage> lowDraw = new ArrayList<MapObjectImage>();
 
 	public List<Player> players = new ArrayList<Player>();
 	public Player humanPlayer;
@@ -76,11 +76,6 @@ public class GameController {
 	public int turnCount = 1;
 	public static final int MAX_TURNS = 500;
 
-	/*
-	 * Make it so that units are always on top of all objects, basically
-	 * separate hashmap for them that is sorted
-	 */
-
 	public GameController(GraphicsConfiguration config) {
 		res = new Resources(config);
 
@@ -89,7 +84,7 @@ public class GameController {
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
-		
+
 		ui = new UI(humanPlayer, res);
 	}
 
@@ -120,55 +115,51 @@ public class GameController {
 				if (map[x][y] == 0) {
 					WallTile wt = new WallTile(x, y, waterImg, waterFowImg);
 					unwalkableMap.put(wt, wt);
-					lowDraw.put(wt, wt.getImage());
+					lowDraw.add(wt.getImage());
 				} else if (map[x][y] == 1) {
 					WalkableTile t = new WalkableTile(x, y, tileImg,
 							tileFowImg, null);
 					walkableMap.put(t, t);
-					lowDraw.put(t, t.getImage());
+					lowDraw.add(t.getImage());
 				} else if (map[x][y] == 2) {
 					WalkableTile t = new WalkableTile(x, y, hillImg,
 							hillFowImg, null);
 					walkableMap.put(t, t);
-					lowDraw.put(t, t.getImage());
+					lowDraw.add(t.getImage());
 				} else if (map[x][y] == 3) {
 					WallTile wt = new WallTile(x, y, wallImg, wallFowImg);
 					unwalkableMap.put(wt, wt);
-					lowDraw.put(wt, wt.getImage());
+					lowDraw.add(wt.getImage());
 				} else if (map[x][y] == 4) {
 					GameStaticObject metal = new GameStaticObject(x, y,
 							metalImg, metalFowImg, null,
 							res.getStaticObject("METAL"));
 					staticObjects.put(metal, metal);
 					walkableMap.put(metal, metal);
-					lowDraw.put(metal, metal.getImage());
+					lowDraw.add(metal.getImage());
 				} else if (map[x][y] == 5) {
 					Player p = new Player("Player " + playerIndex,
 							colors[playerIndex - 1], null);
 					players.add(p);
 					GameStaticObject city = new GameStaticObject(x, y, cityImg,
 							cityFowImg, p, res.getStaticObject("CITY"));
-					
-					if(playerIndex == 1) {
-						offsetX = -city.x + Team2Civ.WINDOW_WIDTH/2;
-						offsetY = -city.y + Team2Civ.WINDOW_HEIGHT/2;
+
+					if (playerIndex == 1) {
+						offsetX = -city.x + Team2Civ.WINDOW_WIDTH / 2;
+						offsetY = -city.y + Team2Civ.WINDOW_HEIGHT / 2;
 					}
-					
+
 					staticObjects.put(city, city);
 					walkableMap.put(city, city);
-					lowDraw.put(city, city.getImage());
+					lowDraw.add(city.getImage());
 					playerIndex++;
 				}
 			}
 		}
 
+		Collections.sort(lowDraw);
+
 		humanPlayer = players.get(0);
-
-		GameUnit test = new GameUnit(15, 15, "WORKER", res, players.get(0),
-				res.getUnit("WORKER"));
-		units.put(test, test);
-		highDraw.put(test, test.getImage());
-
 		currentPlayer = players.get(0);
 	}
 
@@ -206,7 +197,7 @@ public class GameController {
 		for (WallTile t : unwalkableMap.values())
 			t.beingSeen = false;
 
-		for (GameUnit u : units.values()) {
+		for (GameUnit u : units) {
 			u.update(gameTime, walkableMap);
 			if (u.owner == humanPlayer) {
 				u.isSeen();
@@ -267,11 +258,11 @@ public class GameController {
 
 		g.scale(scale, scale);
 
-		for (MapObjectImage i : lowDraw.values())
+		for (MapObjectImage i : lowDraw)
 			i.draw(g, (int) (offsetX), (int) (offsetY), scale);
 
-		TreeMap<CoordObject, MapObjectImage> temp = new TreeMap<CoordObject, MapObjectImage>(highDraw);
-		for (MapObjectImage i : temp.values())
+		Collections.sort(highDraw);
+		for (MapObjectImage i : highDraw)
 			i.draw(g, (int) (offsetX), (int) (offsetY), scale);
 
 		g.scale(1 / scale, 1 / scale);
@@ -292,93 +283,94 @@ public class GameController {
 			zoomingOut = true;
 		}
 	}
-	
+
 	public ArrayList<GameStaticObject> getObjectsOfType(String... type) {
 		ArrayList<GameStaticObject> rtn = new ArrayList<GameStaticObject>();
-		
-		for(GameStaticObject obj: staticObjects.values())
-			if(Arrays.asList(type).contains(obj.data.id))
+
+		for (GameStaticObject obj : staticObjects.values())
+			if (Arrays.asList(type).contains(obj.data.id))
 				rtn.add(obj);
-				
+
 		return rtn;
 	}
-	
-	public ArrayList<GameStaticObject> getPlayerObjectsOfType(Player p, String... type) {
+
+	public ArrayList<GameStaticObject> getPlayerObjectsOfType(Player p,
+			String... type) {
 		ArrayList<GameStaticObject> rtn = new ArrayList<GameStaticObject>();
-		
-		for(GameStaticObject obj: staticObjects.values())
-			if(obj.owner == p && Arrays.asList(type).contains(obj.data.id))
+
+		for (GameStaticObject obj : staticObjects.values())
+			if (obj.owner == p && Arrays.asList(type).contains(obj.data.id))
 				rtn.add(obj);
-				
+
 		return rtn;
 	}
-	
+
 	public ArrayList<GameStaticObject> getAllResources() {
 		ArrayList<GameStaticObject> rtn = new ArrayList<GameStaticObject>();
-		
-		for(GameStaticObject obj: staticObjects.values())
-			if(obj.data.id.equals("MINE") || obj.data.id.equals("METAL"))
+
+		for (GameStaticObject obj : staticObjects.values())
+			if (obj.data.id.equals("MINE") || obj.data.id.equals("METAL"))
 				rtn.add(obj);
-				
+
 		return rtn;
 	}
-	
+
 	public ArrayList<GameStaticObject> getAllCities() {
 		ArrayList<GameStaticObject> rtn = new ArrayList<GameStaticObject>();
-		
-		for(GameStaticObject obj: staticObjects.values())
-			if(obj.data.id.equals("CITY"))
+
+		for (GameStaticObject obj : staticObjects.values())
+			if (obj.data.id.equals("CITY"))
 				rtn.add(obj);
-				
+
 		return rtn;
 	}
 
 	public ArrayList<GameStaticObject> getPlayerCities(Player p) {
 		ArrayList<GameStaticObject> rtn = new ArrayList<GameStaticObject>();
-		
-		for(GameStaticObject obj: staticObjects.values())
-			if(obj.data.id.equals("CITY") && obj.owner == p)
+
+		for (GameStaticObject obj : staticObjects.values())
+			if (obj.data.id.equals("CITY") && obj.owner == p)
 				rtn.add(obj);
-				
+
 		return rtn;
 	}
-	
+
 	public ArrayList<GameUnit> getAllUnits() {
 		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
-		
-		for(GameUnit obj: units.values())
-			rtn.add(obj);
-				
+
+		// for(GameUnit obj: units.values())
+		// rtn.add(obj);
+
 		return rtn;
 	}
-	
+
 	public ArrayList<GameUnit> getPlayerUnits(Player p) {
 		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
-		
-		for(GameUnit obj: units.values())
-			if(obj.owner == p)
-				rtn.add(obj);
-				
+
+		// for(GameUnit obj: units.values())
+		// if(obj.owner == p)
+		// rtn.add(obj);
+
 		return rtn;
 	}
-	
+
 	public ArrayList<GameUnit> getUnitsOfType(String... id) {
 		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
-		
-		for(GameUnit obj: units.values())
-			if(Arrays.asList(id).contains(obj.data.id))
-				rtn.add(obj);
-				
+
+		// for(GameUnit obj: units.values())
+		// if(Arrays.asList(id).contains(obj.data.id))
+		// rtn.add(obj);
+
 		return rtn;
 	}
-	
+
 	public ArrayList<GameUnit> getPlayerUnitsOfType(Player p, String... id) {
 		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
-		
-		for(GameUnit obj: units.values())
-			if(obj.owner == p && Arrays.asList(id).contains(obj.data.id))
-				rtn.add(obj);
-				
+
+		// for(GameUnit obj: units.values())
+		// if(obj.owner == p && Arrays.asList(id).contains(obj.data.id))
+		// rtn.add(obj);
+
 		return rtn;
 	}
 
@@ -393,61 +385,67 @@ public class GameController {
 	private void fortifyTarget() {
 
 	}
-	
+
 	public int getNOfTurnsLeft() {
 		return MAX_TURNS - turnCount;
 	}
 
 	private void endTurn() {
-		currentPlayer = players.get(players.indexOf(currentPlayer) % (players.size()-1));
-		if(currentPlayer != humanPlayer) {
-			//TODO: show what the AI is doing
-			//currentPlayer.ai.perform();
+		currentPlayer = players.get(players.indexOf(currentPlayer)
+				% (players.size() - 1));
+		if (currentPlayer != humanPlayer) {
+			// TODO: show what the AI is doing
+			// currentPlayer.ai.perform();
 			endTurn();
 		} else {
 			turnCount++;
 		}
 	}
 
-	private void addUnitToPlayer(Player p, CoordObject location, GameUnitData data) throws ResNotFoundException {
-		if(p.metal >= data.metalCost) {
+	private void addUnitToPlayer(Player p, CoordObject location,
+			GameUnitData data) throws ResNotFoundException {
+		if (p.metal >= data.metalCost) {
 			p.metal -= data.metalCost;
-			
-			GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res, p, data);
-			units.put(u, u);
-			highDraw.put(u, u.getImage());
-			
+
+			GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res,
+					p, data);
+			highDraw.add(u.getImage());
+			units.add(u);
+
 			target = u;
 			ui.showUnitInfo((GameUnit) target);
 		}
 	}
-	
-	private void addStaticObjToPlayer(Player p, CoordObject location, GameStaticObjectData data) throws ResNotFoundException {
-		if(staticObjects.get(location) == null && p.metal >= data.metalCost) {
+
+	private void addStaticObjToPlayer(Player p, GameUnit unit,
+			GameStaticObjectData data) throws ResNotFoundException {
+		if (staticObjects.get(unit) == null && p.metal >= data.metalCost) {
 			p.metal -= data.metalCost;
-			
+
 			GameStaticObject so = new GameStaticObject(target.mapX,
 					target.mapY, res.getImage(data.id), res.getImage(data.id
 							+ "_fow"), p, data);
 			staticObjects.put(so, so);
 			walkableMap.put(so, so);
-			lowDraw.put(so, so.getImage());
-			
+			lowDraw.add(so.getImage());
+
 			target = so;
 			ui.showStaticObjectInfo((GameStaticObject) target);
-			
-			highDraw.remove(location);
-			units.remove(location);
+
+			highDraw.remove(unit.getImage());
+			units.remove(unit);
 		}
 	}
 
-	public void addObjectToPlayer(Player p, CoordObject location, String objId) throws ResNotFoundException {
-		if(isStaticData(objId))
-			addStaticObjToPlayer(p, location, res.getStaticObject(objId));
-		else if(isUnitData(objId))
+	public void addObjectToPlayer(Player p, CoordObject location, String objId)
+			throws ResNotFoundException {
+		if (isStaticData(objId))
+			addStaticObjToPlayer(p, (GameUnit) location,
+					res.getStaticObject(objId));
+		else if (isUnitData(objId))
 			addUnitToPlayer(p, location, res.getUnit(objId));
 	}
-	
+
 	private boolean isStaticData(String objId) {
 		try {
 			res.getStaticObject(objId);
@@ -456,7 +454,7 @@ public class GameController {
 			return false;
 		}
 	}
-	
+
 	private boolean isUnitData(String objId) {
 		try {
 			res.getUnit(objId);
@@ -533,19 +531,25 @@ public class GameController {
 		} else if (ev.getID() == MouseEvent.MOUSE_RELEASED && leftClick) {
 			if (Math.abs(ev.getX() - pressStartX) < 5
 					&& Math.abs(ev.getY() - pressStartY) < 5) {
-				for (GameUnit u : units.values())
-					if (u.picked((int) (ev.getX() * (1 / scale) - offsetX),
-							(int) (ev.getY() * (1 / scale) - offsetY))) {
+
+				for (GameUnit u : units) {
+					if (u.owner == humanPlayer
+							&& u.picked(
+									(int) (ev.getX() * (1 / scale) - offsetX),
+									(int) (ev.getY() * (1 / scale) - offsetY))) {
 						if (target != null)
 							target.selected = false;
 						target = u;
 						target.selected = true;
 						ui.showUnitInfo((GameUnit) target);
 					}
+				}
 
 				for (GameStaticObject so : staticObjects.values())
-					if (so.picked((int) (ev.getX() * (1 / scale) - offsetX),
-							(int) (ev.getY() * (1 / scale) - offsetY))) {
+					if (so.owner == humanPlayer
+							&& so.picked(
+									(int) (ev.getX() * (1 / scale) - offsetX),
+									(int) (ev.getY() * (1 / scale) - offsetY))) {
 						if (target != null)
 							target.selected = false;
 						target = so;
@@ -586,9 +590,14 @@ public class GameController {
 		ArrayList<WalkableTile> returnList = new ArrayList<WalkableTile>();
 
 		for (WalkableTile tile : walkableMap.values()) {
-			GameUnit u = units.get(tile);
-			if (u == null || u.owner == startObj.owner)
-				nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
+			for (GameUnit u : units) {
+				if(u.mapX == tile.mapX && u.mapY == tile.mapY) {
+					if(u.owner == startObj.owner)
+						nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
+				} else {
+					nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
+				}
+			}
 		}
 		nodeList.put(startObj, new PathNode(startObj.mapX, startObj.mapY));
 

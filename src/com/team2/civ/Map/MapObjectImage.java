@@ -87,9 +87,7 @@ public class MapObjectImage implements Comparable<MapObjectImage> {
 	@Override
 	public boolean equals(Object o) {
 		if(o == this) return true;
-		if(o == null) return false;
-		MapObjectImage i = (MapObjectImage) o;
-		return parent.equals(i.parent);
+		else return false;
 	}
 
 	@Override
