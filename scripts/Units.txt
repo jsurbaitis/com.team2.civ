@@ -22,3 +22,23 @@ build
     CITY
 }
 ENDUNIT
+
+
+ANTIAIR
+HP 200
+AP 10
+BaseDmg 20
+Range 2
+FoWRange 2
+
+DmgModifier
+{
+    AIR +40
+}
+
+UIActions
+{
+    ATTACK
+    DESTROY
+}
+ENDUNIT
