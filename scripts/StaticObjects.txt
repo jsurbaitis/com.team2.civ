@@ -13,6 +13,7 @@ name
 build
 {
     WORKER  
+    ANTIAIR
 }
 
 ENDOBJ
