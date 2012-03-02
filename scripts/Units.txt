@@ -20,6 +20,8 @@ UIActions
 build
 {
     CITY
+    POWERPLANT
+    FORTIFICATION
 }
 ENDUNIT
 
@@ -33,7 +35,7 @@ FoWRange 2
 
 DmgModifier
 {
-    AIR +40
+    AIR 40
 }
 
 UIActions

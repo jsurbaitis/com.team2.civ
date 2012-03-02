@@ -1,12 +1,12 @@
 CITY
-MetalCost 10
+MetalCost 100
 DefensiveBonus 50
 MovementCost 1
 FoWRange 3
 
 name
 {
-    Istambul
+    Istanbul
     New_York
 }
 
@@ -32,3 +32,28 @@ name
 
 ENDOBJ
 
+POWERPLANT
+MetalCost 75
+DefensiveBonus 0
+MovementCost 1
+FoWRange 2
+
+name
+{
+	Power_Resource
+}
+
+ENDOBJ
+
+FORTIFICATION
+MetalCost 50
+DefensiveBonus 100
+MovementCost 1
+FoWRange 3
+
+name
+{
+	Fort Jefferson
+}
+
+ENDOBJ
