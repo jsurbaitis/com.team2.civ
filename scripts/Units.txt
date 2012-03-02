@@ -1,7 +1,7 @@
 WORKER
 HP 50
 AP 10
-BaseDmg 6
+BaseDmg 0
 Range 2
 FoWRange 2
 
