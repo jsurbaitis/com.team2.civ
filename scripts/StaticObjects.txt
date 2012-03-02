@@ -53,7 +53,7 @@ FoWRange 3
 
 name
 {
-	Fort Jefferson
+	Fort_Jefferson
 }
 
 ENDOBJ
