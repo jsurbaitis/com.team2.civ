@@ -9,6 +9,8 @@ import com.team2.civ.Map.PathNode;
 
 public class HeightmapGenerator {
 	private static HashMap<CoordObject, PathNode> nodeList;
+	private static boolean nodeListIncludesWater = false;
+	
 	private static final int[][] nextPos = { { -1, 1 }, { 0, 1 }, { 1, 0 },
 			{ 1, -1 }, { 0, -1 }, { -1, 0 } };
 	private static int[][] map;
@@ -55,7 +57,7 @@ public class HeightmapGenerator {
 	private static boolean canPlaceCity(int i, int j,
 			ArrayList<int[]> citiesPlaced) {
 		for (int[] cityCoords : citiesPlaced) {
-			ArrayList<int[]> path = findPath(i, j, cityCoords[0], cityCoords[1]);
+			ArrayList<int[]> path = findPath(i, j, cityCoords[0], cityCoords[1], false);
 			if (path == null || path.size() < 18)
 				return false;
 		}
@@ -181,25 +183,62 @@ public class HeightmapGenerator {
 				}
 			}
 		}
+		
+		ArrayList<int[]> riverSources = new ArrayList<int[]>();
 
-		// REMOVE WATER IN THE MIDDLE OF LANDMASS, ADD HILLS (6 passes)
+		// REMOVE WATER IN THE MIDDLE OF LANDMASS, ADD HILLS
 		int[] toCountWaterRemove = { 1, 2, 3 };
 		int[] toCountHillAdd = { 3 };
-		for (int p = 0; p < 6; p++) {
-			for (int i = 0; i < width; i++) {
-				for (int j = 0; j < height; j++) {
-					if (map[i][j] == 0) {
-						if (getTileCountAround(i, j, toCountWaterRemove, false) == 4)
-							map[i][j] = 1;
-					} else if (map[i][j] == 1) {
-						if (getTileCountAround(i, j, toCountHillAdd, false) == 2)
-							map[i][j] = 2;
+		for (int i = 0; i < width; i++) {
+			for (int j = 0; j < height; j++) {
+				if (map[i][j] == 0) {
+					if (getTileCountAround(i, j, toCountWaterRemove,false) >= 4 
+							&& getTileCountAround(i, j, toCountHillAdd, false) < 2)
+						map[i][j] = 1;
+					else {
+						int[] toAdd = { i, j };
+						riverSources.add(toAdd);
 					}
+				} else if (map[i][j] == 1) {
+					if (getTileCountAround(i, j, toCountHillAdd, false) == 2)
+						map[i][j] = 2;
+				}
+			}
+		}
+		
+		// ADD RIVERS
+		for(int[] arr: riverSources) {
+			int[] closestWater = getClosestWater(arr[0], arr[1]);
+			ArrayList<int[]> path = findPath(arr[0], arr[1], closestWater[0], closestWater[1], true);
+			if(path != null) {
+				for(int[] tile: path) {
+					map[tile[0]][tile[1]] = 0;
 				}
 			}
 		}
 
 		map[width / 2][height / 2] = 1;
+	}
+	
+	private static int[] getClosestWater(int x, int y) {
+		int[] closest = {x, y};
+		int dist = Integer.MAX_VALUE;
+		int tempDist;
+		
+		for (int i = 0; i < map.length; i++) {
+			for (int j = 0; j < map[0].length; j++) {
+				if(i != x && j != y && map[i][j] == 0) {
+					tempDist = dist(x, y, i, j);
+					if(tempDist < dist) {
+						closest[0] = i;
+						closest[1] = j;
+						dist = tempDist;
+					}
+				}
+			}
+		}
+		
+		return closest;
 	}
 
 	private static int getTileCountAround(int x, int y, int toCount[],
@@ -231,7 +270,7 @@ public class HeightmapGenerator {
 	}
 
 	private static ArrayList<int[]> findPath(int startX, int startY, int endX,
-			int endY) {
+			int endY, boolean includeWater) {
 		ArrayList<PathNode> openList = new ArrayList<PathNode>();
 		ArrayList<PathNode> closedList = new ArrayList<PathNode>();
 		ArrayList<int[]> returnList = new ArrayList<int[]>();
@@ -239,8 +278,10 @@ public class HeightmapGenerator {
 		int[][] nextPos = { { -1, 1 }, { 0, 1 }, { 1, 0 }, { 1, -1 },
 				{ 0, -1 }, { -1, 0 } };
 
-		if (nodeList == null)
-			buildNodeList(map);
+		if (nodeList == null || includeWater != nodeListIncludesWater) {
+			nodeListIncludesWater = includeWater;
+			buildNodeList(map, includeWater);
+		}
 
 		CoordObject targetObj = new CoordObject(endX, endY);
 		PathNode target = null;
@@ -323,11 +364,11 @@ public class HeightmapGenerator {
 		return result;
 	}
 
-	private static void buildNodeList(int[][] map) {
+	private static void buildNodeList(int[][] map, boolean includeWater) {
 		nodeList = new HashMap<CoordObject, PathNode>();
 		for (int i = 0; i < map.length; i++) {
 			for (int j = 0; j < map[0].length; j++) {
-				if (map[i][j] != 0 && map[i][j] != 3)
+				if ((includeWater || map[i][j] != 0) && map[i][j] != 3)
 					nodeList.put(new CoordObject(i, j), new PathNode(i, j));
 			}
 		}
