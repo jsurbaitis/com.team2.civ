@@ -91,5 +91,7 @@ public class Population {
 	    	}
 	    }
 	}
-
+	
+	public void writeAIs(){
+	}
 }
