@@ -10,6 +10,31 @@ DmgModifier
     WHATEVERUNIT 10
 }
 
+name
+{
+    Troy
+	Travis
+	Roy
+	Robert
+	Bob
+	Francesco
+	Rory
+	Mel
+	Francis
+	Ingrid
+	Vince
+	Roderick
+	Clancy
+	Ewin
+	Omar
+	Bradley
+	Kevin
+	Mark
+	Luke
+	Gregory
+	Greg
+}
+
 UIActions
 {
     ATTACK
