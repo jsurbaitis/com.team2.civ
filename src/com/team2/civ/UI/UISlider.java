@@ -8,20 +8,21 @@ import java.util.ArrayList;
 public class UISlider extends UIElement {
 	private BufferedImage bg;
 	private ArrayList<UIElement> children = new ArrayList<UIElement>();
-	
+
 	private boolean slidingOut = false;
 	private boolean slidingIn = false;
-	
+
 	private final boolean vertical;
 	private final int initialx;
 	private final int initialy;
 
-	public UISlider(int x, int y, int width, int height, boolean isVertical, BufferedImage bg) {
-		super(x, y, width, height,new UIEvent(UIEvent.Event.HANDLED));
+	public UISlider(int x, int y, int width, int height, boolean isVertical,
+			BufferedImage bg) {
+		super(x, y, width, height, new UIEvent(UIEvent.Event.HANDLED));
 		initialx = x;
 		initialy = y;
-        this.vertical = isVertical;
-        this.bg = bg;
+		this.vertical = isVertical;
+		this.bg = bg;
 	}
 
 	public void update(long gameTime) {
@@ -29,38 +30,36 @@ public class UISlider extends UIElement {
 			x -= 16;
 			if (initialx > x + width)
 				slidingOut = false;
-		}
-		else if (slidingIn && gameTime % 1 == 0 && !vertical) {
+		} else if (slidingIn && gameTime % 1 == 0 && !vertical) {
 			x += 16;
 			if (initialx < x + width)
 				slidingIn = false;
-		}
-		else if (slidingOut && gameTime % 1 == 0 && vertical) {
+		} else if (slidingOut && gameTime % 1 == 0 && vertical) {
 			y += 16;
-			if ( y>0)
+			if (y > 0)
 				slidingOut = false;
-		}
-		else if (slidingIn && gameTime % 1 == 0 && vertical) {
+		} else if (slidingIn && gameTime % 1 == 0 && vertical) {
 			y -= 16;
 			if (initialy < y - height)
 				slidingIn = false;
 		}
 	}
 
-	public void slideIn(){
-		slidingIn=true;
-		slidingOut=false;
+	public void slideIn() {
+		slidingIn = true;
+		slidingOut = false;
 	}
-	public void slideOut(){
-		slidingIn=false;
-		slidingOut=true;
+
+	public void slideOut() {
+		slidingIn = false;
+		slidingOut = true;
 	}
 
 	@Override
 	public void draw(Graphics2D g) {
-		g.drawImage(bg, x, y, x+width, y+height, null);
-		
-		for(UIElement elem: children)
+		g.drawImage(bg, x, y, x + width, y + height, null);
+
+		for (UIElement elem : children)
 			elem.draw(g);
 	}
 
@@ -71,19 +70,18 @@ public class UISlider extends UIElement {
 
 	public UIEvent onClick(MouseEvent ev) {
 		UIEvent temp = clicked(ev.getX(), ev.getY());
-		
-		if(temp != null) {
+
+		if (temp != null) {
 			for (int i = 0; i < this.children.size(); i++) {
-
-				UIEvent tempo = this.children.get(i).clicked(ev.getX(), ev.getY());
-
+				UIEvent tempo = this.children.get(i).clicked(ev.getX(),
+						ev.getY());
 				if (tempo != null)
 					return tempo;
 			}
 		}
 
 		return temp;
-		
+
 	}
 
 }

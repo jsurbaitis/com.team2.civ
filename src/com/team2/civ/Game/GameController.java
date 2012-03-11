@@ -452,11 +452,27 @@ public class GameController {
 		if (currentPlayer != humanPlayer) {
 			// TODO: show what the AI is doing
 			// if(!Team2Civ.AI_MODE) show stuff
-			// currentPlayer.ai.perform();
+			List<GameAction> actions = currentPlayer.ai.perform(getActionsForOthers(currentPlayer), currentPlayer);
+			performActions(actions);
 			endTurn();
 		} else {
 			turnCount++;
 		}
+	}
+	
+	private void performActions(List<GameAction> actions) {
+		for(GameAction ga: actions) {
+			
+		}
+	}
+	
+	private ArrayList<GameAction> getActionsForOthers(Player exclude) {
+		ArrayList<GameAction> rtn = new ArrayList<GameAction>();
+		for(Player p: players)
+			if(p != exclude)
+				rtn.addAll(p.previousTurn);
+		
+		return rtn;
 	}
 
 	private void upkeep() {
@@ -624,8 +640,7 @@ public class GameController {
 							(int) (ev.getY() * (1 / scale) - offsetY))) {
 
 						endCombatTargeting();
-						movingUnit.startMovement(findPath(movingUnit, t, true,
-								-1));
+						movingUnit.startMovement(findPath(movingUnit, t, movingUnit.owner, true, -1));
 					}
 				}
 			}
@@ -700,9 +715,17 @@ public class GameController {
 				offsetX -= 12;
 		}
 	}
+	
+	public ArrayList<WalkableTile> findPath(CoordObject startObj, CoordObject targetObj, Player owner) {
+		return findPath(startObj, targetObj, owner, true, -1);
+	}
+	
+	public ArrayList<WalkableTile> findPath(CoordObject startObj, CoordObject targetObj) {
+		return findPath(startObj, targetObj, null, true, -1);
+	}
 
-	public ArrayList<WalkableTile> findPath(GameUnit startObj,
-			CoordObject targetObj, boolean walkOnTarget, int lengthLimit) {
+	private ArrayList<WalkableTile> findPath(CoordObject startObj, CoordObject targetObj,
+			Player owner, boolean walkOnTarget, int lengthLimit) {
 		HashMap<CoordObject, PathNode> nodeList = new HashMap<CoordObject, PathNode>();
 		ArrayList<PathNode> openList = new ArrayList<PathNode>();
 		ArrayList<PathNode> closedList = new ArrayList<PathNode>();
@@ -711,7 +734,7 @@ public class GameController {
 		for (WalkableTile tile : walkableMap.values()) {
 			for (GameUnit u : units) {
 				if (u.mapX == tile.mapX && u.mapY == tile.mapY) {
-					if (u.owner == startObj.owner)
+					if (owner == null || u.owner == owner)
 						nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
 				} else {
 					nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));

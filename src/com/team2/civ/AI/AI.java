@@ -3,6 +3,7 @@ package com.team2.civ.AI;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 import com.team2.civ.Game.GameAction;
@@ -178,7 +179,7 @@ public class AI {
 		return responses;
 	}
 	
-	public ArrayList<GameAction> perform(GameAction[][] actions,Player p){
+	public ArrayList<GameAction> perform(List<GameAction> actions, Player p){
 		ArrayList<GameAction> output = new ArrayList<GameAction>();
 		output.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN,p));
 		return output;

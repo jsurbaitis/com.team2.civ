@@ -6,7 +6,7 @@ import java.util.HashMap;
 import com.team2.civ.UI.UIEvent;
 
 public class GameUnitData {
-	public String id, name, description;
+	public String id, description;
 	
 	public int metalCost, powerCost;
 	
@@ -17,12 +17,12 @@ public class GameUnitData {
 	public int fowRange;
 	
 	public HashMap<String, Integer> dmgModifiers = new HashMap<String, Integer>();
+	public ArrayList<String> names = new ArrayList<String>();
 	public ArrayList<UIEvent> uiActions = new ArrayList<UIEvent>();
 	public ArrayList<String> buildIDs = new ArrayList<String>();
 	
 	public GameUnitData(String id) {
 		this.id = id;
-		name = id.toLowerCase();
 	}
 
 }

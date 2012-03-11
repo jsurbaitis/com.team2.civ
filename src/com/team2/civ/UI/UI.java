@@ -47,7 +47,7 @@ public class UI {
 		miniMap = new MiniMap(WW * 7 / 10 + 10, WH * 7 / 10, WW * 3 / 10,
 				WH * 3 / 10,gc);
 		try {
-			endButton = new UIButton(miniMap.x, miniMap.y - 100,(UIEvent.Event.END_TURN), res.getImage("END_TURN"));
+			endButton = new UIButton(miniMap.x, miniMap.y - 100, new UIEvent(UIEvent.Event.END_TURN), res.getImage("END_TURN"));
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -89,45 +89,62 @@ public class UI {
 	public void closeHSlide() {
 		synchronized (sliders) {
 			sliders.remove(selectionInfo);
+			sliders.remove(choiceSlider);
+		}
+	}
+	public void closeSelSlide(){
+		synchronized (sliders) {
+			sliders.remove(selectionInfo);
 		}
 	}
 
-	public UIEvent.Event toEvent(String s) {
+	public UIEvent toEvent(String s) {
 		for (UIEvent.Event event : UIEvent.Event.values()) {
 			if (("BUILD_" + s).equals(event.toString()))
-				return event;
+				return new UIEvent(event);
 		}
 		return null;
 	}
 	
 
 	public void showInfo(ArrayList<MapObject> list) {
-		int totalwidth=40;
-		try{
-		choiceSlider= new UISlider(miniMap.x,WW*8/10,totalwidth,100,false,res.getImage("slider_horizontal_bg"));
-	
+		closeHSlide();
+		closeVSlide();
+		int totalwidth=50;
+		
 		if (list.size()==1)
 		{
 			if(list.get(0) instanceof GameUnit) {
 				showUnitInfo((GameUnit) list.get(0));
 			}
-			else showBuildInfo((GameStaticObject)list.get(0));
+			else showStaticObjectInfo((GameStaticObject)list.get(0));
 		}
+		else{ 
+			try{
+				choiceSlider= new UISlider(miniMap.x,WH*8/10,totalwidth,100,false,res.getImage("slider_horizontal_bg"));
+			   
 		for(int i=0;i<list.size();i++) {
 			if(list.get(i) instanceof GameUnit) {
-				choiceSlider.addChild(new UIText(totalwidth-10,10,((GameUnit) list.get(i)).data.name));
-				choiceSlider.addChild(new UIButton(totalwidth,100,new UIEvent(list.get(i)),res.getImage(((GameUnit) list.get(i)).data.name)));
-				totalwidth+=res.getImage(((GameUnit) list.get(i)).data.name).getWidth();
+				choiceSlider.addChild(new UIText(totalwidth-10,10,((GameUnit) list.get(i)).name));
+				choiceSlider.addChild(new UIButton(totalwidth,40,(new UIEvent(list.get(i))),res.getImage(((GameUnit) list.get(i)).data.id)));
+				totalwidth+=res.getImage(((GameUnit) list.get(i)).data.id).getWidth()+50;
 			}
 			else {
 				choiceSlider.addChild(new UIText(totalwidth-10,10,((GameStaticObject) list.get(i)).name));
-				choiceSlider.addChild(new UIButton(totalwidth,100,new UIEvent(list.get(i)),res.getImage(((GameStaticObject) list.get(i)).name)));
-				totalwidth+=res.getImage(((GameStaticObject) list.get(i)).name).getWidth();
+				choiceSlider.addChild(new UIButton(totalwidth,10,(new UIEvent(list.get(i))),res.getImage(((GameStaticObject) list.get(i)).data.id)));
+				totalwidth+=res.getImage(((GameStaticObject) list.get(i)).data.id).getWidth()+50;
 			}
+			}
+		choiceSlider.width=totalwidth;
+		choiceSlider.slideOut();
+		synchronized (sliders) {
+			sliders.add(choiceSlider);
+		
 		}
-		} catch (ResNotFoundException e) {
-			e.printStackTrace();
-		}
+			} catch (ResNotFoundException e) {
+				e.printStackTrace();
+			}
+			}
 	}
 
 	public void showBuildInfo(GameUnit unit) {
@@ -143,7 +160,7 @@ public class UI {
 			try {
 				buildSlider.addChild(new UIText(0, totalheight,
 						unit.data.buildIDs.get(i)));
-				buildSlider.addChild(new UIButton(0, totalheight,toEvent(unit.data.buildIDs.get(i)), res
+				buildSlider.addChild(new UIButton(0, totalheight, toEvent(unit.data.buildIDs.get(i)), res
 								.getImage(unit.data.buildIDs.get(i))));
 				totalheight += res.getImage(unit.data.buildIDs.get(i))
 						.getHeight() + 50;
@@ -205,7 +222,7 @@ public class UI {
 			e.printStackTrace();
 		}
 		currentunit = unit;
-		selectionInfo.addChild(new UIText(10, 15, (unit.data.name))); //
+		selectionInfo.addChild(new UIText(10, 15, (unit.name))); //
 		// selectionInfo.addChild(new UIText(10, 35, (unit.data.description)));
 
 		selectionInfo.addChild(new UIText(10, 55,(unit.getHP() + "/" + unit.data.HP)));
@@ -214,11 +231,11 @@ public class UI {
 		for (int i = 0; i < unit.data.uiActions.size(); i++) {
 			try {
 				selectionInfo.addChild(new UIButton(totalwidth,	(selectionInfo.height - res.getImage(
-								unit.data.uiActions.get(i).toString())
-								.getHeight()) / 4, unit.data.uiActions.get(i).e,
-						res.getImage(unit.data.uiActions.get(i).toString())));
+								unit.data.uiActions.get(i).e.toString())
+								.getHeight()) / 4, new UIEvent(unit.data.uiActions.get(i).e),
+						res.getImage(unit.data.uiActions.get(i).e.toString())));
 				totalwidth += res.getImage(
-						unit.data.uiActions.get(i).toString()).getWidth() + 25;
+						unit.data.uiActions.get(i).e.toString()).getWidth() + 25;
 				selectionInfo.width = totalwidth;
 			} catch (ResNotFoundException e) {
 				e.printStackTrace();
@@ -229,7 +246,7 @@ public class UI {
 				 
 				selectionInfo.addChild(new UIButton(totalwidth,
 						(selectionInfo.height - res.getImage(UIEvent.Event.BUILD.toString())
-								.getHeight()) / 4, UIEvent.Event.BUILD, res
+								.getHeight()) / 4, new UIEvent(UIEvent.Event.BUILD), res
 								.getImage(UIEvent.Event.BUILD.toString())));
 				totalwidth+= res.getImage(UIEvent.Event.BUILD.toString()).getWidth()+25;
 				selectionInfo.width =totalwidth;
@@ -244,6 +261,8 @@ public class UI {
 	}
 
 	public void showStaticObjectInfo(GameStaticObject unit) {
+		closeVSlide();
+		closeHSlide();
 		currentunit = null;
 		int totalwidth = 75;
 		synchronized (sliders) {
@@ -268,7 +287,7 @@ public class UI {
 			try {				
 				selectionInfo.addChild(new UIButton(totalwidth,
 						(selectionInfo.height - res.getImage(UIEvent.Event.BUILD.toString())
-								.getHeight()) / 4, UIEvent.Event.BUILD, res
+								.getHeight()) / 4, new UIEvent(UIEvent.Event.BUILD), res
 								.getImage(UIEvent.Event.BUILD.toString())));
 				totalwidth+=res
 						.getImage(UIEvent.Event.BUILD.toString()).getWidth();
@@ -324,7 +343,11 @@ public class UI {
 				if (temp != null)
 					event = temp;
 			}
-
+			if (event!=null&&event.actor!=null){
+				if(event.actor instanceof GameUnit) 
+				showUnitInfo((GameUnit) event.actor);
+				else showStaticObjectInfo((GameStaticObject)event.actor);
+			}
 			if (buildSlider != null && !buildSlider.picked(ev.getX(), ev.getY()))
 				sliders.remove(buildSlider);
 
@@ -351,7 +374,6 @@ public class UI {
 				return (new UIEvent(UIEvent.Event.END_TURN));
 			}
 		}
-
 		return event;
 	}
 

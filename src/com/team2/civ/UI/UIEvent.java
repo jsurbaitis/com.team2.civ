@@ -21,6 +21,6 @@ public class UIEvent {
 	}
 	public UIEvent(MapObject ob){
 		e = Event.TARGET_CHANGED;
-		actor=ob;
+		actor = ob;
 	}
 }

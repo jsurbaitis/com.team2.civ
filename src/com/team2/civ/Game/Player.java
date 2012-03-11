@@ -1,6 +1,7 @@
 package com.team2.civ.Game;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.team2.civ.AI.AI;
 
@@ -17,6 +18,8 @@ public class Player {
 	public int population = 0;
 
 	public AI ai;
+	
+	public List<GameAction> previousTurn = new ArrayList<GameAction>();
 	
 	public ArrayList<GameUnit> units = new ArrayList<GameUnit>();
 	public ArrayList<GameStaticObject> objects = new ArrayList<GameStaticObject>();

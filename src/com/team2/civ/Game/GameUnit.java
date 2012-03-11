@@ -1,5 +1,7 @@
 package com.team2.civ.Game;
 
+import java.util.Random;
+
 import com.team2.civ.Data.GameUnitData;
 import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
@@ -9,6 +11,8 @@ public class GameUnit extends MovingMapObject {
 	public GameUnitData data;
 	public Player owner;
 	private int HP, AP;
+	
+	public String name;
 
 	public GameUnit(int mapX, int mapY, String imgId, Resources res, Player owner, GameUnitData data) throws ResNotFoundException {
 		super(mapX, mapY, imgId, res, owner);
@@ -16,6 +20,9 @@ public class GameUnit extends MovingMapObject {
 		this.owner = owner;
 		this.data = data;
 		HP = data.HP;
+		
+		Random rnd = new Random();
+		name = data.names.get(rnd.nextInt(data.names.size()));
 	} 
 	
 	public int getHP() {

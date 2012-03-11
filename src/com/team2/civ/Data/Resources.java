@@ -71,6 +71,8 @@ public class Resources {
 		else if(varName.equals("DefensiveBonus")) u.defensiveBonus = in.nextInt();
 		else if(varName.equals("MovementCose")) u.moveCost = in.nextInt();
 		else if(varName.equals("FoWRange")) u.fowRange = in.nextInt();
+		else if(varName.equals("Destructible")) u.destructible = in.nextBoolean();
+		else if(varName.equals("Capturable")) u.capturable = in.nextBoolean();
 	}
 	
 	private void parseStaticObjectname(Scanner in, GameStaticObjectData u) throws IOException {
@@ -120,12 +122,23 @@ public class Resources {
 				parseUnitUIActions(in, data);
 			else if(str.equals("build"))
 				parseUnitBuild(in, data);
+			else if(str.equals("name"))
+				parseUnitName(in, data);
 			else
 				parseUnitVariable(str, in, data);
 			
 			str = in.next();
 		}
 		units.put(data.id, data);
+	}
+	
+	private void parseUnitName(Scanner in, GameUnitData u) throws IOException {
+		String s = in.next();
+		s = in.next();
+		while(!s.equals("}")) {
+			u.names.add(s.replace('_', ' '));
+			s = in.next();
+		}
 	}
 	
 	private void parseUnitVariable(String varName, Scanner in, GameUnitData u) throws IOException {
