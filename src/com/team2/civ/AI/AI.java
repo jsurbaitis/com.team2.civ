@@ -1,11 +1,13 @@
 package com.team2.civ.AI;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import com.team2.civ.Data.Resources;
+import com.team2.civ.Game.GameAction;
 import com.team2.civ.Game.GameController;
+import com.team2.civ.Game.Player;
 import com.team2.civ.Map.CoordObject;
 import com.team2.civ.Map.WalkableTile;
 
@@ -166,7 +168,7 @@ public class AI {
 	
 	private boolean[][] getResponseCodes(boolean[] env_vars) {
 		boolean[][] responses = new boolean[action_points][action_bits];
-		int index = tolerance_bits + bitsToInt(env_vars) - 1;
+		int index = tolerance_bits + (bitsToInt(env_vars) * action_points * action_bits) ;
 		for (int i = 0; i < action_points; i++){
 			for (int j = 0; j < action_bits; j++){
 				responses[i][j] = this.genome[index];
@@ -174,5 +176,11 @@ public class AI {
 			}
 		}
 		return responses;
+	}
+	
+	public ArrayList<GameAction> perform(GameAction[][] actions,Player p){
+		ArrayList<GameAction> output = new ArrayList<GameAction>();
+		output.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN,p));
+		return output;
 	}
 }
