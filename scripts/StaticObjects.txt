@@ -3,11 +3,45 @@ MetalCost 100
 DefensiveBonus 50
 MovementCost 1
 FoWRange 3
+Destructable false
+Capturable true
 
 name
 {
     Istanbul
     New_York
+    Chicago
+    Shanghai
+    Tokyo
+    Kyoto
+    Paris
+    Marburg
+    Berlin
+    Frankfurt
+    London
+    Edinburgh
+    San_Diego
+    San_Fransisco
+    Washington_D.C.
+    Nagasaki
+    Madrid
+    Rome
+    Giessen
+    Stockholm
+    Amsterdam
+    Kansas_City
+    Mexico_City
+    Arkham
+    Ryleh
+    Harrisburg
+    Mechanicsburg
+    Riga
+    Tallinn
+    Zagreb
+    Moscow
+    St_Petersburg
+    Leningrad
+    Stalingrad
 }
 
 build
@@ -37,10 +71,26 @@ MetalCost 75
 DefensiveBonus 0
 MovementCost 1
 FoWRange 2
+Destructable true
+Capturable false
 
 name
 {
-	Power_Resource
+	LeSalle
+	Indian_Point
+	Edwin_Hatch
+	Beaver_Valley
+	Diablo_Canyon
+	Dresden
+	Wolf_Creek
+	Vogtle
+	Susquehanna_Steam
+	Oconee
+	McGuire
+	Zaporizhia
+	Liebstadt
+	Yeonggwan
+	Rostov
 }
 
 ENDOBJ
@@ -50,10 +100,31 @@ MetalCost 50
 DefensiveBonus 100
 MovementCost 1
 FoWRange 3
+Destructable false
+Capturable true
 
 name
 {
 	Fort_Jefferson
+	Fort_Worth
+	Fort_Bradley
+	Fort_Pierce
+	Fort_Banks
+	Fort_Glankville
+	Flagstaff_Hill_Fort
+	Fort_Walsh
+	Fort_Edward
+	Ninth_Fort
+	Hokkaido
+	Alexandrov_Kremlin
+	Novgorod_Kremlin
+	Kronstadt
+	Fortress_of_Ulm
+	Saalburg
+	Brandenburg_Fort
+	Festung_Koenigstein
+	Fortress_Mareinburg
+	Spandau_Citadel
 }
 
 ENDOBJ
