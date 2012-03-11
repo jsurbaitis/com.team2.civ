@@ -2,8 +2,6 @@ package com.team2.civ.UI;
 
 import java.awt.Graphics2D;
 
-import com.team2.civ.UI.UI.UIEvent;
-
 public class UIElement {
 	public int x, y;
 	public int width, height;
@@ -15,7 +13,7 @@ public class UIElement {
 		this.y = y;
 		this.width = width;
 		this.height = height;
-		this.commandID = commandID;
+        this.commandID = commandID;
 	}
 	public UIEvent clicked(int mx, int my) {
 		if(picked(mx, my))

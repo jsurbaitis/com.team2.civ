@@ -5,6 +5,8 @@ import java.util.ArrayList;
 public class GameStaticObjectData {
 	public String id;
 	
+	public boolean capturable, destructible;
+	
 	public int metalCost, moveCost;
 	public int fowRange;
 	public int defensiveBonus;

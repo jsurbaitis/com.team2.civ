@@ -3,12 +3,12 @@ package com.team2.civ.Data;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.team2.civ.UI.UI.UIEvent;
+import com.team2.civ.UI.UIEvent;
 
 public class GameUnitData {
 	public String id, name, description;
 	
-	public int metalCost, moveCost;
+	public int metalCost, powerCost;
 	
 	public int HP;
 	public int AP;

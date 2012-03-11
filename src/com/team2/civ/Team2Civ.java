@@ -14,6 +14,7 @@ import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
+import com.team2.civ.AI.Generator;
 import com.team2.civ.Game.GameController;
 
 /* MAIN ENTRY POINT - There should be no need to modify this file
@@ -30,6 +31,8 @@ public class Team2Civ extends Thread {
 	public static final int WINDOW_HEIGHT = 768;
 	public static final int FPS_LIMIT = 60;
 	private static final long FPS_WAIT = (long) (1.0 / FPS_LIMIT * 1000);
+	
+	public static final boolean AI_MODE = false;
 	
 	private long timeStartMillis;
 
@@ -61,6 +64,8 @@ public class Team2Civ extends Thread {
         canvas.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
         game = new GameController(config);
+        game.initGame();
+        
         canvas.addKeyListener(new KeyboardInput(game));
         canvas.addMouseListener(new MouseInput(game));
         canvas.addMouseMotionListener(new MouseMotionInput(game));
@@ -142,6 +147,20 @@ public class Team2Civ extends Thread {
     }
 	
 	public static void main(String args[]) {
-		new Team2Civ();
+		if(!AI_MODE)
+			new Team2Civ();
+		else {
+			GraphicsConfiguration config =
+		    		GraphicsEnvironment.getLocalGraphicsEnvironment()
+									   .getDefaultScreenDevice()
+									   .getDefaultConfiguration();
+			
+			int generations = Integer.parseInt(args[0]);
+			int populationSize = Integer.parseInt(args[1]);
+			
+			GameController gc = new GameController(config);
+			Generator g = new Generator(generations, populationSize, gc);
+			g.generate();
+		}
 	}
 }

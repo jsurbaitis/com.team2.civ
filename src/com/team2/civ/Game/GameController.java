@@ -9,6 +9,7 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.Vector;
 import javax.swing.SwingUtilities;
 
 import com.team2.civ.Team2Civ;
+import com.team2.civ.AI.AI;
 import com.team2.civ.Data.GameStaticObjectData;
 import com.team2.civ.Data.GameUnitData;
 import com.team2.civ.Data.ResNotFoundException;
@@ -28,9 +30,14 @@ import com.team2.civ.Map.PathNode;
 import com.team2.civ.Map.WalkableTile;
 import com.team2.civ.Map.WallTile;
 import com.team2.civ.UI.UI;
-import com.team2.civ.UI.UI.UIEvent;
+import com.team2.civ.UI.UIEvent;
 
 public class GameController {
+	private static final boolean FOW_ON = true;
+
+	private static final int MAP_WIDTH = 50;
+	private static final int MAP_HEIGHT = 50;
+
 	private long gameTime = 0;
 
 	private int offsetX = 0;
@@ -41,11 +48,6 @@ public class GameController {
 
 	private int lastMouseX;
 	private int lastMouseY;
-
-	private static final boolean FOW_ON = true;
-
-	private static final int MAP_WIDTH = 50;
-	private static final int MAP_HEIGHT = 50;
 
 	private static final double SCALE_MAX = 1.0;
 	private static final double SCALE_MIN = 0.2;
@@ -79,19 +81,40 @@ public class GameController {
 	private Player currentPlayer;
 	private MapObject target;
 
+	private Vector<GameUnit> combatTargets = new Vector<GameUnit>();
+
 	public int turnCount = 1;
 	public static final int MAX_TURNS = 500;
 
 	public GameController(GraphicsConfiguration config) {
 		res = new Resources(config);
+	}
 
+	public void initGame() {
 		try {
 			createMap();
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
 
-		ui = new UI(humanPlayer, res);
+		ui = new UI(humanPlayer, res, this);
+	}
+
+	public AI runGame(AI a1, AI a2, AI a3, AI a4) {
+		try {
+			createMap();
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		humanPlayer = null;
+		players.get(0).ai = a1;
+		players.get(1).ai = a2;
+		players.get(2).ai = a3;
+		players.get(3).ai = a4;
+
+		return null;
+		// currentPlayer.performTurn();
 	}
 
 	private void createMap() throws ResNotFoundException {
@@ -382,8 +405,27 @@ public class GameController {
 		return rtn;
 	}
 
-	private void startCombat() {
+	public void startCombat(GameUnit attacker, GameUnit target) {
+		target.takeDmg(attacker.getDmgToDeal(target.data.id));
+	}
 
+	private void startCombatTargeting() {
+		for (GameUnit u : units) {
+			if (u.owner != humanPlayer) {
+				if (Math.abs(target.mapX - u.mapX) <= u.data.range
+						&& Math.abs(target.mapY - u.mapY) <= u.data.range) {
+					combatTargets.add(u);
+					u.selected = true;
+				}
+			}
+		}
+	}
+
+	private void endCombatTargeting() {
+		for (GameUnit u : combatTargets)
+			u.selected = false;
+
+		combatTargets.clear();
 	}
 
 	public void destroyUnit(GameUnit u) {
@@ -404,15 +446,51 @@ public class GameController {
 	}
 
 	private void endTurn() {
+		upkeep();
 		currentPlayer = players.get(players.indexOf(currentPlayer)
 				% (players.size() - 1));
 		if (currentPlayer != humanPlayer) {
 			// TODO: show what the AI is doing
+			// if(!Team2Civ.AI_MODE) show stuff
 			// currentPlayer.ai.perform();
 			endTurn();
 		} else {
 			turnCount++;
 		}
+	}
+
+	private void upkeep() {
+		for(GameUnit u: units) {
+			if(u.owner == currentPlayer) {
+				GameStaticObject so = staticObjects.get(u);
+				if(so != null && so.owner != currentPlayer) {
+					if(so.data.capturable) so.owner = currentPlayer;
+					else if(so.data.destructible) staticObjects.remove(so);
+				}
+			}
+		}
+		
+		currentPlayer.power = 0;
+		for(GameStaticObject so: staticObjects.values()) {
+			if(so.data.id.equals("POWERPLANT")) {
+				currentPlayer.power += 10;
+			}
+		}
+	}
+	
+	private int getDistToClosestCity(CoordObject obj) {
+		int smallestDist = Integer.MAX_VALUE;
+		
+		for(GameStaticObject so: staticObjects.values()) {
+			if(so.data.id.equals("CITY") && so.owner == currentPlayer) {
+				int dist = getHeuristic(so.mapX, so.mapY, obj.mapX, obj.mapY);
+				if(dist < smallestDist) {
+					smallestDist = dist;
+				}
+			}
+		}
+		
+		return smallestDist;
 	}
 
 	private void addUnitToPlayer(Player p, CoordObject location,
@@ -485,24 +563,28 @@ public class GameController {
 	}
 
 	public void performEvent(UIEvent event) {
-		if (event == UIEvent.HANDLED)
+		if (event.e == UIEvent.Event.HANDLED)
 			return;
 
-		if (event == UIEvent.ACTION_ATTACK)
-			startCombat();
-		else if (event == UIEvent.ACTION_DESTROY) {
+		if (event.e == UIEvent.Event.ACTION_ATTACK)
+			startCombatTargeting();
+		else if (event.e == UIEvent.Event.ACTION_DESTROY) {
 			destroyUnit((GameUnit) target);
 			target = null;
-		} else if (event == UIEvent.ACTION_FORTIFY)
+		} else if (event.e == UIEvent.Event.ACTION_FORTIFY)
 			fortifyTarget();
-		else if (event == UIEvent.END_TURN)
+		else if (event.e == UIEvent.Event.END_TURN)
 			endTurn();
-		else if (event.toString().startsWith("BUILD"))
+		else if (event.e.toString().startsWith("BUILD"))
 			try {
-				build(event.toString().replace("BUILD_", ""));
+				build(event.e.toString().replace("BUILD_", ""));
 			} catch (ResNotFoundException e) {
 				e.printStackTrace();
 			}
+		else if (event.e == UIEvent.Event.TARGET_CHANGED) {
+			target = event.actor;
+			target.selected = true;
+		}
 	}
 
 	public void onMouseInput(MouseEvent ev) {
@@ -540,6 +622,8 @@ public class GameController {
 				for (WalkableTile t : walkableMap.values()) {
 					if (t.picked((int) (ev.getX() * (1 / scale) - offsetX),
 							(int) (ev.getY() * (1 / scale) - offsetY))) {
+
+						endCombatTargeting();
 						movingUnit.startMovement(findPath(movingUnit, t, true,
 								-1));
 					}
@@ -549,30 +633,48 @@ public class GameController {
 			if (Math.abs(ev.getX() - pressStartX) < 5
 					&& Math.abs(ev.getY() - pressStartY) < 5) {
 
+				for (GameUnit u : combatTargets) {
+					if (u.picked((int) (ev.getX() * (1 / scale) - offsetX),
+							(int) (ev.getY() * (1 / scale) - offsetY))) {
+						startCombat((GameUnit) target, u);
+						return;
+					}
+				}
+
+				ArrayList<MapObject> targets = new ArrayList<MapObject>();
+
 				for (GameUnit u : units) {
 					if (u.owner == humanPlayer
 							&& u.picked(
 									(int) (ev.getX() * (1 / scale) - offsetX),
 									(int) (ev.getY() * (1 / scale) - offsetY))) {
-						if (target != null)
-							target.selected = false;
-						target = u;
-						target.selected = true;
-						ui.showUnitInfo((GameUnit) target);
+
+						endCombatTargeting();
+						targets.add(u);
 					}
 				}
 
-				for (GameStaticObject so : staticObjects.values())
+				for (GameStaticObject so : staticObjects.values()) {
 					if (so.owner == humanPlayer
 							&& so.picked(
 									(int) (ev.getX() * (1 / scale) - offsetX),
 									(int) (ev.getY() * (1 / scale) - offsetY))) {
-						if (target != null)
-							target.selected = false;
-						target = so;
-						target.selected = true;
-						ui.showStaticObjectInfo((GameStaticObject) target);
+
+						endCombatTargeting();
+						targets.add(so);
 					}
+				}
+
+				if (targets.size() > 0) {
+					ui.showInfo(targets);
+					if (target != null)
+						target.selected = false;
+					target = null;
+					if (targets.size() == 1) {
+						target = targets.get(0);
+						target.selected = true;
+					}
+				}
 			}
 		}
 	}
@@ -726,5 +828,20 @@ public class GameController {
 		int result = (dx * dx) + (dy * dy);
 		return result;
 	}
-
+	
+	public Collection<WallTile> getUnwalkableMap() {
+		return Collections.unmodifiableCollection(unwalkableMap.values());
+	}
+	
+	public Collection<WalkableTile> getWalkableMap() {
+		return Collections.unmodifiableCollection(walkableMap.values());
+	}
+	
+	public Collection<GameUnit> getUnit() {
+		return Collections.unmodifiableCollection(units);
+	}
+	
+	public Collection<GameStaticObject> getStaticObjects() {
+		return Collections.unmodifiableCollection(staticObjects.values());
+	}
 }

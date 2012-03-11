@@ -5,8 +5,6 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import com.team2.civ.UI.UI.UIEvent;
-
 public class UISlider extends UIElement {
 	private BufferedImage bg;
 	private ArrayList<UIElement> children = new ArrayList<UIElement>();
@@ -19,7 +17,7 @@ public class UISlider extends UIElement {
 	private final int initialy;
 
 	public UISlider(int x, int y, int width, int height, boolean isVertical, BufferedImage bg) {
-		super(x, y, width, height, UIEvent.HANDLED);
+		super(x, y, width, height,new UIEvent(UIEvent.Event.HANDLED));
 		initialx = x;
 		initialy = y;
         this.vertical = isVertical;

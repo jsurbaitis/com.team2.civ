@@ -11,7 +11,7 @@ import java.util.Scanner;
 
 import javax.imageio.ImageIO;
 
-import com.team2.civ.UI.UI;
+import com.team2.civ.UI.UIEvent;
 
 public class Resources {
 	public static int TILE_WIDTH, TILE_HEIGHT;
@@ -67,7 +67,7 @@ public class Resources {
 	}
 	
 	private void parseStaticObjectVariable(String varName, Scanner in, GameStaticObjectData u) throws IOException {
-		if(varName.equals("MetalCose")) u.metalCost = in.nextInt();
+		if(varName.equals("MetalCost")) u.metalCost = in.nextInt();
 		else if(varName.equals("DefensiveBonus")) u.defensiveBonus = in.nextInt();
 		else if(varName.equals("MovementCose")) u.moveCost = in.nextInt();
 		else if(varName.equals("FoWRange")) u.fowRange = in.nextInt();
@@ -134,6 +134,8 @@ public class Resources {
 		else if(varName.equals("BaseDmg")) u.baseDmg = in.nextInt();
 		else if(varName.equals("Range")) u.range = in.nextInt();
 		else if(varName.equals("FoWRange")) u.fowRange = in.nextInt();
+		else if(varName.equals("MetalCost")) u.metalCost = in.nextInt();
+		else if(varName.equals("PowerCost")) u.powerCost = in.nextInt();
 	}
 
 	private void parseUnitDmgModifiers(Scanner in, GameUnitData u) throws IOException {
@@ -150,11 +152,11 @@ public class Resources {
 		s = in.next();
 		while(!s.equals("}")) {
 			if(s.equals("ATTACK"))
-				u.uiActions.add(UI.UIEvent.ACTION_ATTACK);
+				u.uiActions.add(new UIEvent(UIEvent.Event.ACTION_ATTACK));
 			if(s.equals("DESTROY"))
-				u.uiActions.add(UI.UIEvent.ACTION_DESTROY);
+				u.uiActions.add(new UIEvent(UIEvent.Event.ACTION_DESTROY));
 			if(s.equals("FORTIFY"))
-				u.uiActions.add(UI.UIEvent.ACTION_FORTIFY);
+				u.uiActions.add(new UIEvent(UIEvent.Event.ACTION_FORTIFY));
 			
 			s = in.next();
 		}

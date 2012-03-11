@@ -12,6 +12,7 @@ public class Player {
 	public int scoreEconomy = 0;
 	public int scoreStratLoc = 0;
 	
+	public int power = 0;
 	public int metal = 2000;
 	public int population = 0;
 
