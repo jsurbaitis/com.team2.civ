@@ -12,7 +12,7 @@ DmgModifier
 
 name
 {
-	Troy
+    Troy
 	Travis
 	Roy
 	Robert
@@ -33,14 +33,6 @@ name
 	Luke
 	Gregory
 	Greg
-	Vladimir
-	Lubomir
-	Shin
-	Jaime
-	Jamie
-	Jay
-	Alan
-	Rebecca
 }
 
 UIActions
@@ -69,20 +61,6 @@ FoWRange 2
 DmgModifier
 {
     AIR 40
-}
-
-name
-{
-	SPC._Stevens
-	SPC._Scharrenburg
-	SPC._Urbaitis
-	SPC._Rominov
-	SPC._Cooper
-	SPC._Hills
-	SPC._Ives
-	SPC._Bottino
-	SPC._Markson
-	SPC._Rodriguez
 }
 
 UIActions

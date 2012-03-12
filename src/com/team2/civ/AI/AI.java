@@ -173,6 +173,19 @@ public class AI {
 		return boolArray;
 	}
 	
+	private static byte[] boolToBytes(boolean[] bools) {
+		byte[] byteArray = new byte[bools.length / 8];
+		for(int i = 0; i < (bools.length / 8); i++) {
+			for(int j = 0; j < 8; j++) {
+				if(bools[i*8 + j])
+					byteArray[i] |= (1 << j);
+				else
+					byteArray[i] &= (1 << j);
+			}
+		}
+		return byteArray;
+	}
+	
 	private static boolean[] returnBitsSubset(int start_index, int end_index, boolean[] bits){
 		boolean[] output = new boolean[end_index - start_index + 1];
 		for (int i = start_index; i <= end_index; i++){

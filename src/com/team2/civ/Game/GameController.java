@@ -405,7 +405,68 @@ public class GameController {
 		return rtn;
 	}
 
-	public void startCombat(GameUnit attacker, GameUnit target) {
+	public GameAction performAction(GameAction action) {
+		if (action.actor != null && action.actor.owner != action.performer)
+			return null;
+
+		if (action.event == GameAction.Event.ACTION_ATTACK) {
+			if (action.actor.owner != action.target.owner) {
+				performCombat((GameUnit) action.actor, (GameUnit) action.target);
+			} else {
+				return null;
+			}
+		} 
+		else if (action.event == GameAction.Event.ACTION_DESTROY_SELF) {
+			destroyUnit((GameUnit) action.actor);
+		} 
+		else if (action.event == GameAction.Event.ACTION_FORTIFY) {
+			fortifyUnit((GameUnit) action.actor);
+		} 
+		else if (action.event == GameAction.Event.END_TURN)
+			endTurn();
+		else if (action.event == GameAction.Event.ACTION_MOVE) {
+			startMovement((GameUnit) action.actor, action.target);
+		} 
+		else if (action.event == GameAction.Event.ACTION_CAPTURE_TARGET) {
+			GameStaticObject target = (GameStaticObject) action.target;
+			if (target.data.capturable && action.actor.mapX == target.mapX
+					&& action.actor.mapY == target.mapY)
+				captureObject(target, action.performer);
+		} 
+		else if (action.event == GameAction.Event.ACTION_DESTROY_TARGET) {
+			GameStaticObject target = (GameStaticObject) action.target;
+			if (target.data.destructible && action.actor.mapX == target.mapX
+					&& action.actor.mapY == target.mapY)
+				destroyObject(target, action.performer);
+		} 
+		else if (action.event.toString().startsWith("BUILD")) {
+			try {
+				String obj = action.event.toString().replace("BUILD_", "");
+				if(!addObjectToPlayer(action.performer, action.actor, obj))
+					return null;
+			} catch (ResNotFoundException e) {
+				e.printStackTrace();
+				return null;
+			}
+		}
+
+		return action;
+	}
+
+	private void destroyObject(GameStaticObject target, Player performer) {
+		// TODO: implement
+	}
+
+	private void captureObject(GameStaticObject target, Player performer) {
+		// TODO: implement
+	}
+
+	private void startMovement(GameUnit actor, MapObject target) {
+		endCombatTargeting();
+		actor.startMovement(findPath(actor, target, actor.owner, true, -1));
+	}
+
+	private void performCombat(GameUnit attacker, GameUnit target) {
 		target.takeDmg(attacker.getDmgToDeal(target.data.id));
 	}
 
@@ -437,8 +498,8 @@ public class GameController {
 		u.owner.metal += u.data.metalCost * 0.25;
 	}
 
-	private void fortifyTarget() {
-
+	private void fortifyUnit(GameUnit u) {
+		//TODO: implement
 	}
 
 	public int getNOfTurnsLeft() {
@@ -446,66 +507,69 @@ public class GameController {
 	}
 
 	private void endTurn() {
-		upkeep();
+		upkeep(currentPlayer);
 		currentPlayer = players.get(players.indexOf(currentPlayer)
 				% (players.size() - 1));
 		if (currentPlayer != humanPlayer) {
 			// TODO: show what the AI is doing
 			// if(!Team2Civ.AI_MODE) show stuff
-			List<GameAction> actions = currentPlayer.ai.perform(getActionsForOthers(currentPlayer), currentPlayer);
+			List<GameAction> actions = currentPlayer.ai.perform(
+					getActionsForOthers(currentPlayer), currentPlayer);
 			performActions(actions);
 			endTurn();
 		} else {
 			turnCount++;
 		}
 	}
-	
+
 	private void performActions(List<GameAction> actions) {
-		for(GameAction ga: actions) {
-			
+		for (GameAction ga : actions) {
+
 		}
 	}
-	
+
 	private ArrayList<GameAction> getActionsForOthers(Player exclude) {
 		ArrayList<GameAction> rtn = new ArrayList<GameAction>();
-		for(Player p: players)
-			if(p != exclude)
+		for (Player p : players)
+			if (p != exclude)
 				rtn.addAll(p.previousTurn);
-		
+
 		return rtn;
 	}
 
-	private void upkeep() {
-		for(GameUnit u: units) {
-			if(u.owner == currentPlayer) {
+	private void upkeep(Player p) {
+		for (GameUnit u : units) {
+			if (u.owner == p) {
 				GameStaticObject so = staticObjects.get(u);
-				if(so != null && so.owner != currentPlayer) {
-					if(so.data.capturable) so.owner = currentPlayer;
-					else if(so.data.destructible) staticObjects.remove(so);
+				if (so != null && so.owner != p) {
+					if (so.data.capturable)
+						so.owner = p;
+					else if (so.data.destructible)
+						staticObjects.remove(so);
 				}
 			}
 		}
-		
-		currentPlayer.power = 0;
-		for(GameStaticObject so: staticObjects.values()) {
-			if(so.data.id.equals("POWERPLANT")) {
-				currentPlayer.power += 10;
+
+		p.power = 0;
+		for (GameStaticObject so : staticObjects.values()) {
+			if (so.data.id.equals("POWERPLANT")) {
+				p.power += 10;
 			}
 		}
 	}
-	
+
 	private int getDistToClosestCity(CoordObject obj) {
 		int smallestDist = Integer.MAX_VALUE;
-		
-		for(GameStaticObject so: staticObjects.values()) {
-			if(so.data.id.equals("CITY") && so.owner == currentPlayer) {
+
+		for (GameStaticObject so : staticObjects.values()) {
+			if (so.data.id.equals("CITY") && so.owner == currentPlayer) {
 				int dist = getHeuristic(so.mapX, so.mapY, obj.mapX, obj.mapY);
-				if(dist < smallestDist) {
+				if (dist < smallestDist) {
 					smallestDist = dist;
 				}
 			}
 		}
-		
+
 		return smallestDist;
 	}
 
@@ -526,34 +590,44 @@ public class GameController {
 
 	private void addStaticObjToPlayer(Player p, GameUnit unit,
 			GameStaticObjectData data) throws ResNotFoundException {
-		if (staticObjects.get(unit) == null && p.metal >= data.metalCost) {
-			p.metal -= data.metalCost;
+		p.metal -= data.metalCost;
 
-			GameStaticObject so = new GameStaticObject(target.mapX,
-					target.mapY, res.getImage(data.id), res.getImage(data.id
-							+ "_fow"), p, data);
-			staticObjects.put(so, so);
-			walkableMap.put(so, so);
-			lowDraw.add(so.getImage());
+		GameStaticObject so = new GameStaticObject(target.mapX, target.mapY,
+				res.getImage(data.id), res.getImage(data.id + "_fow"), p, data);
+		staticObjects.put(so, so);
+		walkableMap.put(so, so);
+		lowDraw.add(so.getImage());
 
-			target = so;
-			ui.showStaticObjectInfo((GameStaticObject) target);
+		target = so;
+		ui.showStaticObjectInfo((GameStaticObject) target);
 
-			synchronized (highDraw) {
-				highDraw.remove(unit.getImage());
-			}
-
-			units.remove(unit);
+		synchronized (highDraw) {
+			highDraw.remove(unit.getImage());
 		}
+
+		units.remove(unit);
 	}
 
-	public void addObjectToPlayer(Player p, CoordObject location, String objId)
-			throws ResNotFoundException {
-		if (isStaticData(objId))
-			addStaticObjToPlayer(p, (GameUnit) location,
-					res.getStaticObject(objId));
-		else if (isUnitData(objId))
-			addUnitToPlayer(p, location, res.getUnit(objId));
+	private boolean addObjectToPlayer(Player p, CoordObject location,
+			String objId) throws ResNotFoundException {
+		if (isStaticData(objId)) {
+			GameUnit unit = (GameUnit) location;
+			GameStaticObjectData data = res.getStaticObject(objId);
+			if (unit.data.buildIDs.contains(objId)
+					&& staticObjects.get(unit) == null
+					&& p.metal >= data.metalCost) {
+				addStaticObjToPlayer(p, unit, data);
+				return true;
+			}
+		} else if (isUnitData(objId)) {
+			GameStaticObject so = (GameStaticObject) location;
+			GameUnitData data = res.getUnit(objId);
+			if(so.data.buildIDs.contains(objId) && p.metal >= data.metalCost) {
+				addUnitToPlayer(p, location, data);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private boolean isStaticData(String objId) {
@@ -574,10 +648,6 @@ public class GameController {
 		}
 	}
 
-	private void build(String obj) throws ResNotFoundException {
-		addObjectToPlayer(currentPlayer, target, obj);
-	}
-
 	public void performEvent(UIEvent event) {
 		if (event.e == UIEvent.Event.HANDLED)
 			return;
@@ -588,12 +658,13 @@ public class GameController {
 			destroyUnit((GameUnit) target);
 			target = null;
 		} else if (event.e == UIEvent.Event.ACTION_FORTIFY)
-			fortifyTarget();
+			fortifyUnit((GameUnit) target);
 		else if (event.e == UIEvent.Event.END_TURN)
 			endTurn();
 		else if (event.e.toString().startsWith("BUILD"))
 			try {
-				build(event.e.toString().replace("BUILD_", ""));
+				addObjectToPlayer(currentPlayer, target, event.e.toString()
+						.replace("BUILD_", ""));
 			} catch (ResNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -639,8 +710,8 @@ public class GameController {
 					if (t.picked((int) (ev.getX() * (1 / scale) - offsetX),
 							(int) (ev.getY() * (1 / scale) - offsetY))) {
 
+						startMovement(movingUnit, t);
 						endCombatTargeting();
-						movingUnit.startMovement(findPath(movingUnit, t, movingUnit.owner, true, -1));
 					}
 				}
 			}
@@ -651,7 +722,7 @@ public class GameController {
 				for (GameUnit u : combatTargets) {
 					if (u.picked((int) (ev.getX() * (1 / scale) - offsetX),
 							(int) (ev.getY() * (1 / scale) - offsetY))) {
-						startCombat((GameUnit) target, u);
+						performCombat((GameUnit) target, u);
 						return;
 					}
 				}
@@ -715,17 +786,20 @@ public class GameController {
 				offsetX -= 12;
 		}
 	}
-	
-	public ArrayList<WalkableTile> findPath(CoordObject startObj, CoordObject targetObj, Player owner) {
+
+	public ArrayList<WalkableTile> findPath(CoordObject startObj,
+			CoordObject targetObj, Player owner) {
 		return findPath(startObj, targetObj, owner, true, -1);
 	}
-	
-	public ArrayList<WalkableTile> findPath(CoordObject startObj, CoordObject targetObj) {
+
+	public ArrayList<WalkableTile> findPath(CoordObject startObj,
+			CoordObject targetObj) {
 		return findPath(startObj, targetObj, null, true, -1);
 	}
 
-	private ArrayList<WalkableTile> findPath(CoordObject startObj, CoordObject targetObj,
-			Player owner, boolean walkOnTarget, int lengthLimit) {
+	private ArrayList<WalkableTile> findPath(CoordObject startObj,
+			CoordObject targetObj, Player owner, boolean walkOnTarget,
+			int lengthLimit) {
 		HashMap<CoordObject, PathNode> nodeList = new HashMap<CoordObject, PathNode>();
 		ArrayList<PathNode> openList = new ArrayList<PathNode>();
 		ArrayList<PathNode> closedList = new ArrayList<PathNode>();
@@ -851,19 +925,19 @@ public class GameController {
 		int result = (dx * dx) + (dy * dy);
 		return result;
 	}
-	
+
 	public Collection<WallTile> getUnwalkableMap() {
 		return Collections.unmodifiableCollection(unwalkableMap.values());
 	}
-	
+
 	public Collection<WalkableTile> getWalkableMap() {
 		return Collections.unmodifiableCollection(walkableMap.values());
 	}
-	
+
 	public Collection<GameUnit> getUnit() {
 		return Collections.unmodifiableCollection(units);
 	}
-	
+
 	public Collection<GameStaticObject> getStaticObjects() {
 		return Collections.unmodifiableCollection(staticObjects.values());
 	}
