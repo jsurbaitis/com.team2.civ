@@ -159,6 +159,20 @@ public class AI {
 		return output;
 	}
 	
+	private static boolean[] intToBits(int in) {
+		String binaryString = Integer.toBinaryString(in);
+		char[] binaryArray = binaryString.toCharArray();
+		boolean[] boolArray = new boolean[binaryArray.length];
+		for(int i = 0; i < binaryString.length(); i++) {
+			if(binaryArray[i] == '0') {
+				boolArray[i] = false;
+			} else if(binaryArray[i] == '1') {
+				boolArray[i] = true;
+			}
+		}
+		return boolArray;
+	}
+	
 	private static boolean[] returnBitsSubset(int start_index, int end_index, boolean[] bits){
 		boolean[] output = new boolean[end_index - start_index + 1];
 		for (int i = start_index; i <= end_index; i++){
