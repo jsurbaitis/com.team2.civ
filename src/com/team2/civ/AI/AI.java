@@ -19,6 +19,9 @@ public class AI {
 	final static int action_points = 5;
 	final static int action_bits = 5;
 	final boolean[] genome;
+	
+	final boolean[] conditions = new boolean[condition_bits];
+	final byte[] byteGenome = new byte[124];
 	//tolerances:
 	final int init_st_dev_strat_loc;
 	int current_st_dev_strat_loc;
@@ -210,5 +213,22 @@ public class AI {
 		ArrayList<GameAction> output = new ArrayList<GameAction>();
 		output.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN,p));
 		return output;
+	}
+	
+	private byte getFiveBits(int index) {
+		int bitIndex = (index * 5) % 8;
+		int byteIndex = (index * 5) / 8;
+		byte rtn = 0;
+		
+		for(int i = 0; i < 5; i++) {
+			rtn |= (byteGenome[byteIndex] << bitIndex);
+			bitIndex++;
+			if(bitIndex > 7) {
+				bitIndex = 0;
+				byteIndex++;
+			}
+		}
+		
+		return rtn;
 	}
 }
