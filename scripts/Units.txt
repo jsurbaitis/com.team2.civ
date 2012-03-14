@@ -1,18 +1,17 @@
 WORKER
 HP 50
-AP 10
+AP 2
 BaseDmg 0
 Range 2
 FoWRange 2
 
 DmgModifier
 {
-    WHATEVERUNIT 10
 }
 
 name
 {
-    Troy
+	Troy
 	Travis
 	Roy
 	Robert
@@ -37,9 +36,7 @@ name
 
 UIActions
 {
-    ATTACK
     DESTROY
-    FORTIFY
 }
 
 build
@@ -53,7 +50,7 @@ ENDUNIT
 
 ANTIAIR
 HP 200
-AP 10
+AP 2
 BaseDmg 20
 Range 2
 FoWRange 2
@@ -61,6 +58,45 @@ FoWRange 2
 DmgModifier
 {
     AIR 40
+}
+
+UIActions
+{
+    ATTACK
+    DESTROY
+    FORTIFY
+}
+ENDUNIT
+
+TANK
+HP 300
+AP 2
+BaseDmg 30
+Range 4
+FoWRange 3
+
+DmgModifier
+{
+    AIR -30
+}
+
+UIActions
+{
+    ATTACK
+    DESTROY
+    FORTIFY
+}
+ENDUNIT
+
+AIR
+HP 100
+AP 5
+BaseDmg 30
+Range 2
+FoWRange 5
+
+DmgModifier
+{
 }
 
 UIActions
