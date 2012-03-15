@@ -48,6 +48,8 @@ build
 {
     WORKER  
     ANTIAIR
+    TANK
+    AIR
 }
 
 ENDOBJ
