@@ -10,7 +10,8 @@ import com.team2.civ.Map.MovingMapObject;
 public class GameUnit extends MovingMapObject {
 	public GameUnitData data;
 	public Player owner;
-	private int HP, AP;
+	private int HP;
+	public int AP;
 	
 	public String name;
 

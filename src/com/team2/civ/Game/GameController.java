@@ -228,7 +228,7 @@ public class GameController {
 
 		if (FOW_ON) {
 			for (GameUnit u : units) {
-				u.update(gameTime, walkableMap);
+				u.update(gameTime);
 				if (u.owner == humanPlayer) {
 					u.isSeen();
 					updateFow(u, u.data.fowRange);
@@ -463,11 +463,14 @@ public class GameController {
 
 	private void startMovement(GameUnit actor, MapObject target) {
 		endCombatTargeting();
-		actor.startMovement(findPath(actor, target, actor.owner, true, -1));
+		ArrayList<WalkableTile> path = findPath(actor, target, actor.owner, true, -1); //should limit length to ap TODO:
+		actor.AP -= path.size();
+		actor.startMovement(path);		
 	}
 
 	private void performCombat(GameUnit attacker, GameUnit target) {
 		target.takeDmg(attacker.getDmgToDeal(target.data.id));
+		attacker.AP = 0;
 	}
 
 	private void startCombatTargeting() {
@@ -550,20 +553,32 @@ public class GameController {
 			}
 		}
 
-		p.power = 0;
+		p.powerCapability = 0;
 		for (GameStaticObject so : staticObjects.values()) {
-			if (so.data.id.equals("POWERPLANT")) {
-				p.power += 10;
+			if(so.owner == p) {
+				p.powerCapability += so.data.powerGiven;
+				
+				if(so.data.id.equals("MINE")) {
+					p.metal += 50 / getDistToClosestCity(so, p);
+				}
+			}
+		}
+		
+		p.powerUsage = 0;
+		for(GameUnit u: units) {
+			if(u.owner == p) {
+				u.AP = u.data.AP;
+				p.powerUsage += u.data.powerUsage;
 			}
 		}
 	}
 
-	private int getDistToClosestCity(CoordObject obj) {
+	private int getDistToClosestCity(CoordObject obj, Player p) {
 		int smallestDist = Integer.MAX_VALUE;
 
 		for (GameStaticObject so : staticObjects.values()) {
-			if (so.data.id.equals("CITY") && so.owner == currentPlayer) {
-				int dist = getHeuristic(so.mapX, so.mapY, obj.mapX, obj.mapY);
+			if (so.data.id.equals("CITY") && so.owner == p) {
+				int dist = findPath(obj, so, p).size();
 				if (dist < smallestDist) {
 					smallestDist = dist;
 				}

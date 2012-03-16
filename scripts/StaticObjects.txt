@@ -5,6 +5,7 @@ MovementCost 1
 FoWRange 3
 Destructable false
 Capturable true
+PowerGiven 2
 
 name
 {
@@ -52,20 +53,6 @@ build
 
 ENDOBJ
 
-FLATLAND
-MovementCost 1
-ENDOBJ
-
-METAL
-MovementCost 1
-
-name
-{
-	Metal_Resource
-}
-
-ENDOBJ
-
 POWERPLANT
 MetalCost 75
 DefensiveBonus 0
@@ -73,6 +60,7 @@ MovementCost 1
 FoWRange 2
 Destructable true
 Capturable false
+PowerGiven 10
 
 name
 {
@@ -127,4 +115,31 @@ name
 	Spandau_Citadel
 }
 
+ENDOBJ
+
+MINE
+MetalCost 75
+DefensiveBonus 0
+MovementCost 1
+FoWRange 2
+Destructable false
+Capturable true
+
+name
+{
+	Cigar_Lake
+	Four_Mile
+	Sweetwater
+	White_Mesa
+	Korsan
+	Krasnokamensk
+}
+
+ENDOBJ
+
+METAL
+name
+{
+	Metal
+}
 ENDOBJ

@@ -8,13 +8,13 @@ import com.team2.civ.UI.UIEvent;
 public class GameUnitData {
 	public String id, description;
 	
-	public int metalCost, powerCost;
-	
+	public int metalCost;
 	public int HP;
 	public int AP;
 	public int baseDmg;
 	public int range;
 	public int fowRange;
+	public int powerUsage;
 	
 	public HashMap<String, Integer> dmgModifiers = new HashMap<String, Integer>();
 	public ArrayList<String> names = new ArrayList<String>();

@@ -1,13 +1,22 @@
 package com.team2.civ.AI;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 
 import com.team2.civ.Game.GameAction;
 import com.team2.civ.Game.GameController;
+import com.team2.civ.Game.GameUnit;
 import com.team2.civ.Game.Player;
 import com.team2.civ.Map.CoordObject;
 import com.team2.civ.Map.WalkableTile;
@@ -150,44 +159,6 @@ public class AI {
 			  }}
 		 return b1;	
 	}
-
-	private static int bitsToInt(boolean[] bits) {
-		int output = 0;
-		int bit = 0;
-		for (int i = bits.length - 1; i >= 0; i--) {
-			int val = bits[i] ? 1 : 0;
-			output += val * Math.pow(2, bit);
-			bit++;
-		}
-		return output;
-	}
-	
-	private static boolean[] intToBits(int in) {
-		String binaryString = Integer.toBinaryString(in);
-		char[] binaryArray = binaryString.toCharArray();
-		boolean[] boolArray = new boolean[binaryArray.length];
-		for(int i = 0; i < binaryString.length(); i++) {
-			if(binaryArray[i] == '0') {
-				boolArray[i] = false;
-			} else if(binaryArray[i] == '1') {
-				boolArray[i] = true;
-			}
-		}
-		return boolArray;
-	}
-	
-	private static byte[] boolToBytes(boolean[] bools) {
-		byte[] byteArray = new byte[bools.length / 8];
-		for(int i = 0; i < (bools.length / 8); i++) {
-			for(int j = 0; j < 8; j++) {
-				if(bools[i*8 + j])
-					byteArray[i] |= (1 << j);
-				else
-					byteArray[i] &= (1 << j);
-			}
-		}
-		return byteArray;
-	}
 	
 	private static boolean[] returnBitsSubset(int start_index, int end_index, boolean[] bits){
 		boolean[] output = new boolean[end_index - start_index + 1];
@@ -230,5 +201,123 @@ public class AI {
 		}
 		
 		return rtn;
+	}
+	
+	class ValueComparator implements Comparator {
+
+		Map base;
+
+		public ValueComparator(Map base) {
+			this.base = base;
+		}
+
+		public int compare(Object a, Object b) {
+
+			if ((Integer) base.get(a) < (Integer) base.get(b)) {
+				return 1;
+			} else if ((Integer) base.get(a) == (Integer) base.get(b)) {
+				return 0;
+			} else {
+				return -1;
+			}
+		}
+	}
+
+	private Collection<Player> getmilitaryrankings(Player p[]) {
+		HashMap<Player, Integer> temp = new HashMap<Player, Integer>();
+		for (int t = 0; t < 4; t++) {
+			int sum = 0;
+			for (GameUnit u : game.getPlayerUnits(p[t]))
+				sum += u.data.metalCost;
+			temp.put(p[t], (Integer) sum);
+		}
+
+		ValueComparator vc = new ValueComparator(temp);
+		TreeMap<Player, Integer> sortedMap = new TreeMap<Player, Integer>(vc);
+		sortedMap.putAll(temp);
+		return sortedMap.keySet();
+	}
+	
+	private static int bitsToInt(boolean[] bits) {
+		int output = 0;
+		int bit = 0;
+		for (int i = bits.length - 1; i >= 0; i--) {
+			int val = bits[i] ? 1 : 0;
+			output += val * Math.pow(2, bit);
+			bit++;
+		}
+		return output;
+	}
+	
+	//set bit to 1
+	//my_byte = my_byte | (1 << pos);
+	
+	//set bit to 0
+	//my_byte = my_byte & ~(1 << pos);
+	
+	//8 * i, where i is an integer
+	
+	//http://docs.oracle.com/javase/1.4.2/docs/api/java/io/FileOutputStream.html
+	
+	//take 8 booleans from the boolean array
+	//create a byte and set its bits to be equal to the values of the booleans
+	
+	private static byte[] boolToBytes(boolean[] bools) {
+		byte[] byteArray = new byte[bools.length / 8];
+		for (int i = 0; i < (bools.length / 8); i++) {
+			for(int j = 0; j < 8; j++) {
+				if(bools[i*8 + j])
+					byteArray[i] |= (1 << j);
+				else
+					byteArray[i] &= (1 << j);
+			}
+		}
+		return byteArray;
+	}
+	
+	private static void BytesToFile(byte[] bytes, int genomeNumber) {
+		File f = new File("genome_"+genomeNumber);
+		if(f.exists()) f.delete();
+
+		FileOutputStream out;
+		try {
+			f.createNewFile();
+			out = new FileOutputStream(f);
+			out.write(bytes);
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}	
+	}
+	
+	public void WriteSelf(int genomeNumber) {
+		BytesToFile(boolToBytes(this.genome), genomeNumber);
+	}
+	
+	private static byte[] FileToBytes(File f) {
+		byte[] byteArray = new byte[(int) f.length()];
+		
+		FileInputStream in;
+		try {
+			in = new FileInputStream(f);
+			in.read(byteArray);
+			in.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} return byteArray;
+	}
+	
+	private static boolean[] intToBits(int in) {
+		String binaryString = Integer.toBinaryString(in);
+		char[] binaryArray = binaryString.toCharArray();
+		boolean[] boolArray = new boolean[binaryArray.length];
+		for(int i = 0; i < binaryString.length(); i++) {
+			if(binaryArray[i] == '0') {
+				boolArray[i] = false;
+			} else if(binaryArray[i] == '1') {
+				boolArray[i] = true;
+			}
+		}
+		return boolArray;
 	}
 }

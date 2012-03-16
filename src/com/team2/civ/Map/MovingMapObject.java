@@ -2,7 +2,6 @@ package com.team2.civ.Map;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import com.team2.civ.Data.ResNotFoundException;
@@ -49,10 +48,10 @@ public class MovingMapObject extends MapObject {
 		movingAnim = new Animation(a);*/
 	}
 	
-	public void update(long gameTime, HashMap<CoordObject, WalkableTile> map) {
+	public void update(long gameTime) {
 		if(isMoving) {
 			//movingAnim.update(img, gameTime);
-			updateMovement(map);
+			updateMovement();
 		}
 	}
 
@@ -72,7 +71,7 @@ public class MovingMapObject extends MapObject {
 		}
 	}
 	
-	private void updateMovement(HashMap<CoordObject, WalkableTile> map) {
+	private void updateMovement() {
 		if(speedX == 0 && speedY == 0) {
 			setPos(path.get(path.size() - 1).mapX, path.get(path.size() - 1).mapY);
 

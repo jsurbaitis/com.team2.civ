@@ -10,6 +10,8 @@ public class GameStaticObjectData {
 	public int metalCost, moveCost;
 	public int fowRange;
 	public int defensiveBonus;
+	public int powerGiven;
+	
 	public ArrayList<String> names = new ArrayList<String>();
 	public ArrayList<String> buildIDs = new ArrayList<String>();
 

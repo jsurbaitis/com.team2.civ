@@ -4,6 +4,8 @@ AP 2
 BaseDmg 0
 Range 2
 FoWRange 2
+PowerUsage 1
+MetalCost 50
 
 DmgModifier
 {
@@ -54,6 +56,8 @@ AP 2
 BaseDmg 20
 Range 2
 FoWRange 2
+PowerUsage 2 
+MetalCost 50
 
 DmgModifier
 {
@@ -72,8 +76,10 @@ TANK
 HP 300
 AP 2
 BaseDmg 30
-Range 4
+Range 3
 FoWRange 3
+PowerUsage 2
+MetalCost 100
 
 DmgModifier
 {
@@ -94,6 +100,8 @@ AP 5
 BaseDmg 30
 Range 2
 FoWRange 5
+PowerUsage 4
+MetalCost 200
 
 DmgModifier
 {

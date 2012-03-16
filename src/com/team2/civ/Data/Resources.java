@@ -73,6 +73,7 @@ public class Resources {
 		else if(varName.equals("FoWRange")) u.fowRange = in.nextInt();
 		else if(varName.equals("Destructible")) u.destructible = in.nextBoolean();
 		else if(varName.equals("Capturable")) u.capturable = in.nextBoolean();
+		else if(varName.equals("PowerGiven")) u.powerGiven = in.nextInt();
 	}
 	
 	private void parseStaticObjectname(Scanner in, GameStaticObjectData u) throws IOException {
@@ -148,7 +149,7 @@ public class Resources {
 		else if(varName.equals("Range")) u.range = in.nextInt();
 		else if(varName.equals("FoWRange")) u.fowRange = in.nextInt();
 		else if(varName.equals("MetalCost")) u.metalCost = in.nextInt();
-		else if(varName.equals("PowerCost")) u.powerCost = in.nextInt();
+		else if(varName.equals("PowerUsage")) u.powerUsage = in.nextInt();
 	}
 
 	private void parseUnitDmgModifiers(Scanner in, GameUnitData u) throws IOException {
