@@ -34,8 +34,8 @@ public class AI {
 	//tolerances:
 	final int init_st_dev_strat_loc;
 	int current_st_dev_strat_loc;
-	final int init_combat_pcent_win_chance;
-	int current_combat_pcent_win_chance;
+	final float init_combat_pcent_win_chance;
+	float current_combat_pcent_win_chance;
 	final int init_queue_length;
 	final int init_resource_threshold;
 	final int init_turns_threshold;
@@ -49,7 +49,7 @@ public class AI {
 		walkableMap.get(new CoordObject(0, 0));
 		this.init_st_dev_strat_loc = (int) this.genome[0];
 		this.current_st_dev_strat_loc = this.init_st_dev_strat_loc;
-		this.init_combat_pcent_win_chance = (int) this.genome[1];
+		this.init_combat_pcent_win_chance = ((float) this.genome[1]) / 7;
 		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
 		this.init_queue_length = (int) this.genome[2];
 		this.init_resource_threshold = ((int) this.genome[3]) * 40;
@@ -72,7 +72,7 @@ public class AI {
 		}
 		this.init_st_dev_strat_loc = (int) this.genome[0];
 		this.current_st_dev_strat_loc = this.init_st_dev_strat_loc;
-		this.init_combat_pcent_win_chance = (int) this.genome[1];
+		this.init_combat_pcent_win_chance = ((float) this.genome[1]) / 7;
 		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
 		this.init_queue_length = (int) this.genome[2];
 		this.init_resource_threshold = ((int) this.genome[3]) * 40;
@@ -86,7 +86,7 @@ public class AI {
 		this.genome = FileToBytes(f);
 		this.init_st_dev_strat_loc = (int) this.genome[0];
 		this.current_st_dev_strat_loc = this.init_st_dev_strat_loc;
-		this.init_combat_pcent_win_chance = (int) this.genome[1];
+		this.init_combat_pcent_win_chance = ((float) this.genome[1]) / 7;
 		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
 		this.init_queue_length = (int) this.genome[2];
 		this.init_resource_threshold = ((int) this.genome[3]) * 40;
