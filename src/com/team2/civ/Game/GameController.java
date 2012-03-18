@@ -74,7 +74,7 @@ public class GameController {
 	private Vector<GameUnit> units = new Vector<GameUnit>();
 	private HashMap<CoordObject, GameStaticObject> staticObjects = new HashMap<CoordObject, GameStaticObject>();
 
-	private Vector<MapObjectImage> highDraw = new Vector<MapObjectImage>();
+	private Vector<MapObjectImage> unitDraw = new Vector<MapObjectImage>();
 	private ArrayList<MapObjectImage> lowDraw = new ArrayList<MapObjectImage>();
 
 	public List<Player> players = new ArrayList<Player>();
@@ -336,8 +336,8 @@ public class GameController {
 		for (MapObjectImage i : lowDraw)
 			i.draw(g, (int) (offsetX), (int) (offsetY), scale);
 
-		Collections.sort(highDraw);
-		for (MapObjectImage i : highDraw)
+		Collections.sort(unitDraw);
+		for (MapObjectImage i : unitDraw)
 			i.draw(g, (int) (offsetX), (int) (offsetY), scale);
 
 		g.scale(1 / scale, 1 / scale);
@@ -490,10 +490,13 @@ public class GameController {
 		lowDraw.remove(target);
 		staticObjects.remove(target);
 		performer.metal += target.data.metalCost * 0.2;
+		target.owner.powerCapability -= target.data.powerGiven;
 	}
 
 	private void captureObject(GameStaticObject target, Player performer) {
+		target.owner.powerCapability -= target.data.powerGiven;
 		target.owner = performer;
+		target.owner.powerCapability += target.data.powerGiven;
 	}
 
 	private void startMovement(GameUnit actor, MapObject target) {
@@ -547,12 +550,14 @@ public class GameController {
 	}
 
 	public void destroyUnit(GameUnit u) {
-		synchronized (highDraw) {
-			highDraw.remove(u.getImage());
+		u.owner.metal += u.data.metalCost * 0.25;
+		u.owner.powerUsage -= u.data.powerUsage;
+		
+		synchronized (unitDraw) {
+			unitDraw.remove(u.getImage());
 		}
 
 		units.remove(u);
-		u.owner.metal += u.data.metalCost * 0.25;
 	}
 
 	private void fortifyUnit(GameUnit u) {
@@ -621,10 +626,10 @@ public class GameController {
 			}
 		}
 
-		p.powerCapability = 0;
+		//p.powerCapability = 0;
 		for (GameStaticObject so : staticObjects.values()) {
 			if (so.owner == p) {
-				p.powerCapability += so.data.powerGiven;
+				//p.powerCapability += so.data.powerGiven;
 
 				if (so.data.id.equals("MINE")) {
 					p.metal += 50 / getDistToClosestCity(so, p);
@@ -632,11 +637,11 @@ public class GameController {
 			}
 		}
 
-		p.powerUsage = 0;
+		//p.powerUsage = 0;
 		for (GameUnit u : units) {
 			if (u.owner == p) {
 				u.AP = u.data.AP;
-				p.powerUsage += u.data.powerUsage;
+				//p.powerUsage += u.data.powerUsage;
 
 				GameStaticObject target = staticObjects.get(u);
 				if (target != null && target.owner != p
@@ -649,14 +654,12 @@ public class GameController {
 	public int getDistToClosestCity(CoordObject obj, Player p) {
 		int smallestDist = Integer.MAX_VALUE;
 
-		for (GameStaticObject so : staticObjects.values()) {
-			if (so.data.id.equals("CITY") && so.owner == p) {
-				List<WalkableTile> path = findPath(obj, so, p);
-				if(path != null) {
-					int dist = path.size();
-					if (dist < smallestDist) {
-						smallestDist = dist;
-					}
+		for (GameStaticObject so : getPlayerCities(p)) {
+			List<WalkableTile> path = findPath(obj, so, p);
+			if(path != null) {
+				int dist = path.size();
+				if (dist < smallestDist) {
+					smallestDist = dist;
 				}
 			}
 		}
@@ -664,39 +667,56 @@ public class GameController {
 		return smallestDist;
 	}
 
+	public GameStaticObject getClosestCity(Player agent, Player target) {
+		int smallestDist = Integer.MAX_VALUE;
+		GameStaticObject closest = null;
+		
+		for(GameStaticObject c1: getPlayerCities(agent)) {
+			for (GameStaticObject c2 : getPlayerCities(target)) {
+				List<WalkableTile> path = findPath(c1, c2, agent);
+				if(path != null) {
+					int dist = path.size();
+					if (dist < smallestDist) {
+						smallestDist = dist;
+						closest = c2;
+					}
+				}
+			}
+		}
+		
+		return closest;
+	}
+
 	private void addUnitToPlayer(Player p, CoordObject location,
 			GameUnitData data) throws ResNotFoundException {
-		if (p.metal >= data.metalCost) {
-			p.metal -= data.metalCost;
+		p.metal -= data.metalCost;
+		p.powerUsage += data.powerUsage;
 
-			GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res,
-					p, data);
-			highDraw.add(u.getImage());
-			units.add(u);
+		GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res,
+				p, data);
+		unitDraw.add(u.getImage());
+		units.add(u);
 
-			target = u;
-			ui.showUnitInfo((GameUnit) target);
-		}
+		target = u;
+		ui.showUnitInfo((GameUnit) target);
 	}
 
 	private void addStaticObjToPlayer(Player p, GameUnit unit,
 			GameStaticObjectData data) throws ResNotFoundException {
 		p.metal -= data.metalCost;
+		p.powerCapability += data.powerGiven;
 
 		GameStaticObject so = new GameStaticObject(target.mapX, target.mapY,
 				res.getImage(data.id), res.getImage(data.id + "_fow"), p, data);
 		staticObjects.put(so, so);
 		walkableMap.put(so, so);
 		lowDraw.add(so.getImage());
+		Collections.sort(lowDraw);
 
 		target = so;
 		ui.showStaticObjectInfo((GameStaticObject) target);
 
-		synchronized (highDraw) {
-			highDraw.remove(unit.getImage());
-		}
-
-		units.remove(unit);
+		destroyUnit(unit);
 	}
 
 	private boolean addObjectToPlayer(Player p, CoordObject location,
@@ -719,7 +739,8 @@ public class GameController {
 		} else if (isUnitData(objId)) {
 			GameStaticObject so = (GameStaticObject) location;
 			GameUnitData data = res.getUnit(objId);
-			if (so.data.buildIDs.contains(objId) && p.metal >= data.metalCost) {
+			if (so.data.buildIDs.contains(objId) && p.metal >= data.metalCost
+					&& (p.powerCapability - p.powerUsage) >= data.powerUsage) {
 				addUnitToPlayer(p, location, data);
 				return true;
 			}
@@ -912,14 +933,15 @@ public class GameController {
 		ArrayList<WalkableTile> returnList = new ArrayList<WalkableTile>();
 
 		for (WalkableTile tile : walkableMap.values()) {
+			boolean canWalkOn = true;
 			for (GameUnit u : units) {
 				if (u.mapX == tile.mapX && u.mapY == tile.mapY) {
-					if (owner == null || u.owner == owner)
-						nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
-				} else {
-					nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
+					if (u.owner != owner)
+						canWalkOn = false;
 				}
 			}
+			if(canWalkOn)
+				nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
 		}
 		nodeList.put(startObj, new PathNode(startObj.mapX, startObj.mapY));
 
