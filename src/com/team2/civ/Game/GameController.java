@@ -499,8 +499,8 @@ public class GameController {
 	private void startMovement(GameUnit actor, MapObject target) {
 		endCombatTargeting();
 		List<WalkableTile> path = findPath(actor, target, actor.owner, true,
-				actor.AP);
-		actor.AP -= path.size();
+				actor.AP + 1);
+		actor.AP -= path.size() - 1;
 
 		if (!Team2Civ.AI_MODE)
 			actor.startMovement(path);
@@ -651,9 +651,12 @@ public class GameController {
 
 		for (GameStaticObject so : staticObjects.values()) {
 			if (so.data.id.equals("CITY") && so.owner == p) {
-				int dist = findPath(obj, so, p).size();
-				if (dist < smallestDist) {
-					smallestDist = dist;
+				List<WalkableTile> path = findPath(obj, so, p);
+				if(path != null) {
+					int dist = path.size();
+					if (dist < smallestDist) {
+						smallestDist = dist;
+					}
 				}
 			}
 		}
@@ -701,11 +704,17 @@ public class GameController {
 		if (isStaticData(objId)) {
 			GameUnit unit = (GameUnit) location;
 			GameStaticObjectData data = res.getStaticObject(objId);
-			if (unit.data.buildIDs.contains(objId)
-					&& staticObjects.get(unit) == null
-					&& p.metal >= data.metalCost) {
-				addStaticObjToPlayer(p, unit, data);
-				return true;
+			if(unit.data.buildIDs.contains(objId) && p.metal >= data.metalCost) {
+				if(!objId.equals("MINE") && staticObjects.get(unit) == null) {
+					addStaticObjToPlayer(p, unit, data);
+					return true;
+				} else if(objId.equals("MINE")) {
+					GameStaticObject so = staticObjects.get(unit);
+					if(so != null && so.data.id.equals("METAL")) {
+						addStaticObjToPlayer(p, unit, data);
+						return true;
+					}
+				}
 			}
 		} else if (isUnitData(objId)) {
 			GameStaticObject so = (GameStaticObject) location;
@@ -994,8 +1003,9 @@ public class GameController {
 		if (lengthLimit == -1)
 			return returnList;
 
-		int index = returnList.size() - 1;
-		return returnList.subList(index - lengthLimit, index);
+		int index = returnList.size();
+		int fromIndex = index - lengthLimit;
+		return returnList.subList((fromIndex<0)?0:fromIndex, index);
 	}
 
 	private static int getTentativeScore(int x, int y, int tx, int ty) {
