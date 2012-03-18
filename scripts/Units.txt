@@ -34,6 +34,14 @@ name
 	Luke
 	Gregory
 	Greg
+	Hank
+	Carl
+	Roy
+	Torbald
+	Jacque
+	Craig
+	Sherman
+	Clark
 }
 
 UIActions
@@ -46,6 +54,7 @@ build
     CITY
     POWERPLANT
     FORTIFICATION
+    MINE
 }
 ENDUNIT
 
@@ -76,6 +85,7 @@ name
 	SPC._Bottino
 	SPC._Markson
 	SPC._Rodriguez
+	SPC._Sisto
 }
 
 UIActions
@@ -125,7 +135,7 @@ UIActions
 ENDUNIT
 
 AIR
-HP 100
+HP 120
 AP 5
 BaseDmg 30
 Range 2
