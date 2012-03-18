@@ -39,7 +39,7 @@ public class AI {
 	final int init_resource_threshold;
 	final int init_turns_threshold;
 	int current_turns_threshold;
-	boolean[] default_behavior_code = new boolean[action_bits];
+	final byte default_behavior_code;
 
 	public AI(GameController game) {
 		this.game = game;
@@ -51,10 +51,10 @@ public class AI {
 		this.init_combat_pcent_win_chance = (int) this.genome[1];
 		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
 		this.init_queue_length = (int) this.genome[2];
-		this.init_resource_threshold = (int) this.genome[3];
-		this.init_turns_threshold = bitsToInt(returnBitsSubset(15,20,this.genome));
+		this.init_resource_threshold = ((int) this.genome[3]) * 40;
+		this.init_turns_threshold = ((int) this.genome[4]) * 10;
 		this.current_turns_threshold = this.init_turns_threshold;
-		this.default_behavior_code = returnBitsSubset(21,25,this.genome);
+		this.default_behavior_code = genome[5];
 	}
 
 	public AI(GameController game, AI parent1, AI parent2){
@@ -66,20 +66,33 @@ public class AI {
 		} else {
 			this.genome = mutation(mate2(parent1.genome,parent2.genome));
 		}
-		this.init_st_dev_strat_loc = bitsToInt(returnBitsSubset(0,1,this.genome));
+		this.init_st_dev_strat_loc = (int) this.genome[0];
 		this.current_st_dev_strat_loc = this.init_st_dev_strat_loc;
-		this.init_combat_pcent_win_chance = bitsToInt(returnBitsSubset(2,5,this.genome));
+		this.init_combat_pcent_win_chance = (int) this.genome[1];
 		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
-		this.init_queue_length = bitsToInt(returnBitsSubset(6,8,this.genome));
-		this.init_resource_threshold = bitsToInt(returnBitsSubset(9,14,this.genome));
-		this.init_turns_threshold = bitsToInt(returnBitsSubset(15,20,this.genome));
+		this.init_queue_length = (int) this.genome[2];
+		this.init_resource_threshold = ((int) this.genome[3]) * 40;
+		this.init_turns_threshold = ((int) this.genome[4]) * 10;
 		this.current_turns_threshold = this.init_turns_threshold;
-		this.default_behavior_code = returnBitsSubset(21,25,this.genome);
+		this.default_behavior_code = genome[5];
+	}
+	
+	public AI(GameController game, File f){
+		this.game = game;
+		this.genome = FileToBytes(f);
+		this.init_st_dev_strat_loc = (int) this.genome[0];
+		this.current_st_dev_strat_loc = this.init_st_dev_strat_loc;
+		this.init_combat_pcent_win_chance = (int) this.genome[1];
+		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
+		this.init_queue_length = (int) this.genome[2];
+		this.init_resource_threshold = ((int) this.genome[3]) * 40;
+		this.init_turns_threshold = ((int) this.genome[4]) * 10;
+		this.current_turns_threshold = this.init_turns_threshold;
+		this.default_behavior_code = genome[5];
 	}
 	
 	private static byte[] generateNewGenome() {
-		byte[] genome = new byte[6 + (int) Math.pow(2, condition_bits)
-				* action_points];
+		byte[] genome = new byte[(int) (6 + (((int) Math.pow(2, condition_bits) * action_points) / 1.6))];//1.6 may need to be changed later, but should correspond adequately to 5bits/action code
 		Random rng = new SecureRandom();
 		rng.nextBytes(genome);
 		//tolerances: 
