@@ -1,7 +1,6 @@
 package com.team2.civ.Map;
 
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.team2.civ.Data.ResNotFoundException;
@@ -48,6 +47,10 @@ public class MovingMapObject extends MapObject {
 		movingAnim = new Animation(a);*/
 	}
 	
+	public boolean isMoving() {
+		return isMoving;
+	}
+	
 	public void update(long gameTime) {
 		if(isMoving) {
 			//movingAnim.update(img, gameTime);
@@ -55,8 +58,10 @@ public class MovingMapObject extends MapObject {
 		}
 	}
 
-	public void startMovement(ArrayList<WalkableTile> path) {
+	public void startMovement(List<WalkableTile> path) {
 		if(!isMoving) {
+			if(path.size() == 0) return;
+			
 			this.path = path;
 			if(path != null) {
 				//movingAnim.reset();

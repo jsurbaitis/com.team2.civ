@@ -1,6 +1,6 @@
 CITY
-MetalCost 100
-DefensiveBonus 50
+MetalCost 300
+DefensiveBonus 25
 MovementCost 1
 FoWRange 3
 Destructable false
@@ -47,17 +47,16 @@ name
 
 build
 {
-    WORKER  
-    ANTIAIR
+    WORKER
     TANK
     AIR
+    ANTIAIR
 }
 
 ENDOBJ
 
 POWERPLANT
-MetalCost 75
-DefensiveBonus 0
+MetalCost 100
 MovementCost 1
 FoWRange 2
 Destructable true
@@ -87,7 +86,7 @@ ENDOBJ
 
 FORTIFICATION
 MetalCost 50
-DefensiveBonus 100
+DefensiveBonus 50
 MovementCost 1
 FoWRange 3
 Destructable false
@@ -121,7 +120,6 @@ ENDOBJ
 
 MINE
 MetalCost 75
-DefensiveBonus 0
 MovementCost 1
 FoWRange 2
 Destructable false

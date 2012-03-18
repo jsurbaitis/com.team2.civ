@@ -8,12 +8,16 @@ import com.team2.civ.Data.Resources;
 import com.team2.civ.Map.MovingMapObject;
 
 public class GameUnit extends MovingMapObject {
+	private static final int FORTIFY_BASE = 5;
+	
 	public GameUnitData data;
 	public Player owner;
 	private int HP;
 	public int AP;
 	
 	public String name;
+	
+	private int fortifyBonus;
 
 	public GameUnit(int mapX, int mapY, String imgId, Resources res, Player owner, GameUnitData data) throws ResNotFoundException {
 		super(mapX, mapY, imgId, res, owner);
@@ -21,10 +25,28 @@ public class GameUnit extends MovingMapObject {
 		this.owner = owner;
 		this.data = data;
 		HP = data.HP;
+		AP = data.AP;
 		
 		Random rnd = new Random();
 		name = data.names.get(rnd.nextInt(data.names.size()));
-	} 
+	}
+	
+	public boolean isFortified() {
+		return fortifyBonus > 0;
+	}
+	
+	public void update() {
+		if(isFortified() && fortifyBonus < 25)
+			fortifyBonus += FORTIFY_BASE;
+	}
+	
+	public void fortify() {
+		if(!isFortified()) fortifyBonus = FORTIFY_BASE;
+	}
+	
+	public void unfortify() {
+		fortifyBonus = 0;
+	}
 	
 	public int getHP() {
 		return HP;
@@ -39,7 +61,7 @@ public class GameUnit extends MovingMapObject {
 	}
 
 	public void takeDmg(int dmg) {
-		HP -= dmg;
+		HP -= dmg * (1 - fortifyBonus / 100);
 
 		if (HP <= 0)
 			die();
