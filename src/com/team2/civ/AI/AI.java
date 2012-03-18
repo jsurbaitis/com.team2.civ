@@ -27,10 +27,9 @@ public class AI {
 	final static int tolerance_bits = 26;
 	final static int action_points = 5;
 	final static int action_bits = 5;
-	final boolean[] genome;
+	final byte[] genome;
 	
 	final boolean[] conditions = new boolean[condition_bits];
-	final byte[] byteGenome = new byte[124];
 	//tolerances:
 	final int init_st_dev_strat_loc;
 	int current_st_dev_strat_loc;
@@ -47,12 +46,12 @@ public class AI {
 		this.genome = generateNewGenome();
 		HashMap<CoordObject, WalkableTile> walkableMap = game.getWalkableTilesCopy();
 		walkableMap.get(new CoordObject(0, 0));
-		this.init_st_dev_strat_loc = bitsToInt(returnBitsSubset(0,1,this.genome));
+		this.init_st_dev_strat_loc = (int) this.genome[0];
 		this.current_st_dev_strat_loc = this.init_st_dev_strat_loc;
-		this.init_combat_pcent_win_chance = bitsToInt(returnBitsSubset(2,5,this.genome));
+		this.init_combat_pcent_win_chance = (int) this.genome[1];
 		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
-		this.init_queue_length = bitsToInt(returnBitsSubset(6,8,this.genome));
-		this.init_resource_threshold = bitsToInt(returnBitsSubset(9,14,this.genome));
+		this.init_queue_length = (int) this.genome[2];
+		this.init_resource_threshold = (int) this.genome[3];
 		this.init_turns_threshold = bitsToInt(returnBitsSubset(15,20,this.genome));
 		this.current_turns_threshold = this.init_turns_threshold;
 		this.default_behavior_code = returnBitsSubset(21,25,this.genome);
@@ -78,27 +77,18 @@ public class AI {
 		this.default_behavior_code = returnBitsSubset(21,25,this.genome);
 	}
 	
-	private static boolean[] generateNewGenome() {
-		boolean[] actions = new boolean[(int) Math.pow(2, condition_bits)
-				* action_points * action_bits];
+	private static byte[] generateNewGenome() {
+		byte[] genome = new byte[6 + (int) Math.pow(2, condition_bits)
+				* action_points];
 		Random rng = new SecureRandom();
-		for (int i = 0; i < actions.length; i++) {
-			actions[i] = rng.nextBoolean();
-			System.out.print(actions[i]);
-		}
-		boolean[] tolerances = new boolean[tolerance_bits]; //tolerance bits come first!
-		for (int i = 0; i < tolerances.length; i++) {
-			tolerances[i] = rng.nextBoolean();
-			System.out.print(tolerances[i]);
-		}
-		System.out.println();
-		boolean[] genome = new boolean[tolerances.length + actions.length];
-		for (int i = 0; i < tolerances.length; i++) {
-			genome[i] = tolerances[i];
-		}
-		for (int i = 0; i < actions.length; i++) {
-			genome[i + tolerances.length - 1] = actions[i];
-		}
+		rng.nextBytes(genome);
+		//tolerances: 
+		genome[0] = (byte) rng.nextInt(3); //stdev stratloc
+		genome[1] = (byte) rng.nextInt(15); //win%tol
+		genome[2] = (byte) rng.nextInt(7); //max queue length
+		genome[3] = (byte) rng.nextInt(63); //banked resources (*40 later)
+		genome[4] = (byte) rng.nextInt(63); //turns left (*10 later)
+		genome[5] = (byte) rng.nextInt(31); //default action
 		return genome;
 	}
 
@@ -192,7 +182,7 @@ public class AI {
 		byte rtn = 0;
 		
 		for(int i = 0; i < 5; i++) {
-			rtn |= (byteGenome[byteIndex] << bitIndex);
+			rtn |= (this.genome[byteIndex] << bitIndex);
 			bitIndex++;
 			if(bitIndex > 7) {
 				bitIndex = 0;
@@ -291,12 +281,11 @@ public class AI {
 	}
 	
 	public void WriteSelf(int genomeNumber) {
-		BytesToFile(boolToBytes(this.genome), genomeNumber);
+		BytesToFile(this.genome, genomeNumber);
 	}
 	
 	private static byte[] FileToBytes(File f) {
 		byte[] byteArray = new byte[(int) f.length()];
-		
 		FileInputStream in;
 		try {
 			in = new FileInputStream(f);
@@ -320,4 +309,5 @@ public class AI {
 		}
 		return boolArray;
 	}
+
 }
