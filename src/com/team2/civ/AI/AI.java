@@ -105,10 +105,10 @@ public class AI {
 		return genome;
 	}
 
-	private static boolean[] mate1(boolean[] b1, boolean[] b2) {
+private static byte[] mate1(byte[] b1, byte[] b2) {
 		Random random = new SecureRandom();
 		boolean rng = random.nextBoolean();
-		boolean temp [] = new boolean[b1.length];
+		byte temp[] = new byte[b1.length];
 		int len = b1.length % 2;
 		if (rng) {
 			for (int i = 0; i < len; i++) {
@@ -123,91 +123,80 @@ public class AI {
 		}
 		return temp;
 	}
-	
-	private static boolean[] mate2(boolean[] b1, boolean[] b2) {
+
+	private static byte[] mate2(byte[] b1, byte[] b2) {
 		Random random = new SecureRandom();
 		boolean rng = random.nextBoolean();
-		
+
 		Random random1 = new SecureRandom();
 		int rng2 = random1.nextInt(b1.length);
-		
+
 		int a = b1.length % 5;
 		rng2 = random.nextInt(a);
-		boolean temp2 [] = new boolean[b1.length];
+		byte temp2[] = new byte[b1.length];
 		if (rng) {
-			for (int i = 0; i < rng2*5; i++) {
+			for (int i = 0; i < rng2 * 5; i++) {
 				temp2[i] = b1[i];
-				temp2[rng2*5 + i] = b2[rng2*5 + i];
+				temp2[rng2 * 5 + i] = b2[rng2 * 5 + i];
 			}
 		} else {
-			for (int i = 0; i < rng2*5; i++) {
+			for (int i = 0; i < rng2 * 5; i++) {
 				temp2[i] = b2[i];
-				temp2[rng2*5 + i] = b1[rng2*5 + i];
+				temp2[rng2 * 5 + i] = b1[rng2 * 5 + i];
 			}
 		}
 		return temp2;
 	}
-	
-	private static boolean[] mutation(boolean[] b1) {
+
+	private static void mutation(byte[] b1) {
 		Random random = new SecureRandom();
-		int rng3 = random.nextInt(19);
-		boolean temp3 [] = new boolean[b1.length];
-		  if (rng3 == 0){
-			  for(int i = 0; i < b1.length; i++){
-				  int rng4 = random.nextInt(9);
-				  if (rng4 == 0)
-					  temp3[i] = random.nextBoolean();
-					  else  temp3[i] = b1[i];
-	
-			  }}
-		 return b1;	
-	}
-	
-	private static boolean[] returnBitsSubset(int start_index, int end_index, boolean[] bits){
-		boolean[] output = new boolean[end_index - start_index + 1];
-		for (int i = start_index; i <= end_index; i++){
-			output[i] = bits[i];
-		}
-		return output;
-	}
-	
-	private boolean[][] getResponseCodes(boolean[] env_vars) {
-		boolean[][] responses = new boolean[action_points][action_bits];
-		int index = tolerance_bits + (bitsToInt(env_vars) * action_points * action_bits) ;
-		for (int i = 0; i < action_points; i++){
-			for (int j = 0; j < action_bits; j++){
-				responses[i][j] = this.genome[index];
-				index++;
+		int rng = random.nextInt(19);
+
+		if (rng == 0) {
+			for (int i = 0; i < b1.length; i++) {
+				rng = random.nextInt(19);
+				if(rng == 0)
+					b1[i] = (byte) random.nextInt();
 			}
+		}
+	}
+
+	private byte[] getResponseCodes(boolean[] env_vars) {
+		byte[] responses = new byte[action_points];
+		int index = bitsToInt(env_vars) * action_points;
+		for (int i = 0; i < action_points; i++) {
+			responses[i] = getFiveBits(index + i);
 		}
 		return responses;
 	}
-	
-	public ArrayList<GameAction> perform(List<GameAction> actions, Player p){
+
+	public ArrayList<GameAction> perform(List<GameAction> actions, Player p) {
 		ArrayList<GameAction> output = new ArrayList<GameAction>();
-		output.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN,p));
+		output.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN, p));
 		return output;
 	}
-	
+
 	private byte getFiveBits(int index) {
 		int bitIndex = (index * 5) % 8;
-		int byteIndex = (index * 5) / 8;
+		int byteIndex = (index * 5) / 8 + 6;
 		byte rtn = 0;
-		
-		for(int i = 0; i < 5; i++) {
+
+		for (int i = 0; i < 5; i++) {
 			rtn |= (this.genome[byteIndex] << bitIndex);
 			bitIndex++;
-			if(bitIndex > 7) {
+			if (bitIndex > 7) {
 				bitIndex = 0;
 				byteIndex++;
 			}
 		}
-		
+
 		return rtn;
 	}
-	
+
+	@SuppressWarnings("rawtypes")
 	class ValueComparator implements Comparator {
 
+		@SuppressWarnings("rawtypes")
 		Map base;
 
 		public ValueComparator(Map base) {
@@ -240,7 +229,7 @@ public class AI {
 		sortedMap.putAll(temp);
 		return sortedMap.keySet();
 	}
-	
+
 	private static int bitsToInt(boolean[] bits) {
 		int output = 0;
 		int bit = 0;
@@ -251,25 +240,25 @@ public class AI {
 		}
 		return output;
 	}
-	
-	//set bit to 1
-	//my_byte = my_byte | (1 << pos);
-	
-	//set bit to 0
-	//my_byte = my_byte & ~(1 << pos);
-	
-	//8 * i, where i is an integer
-	
-	//http://docs.oracle.com/javase/1.4.2/docs/api/java/io/FileOutputStream.html
-	
-	//take 8 booleans from the boolean array
-	//create a byte and set its bits to be equal to the values of the booleans
-	
+
+	// set bit to 1
+	// my_byte = my_byte | (1 << pos);
+
+	// set bit to 0
+	// my_byte = my_byte & ~(1 << pos);
+
+	// 8 * i, where i is an integer
+
+	// http://docs.oracle.com/javase/1.4.2/docs/api/java/io/FileOutputStream.html
+
+	// take 8 booleans from the boolean array
+	// create a byte and set its bits to be equal to the values of the booleans
+
 	private static byte[] boolToBytes(boolean[] bools) {
 		byte[] byteArray = new byte[bools.length / 8];
 		for (int i = 0; i < (bools.length / 8); i++) {
-			for(int j = 0; j < 8; j++) {
-				if(bools[i*8 + j])
+			for (int j = 0; j < 8; j++) {
+				if (bools[i * 8 + j])
 					byteArray[i] |= (1 << j);
 				else
 					byteArray[i] &= (1 << j);
@@ -277,10 +266,11 @@ public class AI {
 		}
 		return byteArray;
 	}
-	
+
 	private static void BytesToFile(byte[] bytes, int genomeNumber) {
-		File f = new File("genome_"+genomeNumber);
-		if(f.exists()) f.delete();
+		File f = new File("genome_" + genomeNumber);
+		if (f.exists())
+			f.delete();
 
 		FileOutputStream out;
 		try {
@@ -290,13 +280,13 @@ public class AI {
 			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}	
+		}
 	}
-	
+
 	public void WriteSelf(int genomeNumber) {
 		BytesToFile(this.genome, genomeNumber);
 	}
-	
+
 	private static byte[] FileToBytes(File f) {
 		byte[] byteArray = new byte[(int) f.length()];
 		FileInputStream in;
@@ -306,21 +296,21 @@ public class AI {
 			in.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-		} return byteArray;
+		}
+		return byteArray;
 	}
-	
+
 	private static boolean[] intToBits(int in) {
 		String binaryString = Integer.toBinaryString(in);
 		char[] binaryArray = binaryString.toCharArray();
 		boolean[] boolArray = new boolean[binaryArray.length];
-		for(int i = 0; i < binaryString.length(); i++) {
-			if(binaryArray[i] == '0') {
+		for (int i = 0; i < binaryString.length(); i++) {
+			if (binaryArray[i] == '0') {
 				boolArray[i] = false;
-			} else if(binaryArray[i] == '1') {
+			} else if (binaryArray[i] == '1') {
 				boolArray[i] = true;
 			}
 		}
 		return boolArray;
 	}
-
 }
