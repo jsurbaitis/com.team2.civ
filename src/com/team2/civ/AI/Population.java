@@ -29,7 +29,7 @@ public class Population {
 	
 	public void populate(){
 		for (int i = 0; i < genomes.length; i++){
-			genomes[i] = new AI(null);
+			genomes[i] = new AI(this.game);
 			fitness.put(genomes[i], 0);
 		}
 	}
@@ -103,6 +103,7 @@ public class Population {
 	    		j++;
 	    	}
 	    }
+	    this.genomes = newAI;
 	}
 	
 	public void writeAIs(){
