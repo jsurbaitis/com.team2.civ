@@ -11,7 +11,7 @@ public class Population {
 	private AI[] genomes;
 	private HashMap<AI,Integer> fitness = new HashMap<AI, Integer>();
 	private HashMap<AI,Integer> times_used= new HashMap<AI, Integer>();
-	private int fitness_level = 0;
+	private double fitness_level = 0;
 	
 	public Population(int pop_size, GameController gc){
 		population_size = pop_size;
@@ -80,6 +80,11 @@ public class Population {
 	}
 	
 	public void cullHerd(){
+		double fitsum = 0;
+		for (Integer i : fitness.values()){
+			fitsum += i;
+		}
+		this.fitness_level = fitsum / fitness.values().size();
 		AI[] newAI = new AI[population_size];
 		int j = 0;
 		for (int i = 0; i < genomes.length; i++){
@@ -101,5 +106,10 @@ public class Population {
 	}
 	
 	public void writeAIs(){
+		int index = 0;
+		for (AI ai : this.genomes){
+			ai.WriteSelf(index);
+			index++;
+		}
 	}
 }
