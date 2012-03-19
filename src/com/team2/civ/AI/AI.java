@@ -427,6 +427,77 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 				
 	}
 	
+	
+	private GameAction parseActionCode(byte b, Player p) throws Exception{
+		if (b == SEIZE_STRATEGIC_LOCATION){
+			return this.SeizeStrategicLocation(p);
+		} else if (b == SEIZE_RESOURCE){
+			return this.SeizeResource();
+		} else if (b == ATTACK_PLAYER_1){
+			return this.AttackPlayer1(p);
+		} else if (b == ATTACK_PLAYER_2){
+			return this.AttackPlayer2(p);
+		} else if (b == ATTACK_PLAYER_3) {
+			return this.AttackPlayer3(p);
+		} else if (b == ATTACK_STRONGEST_MILITARY) {
+			return this.AttackStrongestMilitary(p);
+		} else if (b == ATTACK_STRONGEST_ECONOMY) {
+			return this.AttackStrongestEconomy(p);
+		} else if (b == ATTACK_WEAKEST_MILITARY) {
+			return this.AttackWeakestMilitary(p);
+		} else if (b == ATTACK_WEAKEST_ECONOMY) {
+			return this.AttackWeakestEconomy(p);
+		} else if (b == HARASS_PLAYER_1) {
+			return this.HarassPlayer1(p);
+		} else if (b == HARASS_PLAYER_2) {
+			return this.HarassPlayer2(p);
+		} else if (b == HARASS_PLAYER_3) {
+			return this.HarassPlayer3(p);
+		} else if (b == HARASS_STRONGEST_MILITARY) {
+			return this.HarassStrongestMilitary(p);
+		} else if (b == HARASS_STRONGEST_ECONOMY) {
+			return this.HarassStrongestEconomy(p);
+		} else if (b == HARASS_WEAKEST_MILITARY) {
+			return this.HarassWeakestMilitary(p);
+		} else if (b == HARASS_WEAKEST_ECONOMY) {
+			return this.HarassWeakestEconomy(p);
+		} else if (b == MAKE_WORKER) {
+			return this.makeWorker();
+		} else if (b == MAKE_TANK) {
+			return this.makeTank();
+		} else if (b == MAKE_AIR) {
+			return this.makeAir();
+		} else if (b == MAKE_ANIAIR) {
+			return this.makeAntiair();
+		} else if (b == FORTIFY_STRATEGIC_LOCATION) {
+			return this.FortifyStrategicLocation(p);
+		} else if (b == FORTIFY_RESOURCE) {
+			return this.FortifyResource(p);
+		} else if (b == FORTIFY_CITY) {
+			return this.FortifyCity(p);
+		} else if (b == CLEAR_UNIT_QUEUE) {
+			return this.ClearUnitQueue(p);
+		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10) {
+			return this.CombatWinChanceTolerancePlus10(p);
+		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10) {
+			return this.CombatWinChanceToleranceMinus10(p);
+		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_RESET_TO_DEFAULT) {
+			return this.CombatWinChanceToleranceResetToDefault(p);
+		} else if (b == TURNS_LEFT_THRESHOLD_MINUS_20) {
+			return this.TurnsLeftThresholdMinus20(p);
+		} else if (b == TURNS_LEFT_THRESHOLD_PLUS_20) {
+			return this.TurnsLeftThresholdPlus20(p);
+		} else if (b == TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT) {
+			return this.TurnsLeftThresholdResetToDefault(p);
+		} else if (b == CREATE_NEW_CITY) {
+			return this.CreateNewCity(p);
+		} else if (b == NO_ACTION) {
+			return this.NoAction(p);
+		} else { 
+			throw new Exception("No action found for byte: " + b);
+		}
+	}
+	
 	private GameAction SeizeStrategicLocation(Player p){
 		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
@@ -516,6 +587,10 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 	}
 	
     private GameAction HarassWeakestMilitary(Player p){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+	}
+    
+    private GameAction HarassWeakestEconomy(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
     
