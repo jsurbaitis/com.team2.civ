@@ -593,5 +593,13 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
     private GameAction NoAction(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, p);
 	}
+
+    private GameAction GeneralMakeUnit(Player p){
+    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, p);
+	}
+	
+    private GameAction MakePowerplant(Player p){
+    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, p);
+	}
 	
 }
