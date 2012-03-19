@@ -11,7 +11,7 @@ public class Population {
 	private AI[] genomes;
 	private HashMap<AI,Integer> fitness = new HashMap<AI, Integer>();
 	private HashMap<AI,Integer> times_used= new HashMap<AI, Integer>();
-	private final int fitness_level = 2;
+	private int fitness_level = 0;
 	
 	public Population(int pop_size, GameController gc){
 		population_size = pop_size;
@@ -63,6 +63,8 @@ public class Population {
 		//fitness.put(winner, (fitness.get(winner) + 1));
 		times_used.put(ai1, times_used.get(ai1) + 1);
 		times_used.put(ai2, times_used.get(ai2) + 1);
+		times_used.put(ai3, times_used.get(ai3) + 1);
+		times_used.put(ai4, times_used.get(ai4) + 1);
 	}
 	
 	public void competeAll(){
