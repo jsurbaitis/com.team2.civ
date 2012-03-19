@@ -46,6 +46,40 @@ public class AI {
 	int current_turns_threshold;
 	final byte default_behavior_code;
 	
+	final byte SEIZE_STRATEGIC_LOCATION = 0;
+	final byte SEIZE_RESOURCE = 1;
+	final byte ATTACK_PLAYER_1 = 2;
+	final byte ATTACK_PLAYER_2 = 3;
+	final byte ATTACK_PLAYER_3 = 4;
+	final byte ATTACK_STRONGEST_MILITARY = 5;
+	final byte ATTACK_STRONGEST_ECONOMY = 6;
+	final byte ATTACK_WEAKEST_MILITARY = 7;
+	final byte ATTACK_WEAKEST_ECONOMY = 8;
+	final byte HARASS_PLAYER_1 = 9;
+	final byte HARASS_PLAYER_2 = 10;
+	final byte HARASS_PLAYER_3 = 11;
+	final byte HARASS_STRONGEST_MILITARY = 12;
+	final byte HARASS_STRONGEST_ECONOMY = 13;
+	final byte HARASS_WEAKEST_MILITARY = 14;
+	final byte HARASS_WEAKEST_ECONOMY = 15;
+	final byte MAKE_WORKER = 16;
+	final byte MAKE_TANK = 17;
+	final byte MAKE_AIR = 18;
+	final byte MAKE_ANIAIR = 19;
+	final byte FORTIFY_STRATEGIC_LOCATION = 20;
+	final byte FORTIFY_RESOURCE = 21;
+	final byte FORTIFY_CITY = 22;
+	final byte CLEAR_UNIT_QUEUE = 23;
+	final byte COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10 = 24;
+	final byte COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10 = 25;
+	final byte COMBAT_WIN_CHANCE_TOLERANCE_RESET_TO_DEFAULT = 26;
+	final byte TURNS_LEFT_THRESHOLD_MINUS_20 = 27;
+	final byte TURNS_LEFT_THRESHOLD_PLUS_20 = 28;
+	final byte TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT = 29;
+	final byte CREATE_NEW_CITY = 30;
+	final byte NO_ACTION = 31;
+	
+	
 	private Player owner;
 	private Resources res;
 	
@@ -436,39 +470,51 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
     private GameAction AttackPlayer1(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction AttackPlayer2(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction AttackPlayer3(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction AttackStrongestMilitary(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction AttackStrongestEconomy(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction AttackWeakestMilitary(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction AttackWeakestEconomy(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
-    private GameAction harassPlayer1(Player p){
+	
+    private GameAction HarassPlayer1(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
-    private GameAction harassPlayer2(Player p){
+	
+    private GameAction HarassPlayer2(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction HarassPlayer3(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
-    private GameAction harassStrongestMilitary(Player p){
+	
+    private GameAction HarassStrongestMilitary(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction HarassStrongestEconomy(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction HarassWeakestMilitary(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
@@ -485,7 +531,7 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
     	return makeUnit(GameAction.OneAgentEvent.BUILD_AIR);
 	}
     
-    private GameAction makeQueueAntiAir(){
+    private GameAction makeAntiair(){
     	return makeUnit(GameAction.OneAgentEvent.BUILD_ANTIAIR);
 	}
     
@@ -503,37 +549,49 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
     private GameAction FortifyStrategicLocation(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction FortifyResource(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction FortifyCity(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction ClearUnitQueue(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction CombatWinChanceTolerancePlus10(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction CombatWinChanceToleranceMinus10(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
-    private GameAction CombatWinChanceToleranceResetToDefaule(Player p){
+	
+    private GameAction CombatWinChanceToleranceResetToDefault(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction TurnsLeftThresholdMinus20(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction TurnsLeftThresholdPlus20(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction TurnsLeftThresholdResetToDefault(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction CreateNewCity(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
+	
     private GameAction NoAction(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, p);
 	}
+	
 }
