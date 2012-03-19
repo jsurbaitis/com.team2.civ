@@ -9,11 +9,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
+import com.team2.civ.Data.GameUnitData;
+import com.team2.civ.Data.ResNotFoundException;
+import com.team2.civ.Data.Resources;
 import com.team2.civ.Game.GameAction;
 import com.team2.civ.Game.GameController;
 import com.team2.civ.Game.GameStaticObject;
@@ -41,9 +45,16 @@ public class AI {
 	final int init_turns_threshold;
 	int current_turns_threshold;
 	final byte default_behavior_code;
+	
+	private Player owner;
+	private Resources res;
+	
+	private List<GameAction> output = new ArrayList<GameAction>();
 
-	public AI(GameController game) {
+	public AI(GameController game, Player owner, Resources res) {
 		this.game = game;
+		this.owner = owner;
+		this.res = res;
 		this.genome = generateNewGenome();
 		HashMap<CoordObject, WalkableTile> walkableMap = game.getWalkableTilesCopy();
 		walkableMap.get(new CoordObject(0, 0));
@@ -172,16 +183,6 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 			responses[i] = getFiveBits(index + i);
 		}
 		return responses;
-	}
-
-	public ArrayList<GameAction> perform(List<GameAction> actions, Player p) {
-		ArrayList<GameAction> output = new ArrayList<GameAction>();
-		output.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN, p));
-		
-		boolean[] arr = new boolean[21];
-		for(int i = 0; i < 21; i++) arr[i] = true;
-		getResponseCodes(arr);
-		return output;
 	}
 
 	private byte getFiveBits(int index) {
@@ -322,6 +323,19 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		return boolArray;
 	}
 	
+	private GameStaticObject getRandomActiveCity() {
+		List<GameStaticObject> cities = game.getPlayerCities(owner);
+		Iterator<GameStaticObject> it = cities.iterator();
+		while(it.hasNext()) {
+			if(isStaticObjUsed(it.next()))
+				it.remove();
+		}
+		
+		Random rnd = new Random();
+		int index = rnd.nextInt(cities.size());
+		return cities.get(index);
+	}
+	
 	private Collection<Player> getmine(Player p[]) {
 		HashMap<Player, Integer> temp = new HashMap<Player, Integer>();
 		for (int t = 0; t < 4; t++) {
@@ -345,12 +359,80 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		return sum/chase.getHP();
 	}
 	
+	public List<GameAction> perform(List<GameAction> actions, Player p) {
+		output.clear();
+		output.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN, p));
+		
+		boolean[] arr = new boolean[21];
+		for(int i = 0; i < 21; i++) arr[i] = true;
+		getResponseCodes(arr);
+		return output;
+	}
+	
+	private boolean isUnitUsed(GameUnit u) {
+		for(GameAction action: output)
+			if(action.actor == u)
+				return true;
+		
+		return false;
+	}
+	
+	private boolean isStaticObjUsed(GameStaticObject so) {
+		for(GameAction action: output)
+			if(action.actor == so)
+				return true;
+		
+		return false;
+	}
+	
+	private boolean hasFreeWorkers() {
+		for(GameUnit u: game.getPlayerUnits(owner))
+			if(!isUnitUsed(u)) return true;
+		
+		return false;
+				
+	}
+	
 	private GameAction SeizeStrategicLocation(Player p){
 		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
-	private GameAction SeizeResource(Player p){
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+	
+	private GameAction SeizeResource() {
+		ArrayList<GameUnit> ourWorkers = game.getPlayerUnitsOfType(owner, "WORKER");
+		GameStaticObject best = null;
+		int closestDist = Integer.MAX_VALUE;
+		
+		for(GameStaticObject so: game.getAllResources()) {
+			for(GameUnit u: ourWorkers) {
+				if(!isUnitUsed(u) && u.mapX == so.mapX && u.mapY == so.mapY)
+					return new GameAction(GameAction.OneAgentEvent.BUILD_MINE, owner, u);
+				
+				int dist = game.getDistToClosestCity(so, owner);
+				if(dist < closestDist) {
+					closestDist = dist;
+					best = so;
+				}
+			}
+		}
+
+		GameUnit bestWorker = null;
+		closestDist = Integer.MAX_VALUE;
+		for(GameUnit u: ourWorkers) {
+			if(isUnitUsed(u)) continue;
+			
+			int dist = game.getDistBetween(u, best, owner);
+			if(dist != -1 && dist < closestDist) {
+				closestDist = dist;
+				bestWorker = u;
+			}
+		}
+		
+		if(bestWorker != null)
+			return new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE, owner, bestWorker, best);
+		else
+			return this.makeWorker();
 	}
+	
     private GameAction AttackPlayer1(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
@@ -390,18 +472,34 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
     private GameAction HarassWeakestMilitary(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}
-    private GameAction makeQueueWorker(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    
+    private GameAction makeWorker() {
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-    private GameAction MakeQueueTank(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    
+    private GameAction makeTank() {
+    	return makeUnit(GameAction.OneAgentEvent.BUILD_TANK);
 	}
-    private GameAction MakeQueueAir(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    
+    private GameAction makeAir(){
+    	return makeUnit(GameAction.OneAgentEvent.BUILD_AIR);
 	}
-    private GameAction makeQueueAntiAir(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    
+    private GameAction makeQueueAntiAir(){
+    	return makeUnit(GameAction.OneAgentEvent.BUILD_ANTIAIR);
 	}
+    
+    private GameAction makeUnit(GameAction.OneAgentEvent buildEvent) {
+    	try {
+			GameUnitData data = res.getUnit(buildEvent.toString().replace("BUILD_", ""));
+			if(owner.canAfford(data))
+	    		return new GameAction(buildEvent, owner, getRandomActiveCity());
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
+		return SeizeResource();
+    }
+    
     private GameAction FortifyStrategicLocation(Player p){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
 	}

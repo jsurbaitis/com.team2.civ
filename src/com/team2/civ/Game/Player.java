@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.team2.civ.AI.AI;
+import com.team2.civ.Data.GameStaticObjectData;
+import com.team2.civ.Data.GameUnitData;
 
 public class Player {
 	public String name;
@@ -14,7 +16,7 @@ public class Player {
 	public int scoreStratLoc = 0;
 	
 	public int powerUsage = 0;
-	public int powerCapability = 0;
+	public int powerCapability = 2;
 	public int metal = 2000;
 	public int population = 0;
 
@@ -31,5 +33,11 @@ public class Player {
 		this.ai = ai;
 	}
 	
+	public boolean canAfford(GameUnitData data) {
+		return metal >= data.metalCost && (powerCapability - powerUsage) >= data.powerUsage;
+	}
 	
+	public boolean canAfford(GameStaticObjectData data) {
+		return metal >= data.metalCost;
+	}	
 }

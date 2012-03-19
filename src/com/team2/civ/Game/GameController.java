@@ -200,7 +200,7 @@ public class GameController {
 
 		for (int i = 1; i < players.size(); i++) {
 			Player p = players.get(i);
-			p.ai = new AI(this);
+			p.ai = new AI(this, p, res);
 		}
 	}
 
@@ -410,21 +410,12 @@ public class GameController {
 		return rtn;
 	}
 
-	public ArrayList<GameUnit> getAllUnits() {
-		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
-
-		// for(GameUnit obj: units.values())
-		// rtn.add(obj);
-
-		return rtn;
-	}
-
 	public ArrayList<GameUnit> getPlayerUnits(Player p) {
 		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
 
-		// for(GameUnit obj: units.values())
-		// if(obj.owner == p)
-		// rtn.add(obj);
+		for(GameUnit obj: units)
+			if(obj.owner == p)
+				rtn.add(obj);
 
 		return rtn;
 	}
@@ -432,9 +423,9 @@ public class GameController {
 	public ArrayList<GameUnit> getUnitsOfType(String... id) {
 		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
 
-		// for(GameUnit obj: units.values())
-		// if(Arrays.asList(id).contains(obj.data.id))
-		// rtn.add(obj);
+		for(GameUnit obj: units)
+			if(Arrays.asList(id).contains(obj.data.id))
+				rtn.add(obj);
 
 		return rtn;
 	}
@@ -442,9 +433,9 @@ public class GameController {
 	public ArrayList<GameUnit> getPlayerUnitsOfType(Player p, String... id) {
 		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
 
-		// for(GameUnit obj: units.values())
-		// if(obj.owner == p && Arrays.asList(id).contains(obj.data.id))
-		// rtn.add(obj);
+		for(GameUnit obj: units)
+			if(obj.owner == p && Arrays.asList(id).contains(obj.data.id))
+				rtn.add(obj);
 
 		return rtn;
 	}
@@ -629,6 +620,7 @@ public class GameController {
 		//p.powerCapability = 0;
 		for (GameStaticObject so : staticObjects.values()) {
 			if (so.owner == p) {
+				so.active = true;
 				//p.powerCapability += so.data.powerGiven;
 
 				if (so.data.id.equals("MINE")) {
@@ -666,6 +658,14 @@ public class GameController {
 
 		return smallestDist;
 	}
+	
+	public int getDistBetween(CoordObject obj1, CoordObject obj2, Player p) {
+		List<WalkableTile> path = findPath(obj1, obj2, p);
+		if(path != null) {
+			return path.size();
+		}
+		return -1;
+	}
 
 	public GameStaticObject getClosestCity(Player agent, Player target) {
 		int smallestDist = Integer.MAX_VALUE;
@@ -687,7 +687,7 @@ public class GameController {
 		return closest;
 	}
 
-	private void addUnitToPlayer(Player p, CoordObject location,
+	private void addUnitToPlayer(Player p, GameStaticObject city,
 			GameUnitData data) throws ResNotFoundException {
 		p.metal -= data.metalCost;
 		p.powerUsage += data.powerUsage;
@@ -724,7 +724,7 @@ public class GameController {
 		if (isStaticData(objId)) {
 			GameUnit unit = (GameUnit) location;
 			GameStaticObjectData data = res.getStaticObject(objId);
-			if(unit.data.buildIDs.contains(objId) && p.metal >= data.metalCost) {
+			if(unit.data.buildIDs.contains(objId) && p.canAfford(data)) {
 				if(!objId.equals("MINE") && staticObjects.get(unit) == null) {
 					addStaticObjToPlayer(p, unit, data);
 					return true;
@@ -739,9 +739,8 @@ public class GameController {
 		} else if (isUnitData(objId)) {
 			GameStaticObject so = (GameStaticObject) location;
 			GameUnitData data = res.getUnit(objId);
-			if (so.data.buildIDs.contains(objId) && p.metal >= data.metalCost
-					&& (p.powerCapability - p.powerUsage) >= data.powerUsage) {
-				addUnitToPlayer(p, location, data);
+			if (so.active && so.data.buildIDs.contains(objId) && p.canAfford(data)) {
+				addUnitToPlayer(p, so, data);
 				return true;
 			}
 		}
@@ -1050,7 +1049,7 @@ public class GameController {
 		return Collections.unmodifiableCollection(walkableMap.values());
 	}
 
-	public Collection<GameUnit> getUnit() {
+	public Collection<GameUnit> getUnits() {
 		return Collections.unmodifiableCollection(units);
 	}
 

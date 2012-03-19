@@ -11,6 +11,8 @@ public class GameStaticObject extends WalkableTile {
 	public String name;
 
 	private int HP;
+	
+	public boolean active = true;
 
 	public GameStaticObject(int mapX, int mapY, BufferedImage bitmap, BufferedImage fowImg, Player owner,
 			GameStaticObjectData data) {
