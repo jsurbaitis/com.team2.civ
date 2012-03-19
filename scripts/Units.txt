@@ -34,6 +34,14 @@ name
 	Luke
 	Gregory
 	Greg
+	Hank
+	Carl
+	Roy
+	Torbald
+	Jacque
+	Craig
+	Sherman
+	Clark
 }
 
 UIActions
@@ -65,6 +73,21 @@ DmgModifier
     AIR 40
 }
 
+name
+{
+	SPC._Stevens
+	SPC._Scharrenburg
+	SPC._Urbaitis
+	SPC._Rominov
+	SPC._Cooper
+	SPC._Hills
+	SPC._Ives
+	SPC._Bottino
+	SPC._Markson
+	SPC._Rodriguez
+	SPC._Sisto
+}
+
 UIActions
 {
     ATTACK
@@ -87,6 +110,22 @@ DmgModifier
     AIR -30
 }
 
+name
+{
+	PFC._Williams
+	PFC._Colby
+	PFC._Gates
+	PFC._Thompson
+	PFC._Ferrel
+	PFC._Knittweis
+	PFC._Stern
+	PFC._Lewinsky
+	PFC._Bernstein
+	PFC._Chapman
+	PFC._McGlincey
+	PFC._April
+}
+
 UIActions
 {
     ATTACK
@@ -96,7 +135,7 @@ UIActions
 ENDUNIT
 
 AIR
-HP 100
+HP 120
 AP 5
 BaseDmg 30
 Range 2
@@ -106,6 +145,22 @@ MetalCost 200
 
 DmgModifier
 {
+}
+
+name
+{
+	1ST_LT._Skinkys
+	1ST_LT._Malaseviciute
+	1ST_LT._Rodgers
+	1ST_LT._Brandt
+	1ST_LT._Harrison
+	1ST_LT._Harley
+	1ST_LT._Malek
+	1ST_LT._Hammond
+	1ST_LT._Bowie
+	1ST_LT._Barber
+	1ST_LT._Dicker
+	1ST_LT._Pazzani
 }
 
 UIActions
