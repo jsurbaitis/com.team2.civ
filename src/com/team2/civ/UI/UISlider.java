@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 public class UISlider extends UIElement {
 	private BufferedImage bg;
-	private ArrayList<UIElement> children = new ArrayList<UIElement>();
+	ArrayList<UIElement> children = new ArrayList<UIElement>();
 
 	private boolean slidingOut = false;
 	private boolean slidingIn = false;

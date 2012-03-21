@@ -15,6 +15,7 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 import com.team2.civ.AI.Generator;
+import com.team2.civ.Data.Resources;
 import com.team2.civ.Game.GameController;
 
 /* MAIN ENTRY POINT - There should be no need to modify this file
@@ -60,10 +61,12 @@ public class Team2Civ extends Thread {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
+		Resources.init(config);
+
         canvas = new Canvas(config);
         canvas.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-        game = new GameController(config);
+        game = new GameController();
         game.initGame();
         
         canvas.addKeyListener(new KeyboardInput(game));
@@ -155,11 +158,12 @@ public class Team2Civ extends Thread {
 									   .getDefaultScreenDevice()
 									   .getDefaultConfiguration();
 			
+			Resources.init(config);
+			
 			int generations = Integer.parseInt(args[0]);
 			int populationSize = Integer.parseInt(args[1]);
-			
-			GameController gc = new GameController(config);
-			Generator g = new Generator(generations, populationSize, gc);
+
+			Generator g = new Generator(generations, populationSize, config);
 			g.generate();
 		}
 	}

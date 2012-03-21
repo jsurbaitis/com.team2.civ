@@ -2,7 +2,6 @@ package com.team2.civ.Game;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -36,8 +35,8 @@ import com.team2.civ.UI.UIEvent;
 public class GameController {
 	private static final boolean FOW_ON = true;
 
-	private static final int MAP_WIDTH = 50;
-	private static final int MAP_HEIGHT = 50;
+	public static final int MAP_WIDTH = 50;
+	public static final int MAP_HEIGHT = 50;
 
 	private long gameTime = 0;
 
@@ -62,8 +61,8 @@ public class GameController {
 
 	private boolean leftClick = true;
 
-	private Resources res;
 	private UI ui;
+	private Resources res;
 
 	private final int[][] nextPos = { { -1, 1 }, { 0, 1 }, { 1, 0 }, { 1, -1 },
 			{ 0, -1 }, { -1, 0 } };
@@ -75,7 +74,7 @@ public class GameController {
 	private HashMap<CoordObject, GameStaticObject> staticObjects = new HashMap<CoordObject, GameStaticObject>();
 
 	private Vector<MapObjectImage> unitDraw = new Vector<MapObjectImage>();
-	private ArrayList<MapObjectImage> lowDraw = new ArrayList<MapObjectImage>();
+	private Vector<MapObjectImage> lowDraw = new Vector<MapObjectImage>();
 
 	public List<Player> players = new ArrayList<Player>();
 	public Player humanPlayer;
@@ -92,8 +91,8 @@ public class GameController {
 	public int turnCount = 1;
 	public static final int MAX_TURNS = 630;
 
-	public GameController(GraphicsConfiguration config) {
-		res = new Resources(config);
+	public GameController() {
+		this.res = Resources.getInstance();
 	}
 
 	public void initGame() {
@@ -103,7 +102,7 @@ public class GameController {
 			e.printStackTrace();
 		}
 
-		ui = new UI(humanPlayer, res, this);
+		ui = new UI(humanPlayer, this);
 	}
 
 	public AI runGame(AI a1, AI a2, AI a3, AI a4) {
@@ -118,6 +117,9 @@ public class GameController {
 		players.get(1).ai = a2;
 		players.get(2).ai = a3;
 		players.get(3).ai = a4;
+		
+		for(Player p: players)
+			p.ai.setGameVars(this, p);
 
 		return null;
 		// currentPlayer.performTurn();
@@ -195,12 +197,16 @@ public class GameController {
 
 		Collections.sort(lowDraw);
 
-		humanPlayer = players.get(0);
 		currentPlayer = players.get(0);
 
-		for (int i = 1; i < players.size(); i++) {
-			Player p = players.get(i);
-			p.ai = new AI(this, p, res);
+		if (!Team2Civ.AI_MODE) {
+			humanPlayer = players.get(0);
+
+			for (int i = 1; i < players.size(); i++) {
+				Player p = players.get(i);
+				p.ai = new AI();
+				p.ai.setGameVars(this, p);
+			}
 		}
 	}
 
@@ -230,12 +236,12 @@ public class GameController {
 		}
 
 		if (showingActionList != null) {
-			if(currentAction.actor != null) {
+			if (currentAction.actor != null) {
 				offsetX = -currentAction.actor.x + Team2Civ.WINDOW_WIDTH / 2;
 				offsetY = -currentAction.actor.y + Team2Civ.WINDOW_HEIGHT / 2;
 			}
-			
-			if(currentAction.event == GameAction.Event.ACTION_MOVE) {
+
+			if (currentAction.event == GameAction.Event.ACTION_MOVE) {
 				GameUnit u = (GameUnit) currentAction.actor;
 				if (!u.isMoving()) {
 					actionIndex++;
@@ -333,9 +339,11 @@ public class GameController {
 
 		g.scale(scale, scale);
 
-		for (MapObjectImage i : lowDraw)
-			i.draw(g, (int) (offsetX), (int) (offsetY), scale);
-
+		synchronized(lowDraw) {
+			for (MapObjectImage i : lowDraw)
+				i.draw(g, (int) (offsetX), (int) (offsetY), scale);
+		}
+		
 		Collections.sort(unitDraw);
 		for (MapObjectImage i : unitDraw)
 			i.draw(g, (int) (offsetX), (int) (offsetY), scale);
@@ -413,8 +421,8 @@ public class GameController {
 	public ArrayList<GameUnit> getPlayerUnits(Player p) {
 		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
 
-		for(GameUnit obj: units)
-			if(obj.owner == p)
+		for (GameUnit obj : units)
+			if (obj.owner == p)
 				rtn.add(obj);
 
 		return rtn;
@@ -423,8 +431,8 @@ public class GameController {
 	public ArrayList<GameUnit> getUnitsOfType(String... id) {
 		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
 
-		for(GameUnit obj: units)
-			if(Arrays.asList(id).contains(obj.data.id))
+		for (GameUnit obj : units)
+			if (Arrays.asList(id).contains(obj.data.id))
 				rtn.add(obj);
 
 		return rtn;
@@ -433,8 +441,8 @@ public class GameController {
 	public ArrayList<GameUnit> getPlayerUnitsOfType(Player p, String... id) {
 		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
 
-		for(GameUnit obj: units)
-			if(obj.owner == p && Arrays.asList(id).contains(obj.data.id))
+		for (GameUnit obj : units)
+			if (obj.owner == p && Arrays.asList(id).contains(obj.data.id))
 				rtn.add(obj);
 
 		return rtn;
@@ -543,7 +551,7 @@ public class GameController {
 	public void destroyUnit(GameUnit u) {
 		u.owner.metal += u.data.metalCost * 0.25;
 		u.owner.powerUsage -= u.data.powerUsage;
-		
+
 		synchronized (unitDraw) {
 			unitDraw.remove(u.getImage());
 		}
@@ -566,8 +574,7 @@ public class GameController {
 		currentPlayer = players.get(nextPlayer);
 
 		if (currentPlayer != humanPlayer) {
-			List<GameAction> actions = currentPlayer.ai.perform(
-					getActionsForOthers(currentPlayer), currentPlayer);
+			List<GameAction> actions = currentPlayer.ai.perform(getActionsForOthers(currentPlayer));
 
 			if (Team2Civ.AI_MODE)
 				currentPlayer.previousTurn = performActions(actions);
@@ -617,11 +624,11 @@ public class GameController {
 			}
 		}
 
-		//p.powerCapability = 0;
+		// p.powerCapability = 0;
 		for (GameStaticObject so : staticObjects.values()) {
 			if (so.owner == p) {
 				so.active = true;
-				//p.powerCapability += so.data.powerGiven;
+				// p.powerCapability += so.data.powerGiven;
 
 				if (so.data.id.equals("MINE")) {
 					p.metal += 50 / getDistToClosestCity(so, p);
@@ -629,11 +636,11 @@ public class GameController {
 			}
 		}
 
-		//p.powerUsage = 0;
+		// p.powerUsage = 0;
 		for (GameUnit u : units) {
 			if (u.owner == p) {
 				u.AP = u.data.AP;
-				//p.powerUsage += u.data.powerUsage;
+				// p.powerUsage += u.data.powerUsage;
 
 				GameStaticObject target = staticObjects.get(u);
 				if (target != null && target.owner != p
@@ -648,7 +655,7 @@ public class GameController {
 
 		for (GameStaticObject so : getPlayerCities(p)) {
 			List<WalkableTile> path = findPath(obj, so, p);
-			if(path != null) {
+			if (path != null) {
 				int dist = path.size();
 				if (dist < smallestDist) {
 					smallestDist = dist;
@@ -658,10 +665,10 @@ public class GameController {
 
 		return smallestDist;
 	}
-	
+
 	public int getDistBetween(CoordObject obj1, CoordObject obj2, Player p) {
 		List<WalkableTile> path = findPath(obj1, obj2, p);
-		if(path != null) {
+		if (path != null) {
 			return path.size();
 		}
 		return -1;
@@ -670,11 +677,11 @@ public class GameController {
 	public GameStaticObject getClosestCity(Player agent, Player target) {
 		int smallestDist = Integer.MAX_VALUE;
 		GameStaticObject closest = null;
-		
-		for(GameStaticObject c1: getPlayerCities(agent)) {
+
+		for (GameStaticObject c1 : getPlayerCities(agent)) {
 			for (GameStaticObject c2 : getPlayerCities(target)) {
 				List<WalkableTile> path = findPath(c1, c2, agent);
-				if(path != null) {
+				if (path != null) {
 					int dist = path.size();
 					if (dist < smallestDist) {
 						smallestDist = dist;
@@ -683,7 +690,7 @@ public class GameController {
 				}
 			}
 		}
-		
+
 		return closest;
 	}
 
@@ -692,8 +699,8 @@ public class GameController {
 		p.metal -= data.metalCost;
 		p.powerUsage += data.powerUsage;
 
-		GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res,
-				p, data);
+		GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res, p,
+				data);
 		unitDraw.add(u.getImage());
 		units.add(u);
 
@@ -710,8 +717,11 @@ public class GameController {
 				res.getImage(data.id), res.getImage(data.id + "_fow"), p, data);
 		staticObjects.put(so, so);
 		walkableMap.put(so, so);
-		lowDraw.add(so.getImage());
-		Collections.sort(lowDraw);
+		
+		synchronized(lowDraw) {
+			lowDraw.add(so.getImage());
+			Collections.sort(lowDraw);
+		}
 
 		target = so;
 		ui.showStaticObjectInfo((GameStaticObject) target);
@@ -724,13 +734,13 @@ public class GameController {
 		if (isStaticData(objId)) {
 			GameUnit unit = (GameUnit) location;
 			GameStaticObjectData data = res.getStaticObject(objId);
-			if(unit.data.buildIDs.contains(objId) && p.canAfford(data)) {
-				if(!objId.equals("MINE") && staticObjects.get(unit) == null) {
+			if (unit.data.buildIDs.contains(objId) && p.canAfford(data)) {
+				if (!objId.equals("MINE") && staticObjects.get(unit) == null) {
 					addStaticObjToPlayer(p, unit, data);
 					return true;
-				} else if(objId.equals("MINE")) {
+				} else if (objId.equals("MINE")) {
 					GameStaticObject so = staticObjects.get(unit);
-					if(so != null && so.data.id.equals("METAL")) {
+					if (so != null && so.data.id.equals("METAL")) {
 						addStaticObjToPlayer(p, unit, data);
 						return true;
 					}
@@ -739,7 +749,8 @@ public class GameController {
 		} else if (isUnitData(objId)) {
 			GameStaticObject so = (GameStaticObject) location;
 			GameUnitData data = res.getUnit(objId);
-			if (so.active && so.data.buildIDs.contains(objId) && p.canAfford(data)) {
+			if (so.active && so.data.buildIDs.contains(objId)
+					&& p.canAfford(data)) {
 				addUnitToPlayer(p, so, data);
 				return true;
 			}
@@ -939,7 +950,7 @@ public class GameController {
 						canWalkOn = false;
 				}
 			}
-			if(canWalkOn)
+			if (canWalkOn)
 				nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
 		}
 		nodeList.put(startObj, new PathNode(startObj.mapX, startObj.mapY));
@@ -1026,7 +1037,7 @@ public class GameController {
 
 		int index = returnList.size();
 		int fromIndex = index - lengthLimit;
-		return returnList.subList((fromIndex<0)?0:fromIndex, index);
+		return returnList.subList((fromIndex < 0) ? 0 : fromIndex, index);
 	}
 
 	private static int getTentativeScore(int x, int y, int tx, int ty) {

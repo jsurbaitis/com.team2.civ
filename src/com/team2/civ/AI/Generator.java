@@ -1,14 +1,14 @@
 package com.team2.civ.AI;
 
-import com.team2.civ.Game.GameController;
+import java.awt.GraphicsConfiguration;
 
 public class Generator {
 	private int init_generations;
 	private Population pop;
 	
-	public Generator(int generations, int population_size, GameController gc){
+	public Generator(int generations, int population_size, GraphicsConfiguration graphics){
 		init_generations = generations;
-		pop = new Population(population_size, gc);
+		pop = new Population(population_size);
 	}
 	
 	public void generate(){

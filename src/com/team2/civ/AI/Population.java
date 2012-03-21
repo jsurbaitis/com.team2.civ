@@ -7,29 +7,26 @@ import com.team2.civ.Game.GameController;
 
 public class Population {
 	private int population_size;
-	private GameController game;
 	private AI[] genomes;
 	private HashMap<AI,Integer> fitness = new HashMap<AI, Integer>();
 	private HashMap<AI,Integer> times_used= new HashMap<AI, Integer>();
 	private double fitness_level = 0;
 	
-	public Population(int pop_size, GameController gc){
+	public Population(int pop_size){
 		population_size = pop_size;
-		game = gc;
 		genomes = new AI[pop_size];
 		this.populate();
 	}
 	
-	public Population(int pop_size, GameController gc, HashMap<AI,Integer> fit, AI[] genome_array) {
+	public Population(int pop_size, HashMap<AI,Integer> fit, AI[] genome_array) {
 		population_size = pop_size;
-		game = gc;
 		genomes = genome_array;
 		fitness = fit;
 	}
 	
-	public void populate(){
+	public void populate() {
 		for (int i = 0; i < genomes.length; i++){
-			genomes[i] = new AI(this.game);
+			genomes[i] = new AI();
 			fitness.put(genomes[i], 0);
 		}
 	}
@@ -99,7 +96,7 @@ public class Population {
 	    	for (int t = j; t < genomes.length; t++){		
 	    		AI parent1 =newAI[random.nextInt(k)];
 	    		AI parent2 =newAI[random.nextInt(k)];
-	    		newAI[j] = new AI(game, parent1, parent2);
+	    		newAI[j] = new AI(parent1, parent2);
 	    		j++;
 	    	}
 	    }

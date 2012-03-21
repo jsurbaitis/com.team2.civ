@@ -16,11 +16,18 @@ import com.team2.civ.UI.UIEvent;
 public class Resources {
 	public static int TILE_WIDTH, TILE_HEIGHT;
 	
+	private static GraphicsConfiguration config;
+	private static Resources instance;
+	
 	private HashMap<String, BufferedImage> images = new HashMap<String, BufferedImage>();
 	private HashMap<String, GameUnitData> units = new HashMap<String, GameUnitData>();
 	private HashMap<String, GameStaticObjectData> staticObjs = new HashMap<String, GameStaticObjectData>();
+
+	public static void init(GraphicsConfiguration config) {
+		Resources.config = config;
+	}
 	
-	public Resources(GraphicsConfiguration config) {
+	private Resources() {
 		loadImages(config);
 		
 		try {
@@ -32,6 +39,15 @@ public class Resources {
 		}
 	}
 	
+	public static Resources getInstance() {
+		if(config == null) return null;
+		
+		if(instance == null) 
+			instance = new Resources();
+		
+		return instance;
+	}
+
 	public GameStaticObjectData getStaticObject(String tag) throws ResNotFoundException {
 		GameStaticObjectData rtn = staticObjs.get(tag);
 		if(rtn == null)

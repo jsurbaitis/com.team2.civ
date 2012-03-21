@@ -23,11 +23,8 @@ import com.team2.civ.Game.GameController;
 import com.team2.civ.Game.GameStaticObject;
 import com.team2.civ.Game.GameUnit;
 import com.team2.civ.Game.Player;
-import com.team2.civ.Map.CoordObject;
-import com.team2.civ.Map.WalkableTile;
 
 public class AI {
-	private GameController game;
 	final static int condition_bits = 21;
 	final static int tolerance_bits = 26;
 	final static int action_points = 5;
@@ -79,19 +76,14 @@ public class AI {
 	final byte CREATE_NEW_CITY = 30;
 	final byte NO_ACTION = 31;
 	
-	
+	private GameController game;
 	private Player owner;
 	private Resources res;
-	
+
 	private List<GameAction> output = new ArrayList<GameAction>();
 
-	public AI(GameController game, Player owner, Resources res) {
-		this.game = game;
-		this.owner = owner;
-		this.res = res;
+	public AI() {
 		this.genome = generateNewGenome();
-		HashMap<CoordObject, WalkableTile> walkableMap = game.getWalkableTilesCopy();
-		walkableMap.get(new CoordObject(0, 0));
 		this.init_st_dev_strat_loc = (int) this.genome[0];
 		this.current_st_dev_strat_loc = this.init_st_dev_strat_loc;
 		this.init_combat_pcent_win_chance = ((float) this.genome[1]) / 7;
@@ -104,8 +96,7 @@ public class AI {
 		this.WriteSelf(0);
 	}
 
-	public AI(GameController game, AI parent1, AI parent2){
-		this.game = game;
+	public AI(AI parent1, AI parent2){
 		Random rng = new SecureRandom();
 		int num = rng.nextInt(1);
 		if (num == 0) {
@@ -126,8 +117,7 @@ public class AI {
 		this.default_behavior_code = genome[5];
 	}
 	
-	public AI(GameController game, File f){
-		this.game = game;
+	public AI(File f){
 		this.genome = FileToBytes(f);
 		this.init_st_dev_strat_loc = (int) this.genome[0];
 		this.current_st_dev_strat_loc = this.init_st_dev_strat_loc;
@@ -138,6 +128,12 @@ public class AI {
 		this.init_turns_threshold = ((int) this.genome[4]) * 10;
 		this.current_turns_threshold = this.init_turns_threshold;
 		this.default_behavior_code = genome[5];
+	}
+	
+	public void setGameVars(GameController game, Player owner) {
+		this.game = game;
+		this.owner = owner;
+		this.res = Resources.getInstance();
 	}
 	
 	private static byte[] generateNewGenome() {
@@ -393,9 +389,9 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		return sum/chase.getHP();
 	}
 	
-	public List<GameAction> perform(List<GameAction> actions, Player p) {
+	public List<GameAction> perform(List<GameAction> actions) {
 		output.clear();
-		output.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN, p));
+		output.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner));
 		
 		boolean[] arr = new boolean[21];
 		for(int i = 0; i < 21; i++) arr[i] = true;
@@ -427,79 +423,8 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 				
 	}
 	
-	
-	private GameAction parseActionCode(byte b, Player p) throws Exception{
-		if (b == SEIZE_STRATEGIC_LOCATION){
-			return this.SeizeStrategicLocation(p);
-		} else if (b == SEIZE_RESOURCE){
-			return this.SeizeResource();
-		} else if (b == ATTACK_PLAYER_1){
-			return this.AttackPlayer1(p);
-		} else if (b == ATTACK_PLAYER_2){
-			return this.AttackPlayer2(p);
-		} else if (b == ATTACK_PLAYER_3) {
-			return this.AttackPlayer3(p);
-		} else if (b == ATTACK_STRONGEST_MILITARY) {
-			return this.AttackStrongestMilitary(p);
-		} else if (b == ATTACK_STRONGEST_ECONOMY) {
-			return this.AttackStrongestEconomy(p);
-		} else if (b == ATTACK_WEAKEST_MILITARY) {
-			return this.AttackWeakestMilitary(p);
-		} else if (b == ATTACK_WEAKEST_ECONOMY) {
-			return this.AttackWeakestEconomy(p);
-		} else if (b == HARASS_PLAYER_1) {
-			return this.HarassPlayer1(p);
-		} else if (b == HARASS_PLAYER_2) {
-			return this.HarassPlayer2(p);
-		} else if (b == HARASS_PLAYER_3) {
-			return this.HarassPlayer3(p);
-		} else if (b == HARASS_STRONGEST_MILITARY) {
-			return this.HarassStrongestMilitary(p);
-		} else if (b == HARASS_STRONGEST_ECONOMY) {
-			return this.HarassStrongestEconomy(p);
-		} else if (b == HARASS_WEAKEST_MILITARY) {
-			return this.HarassWeakestMilitary(p);
-		} else if (b == HARASS_WEAKEST_ECONOMY) {
-			return this.HarassWeakestEconomy(p);
-		} else if (b == MAKE_WORKER) {
-			return this.makeWorker();
-		} else if (b == MAKE_TANK) {
-			return this.makeTank();
-		} else if (b == MAKE_AIR) {
-			return this.makeAir();
-		} else if (b == MAKE_ANIAIR) {
-			return this.makeAntiair();
-		} else if (b == FORTIFY_STRATEGIC_LOCATION) {
-			return this.FortifyStrategicLocation(p);
-		} else if (b == FORTIFY_RESOURCE) {
-			return this.FortifyResource(p);
-		} else if (b == FORTIFY_CITY) {
-			return this.FortifyCity(p);
-		} else if (b == CLEAR_UNIT_QUEUE) {
-			return this.ClearUnitQueue(p);
-		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10) {
-			return this.CombatWinChanceTolerancePlus10(p);
-		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10) {
-			return this.CombatWinChanceToleranceMinus10(p);
-		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_RESET_TO_DEFAULT) {
-			return this.CombatWinChanceToleranceResetToDefault(p);
-		} else if (b == TURNS_LEFT_THRESHOLD_MINUS_20) {
-			return this.TurnsLeftThresholdMinus20(p);
-		} else if (b == TURNS_LEFT_THRESHOLD_PLUS_20) {
-			return this.TurnsLeftThresholdPlus20(p);
-		} else if (b == TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT) {
-			return this.TurnsLeftThresholdResetToDefault(p);
-		} else if (b == CREATE_NEW_CITY) {
-			return this.CreateNewCity(p);
-		} else if (b == NO_ACTION) {
-			return this.NoAction(p);
-		} else { 
-			throw new Exception("No action found for byte: " + b);
-		}
-	}
-	
-	private GameAction SeizeStrategicLocation(Player p){
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+	private GameAction SeizeStrategicLocation(){
+		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
 	
 	private GameAction SeizeResource() {
@@ -538,60 +463,44 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 			return this.makeWorker();
 	}
 	
-    private GameAction AttackPlayer1(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction AttackPlayer1(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction AttackPlayer2(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction AttackPlayer2(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction AttackPlayer3(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction AttackPlayer3(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction AttackStrongestMilitary(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction AttackStrongestMilitary(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction AttackStrongestEconomy(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction AttackStrongestEconomy(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction AttackWeakestMilitary(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction AttackWeakestMilitary(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction AttackWeakestEconomy(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction AttackWeakestEconomy(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction HarassPlayer1(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction harassPlayer1(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction HarassPlayer2(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction harassPlayer2(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction HarassPlayer3(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction HarassPlayer3(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction HarassStrongestMilitary(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction harassStrongestMilitary(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction HarassStrongestEconomy(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction HarassStrongestEconomy(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction HarassWeakestMilitary(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
-	}
-    
-    private GameAction HarassWeakestEconomy(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction HarassWeakestMilitary(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
     
     private GameAction makeWorker() {
@@ -606,7 +515,7 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
     	return makeUnit(GameAction.OneAgentEvent.BUILD_AIR);
 	}
     
-    private GameAction makeAntiair(){
+    private GameAction makeAntiAir(){
     	return makeUnit(GameAction.OneAgentEvent.BUILD_ANTIAIR);
 	}
     
@@ -621,60 +530,114 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		return SeizeResource();
     }
     
-    private GameAction FortifyStrategicLocation(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction FortifyStrategicLocation(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction FortifyResource(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction FortifyResource(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction FortifyCity(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction FortifyCity(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction ClearUnitQueue(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction ClearUnitQueue(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction CombatWinChanceTolerancePlus10(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction CombatWinChanceTolerancePlus10(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction CombatWinChanceToleranceMinus10(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction CombatWinChanceToleranceMinus10(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction CombatWinChanceToleranceResetToDefault(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction CombatWinChanceToleranceResetToDefault(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction TurnsLeftThresholdMinus20(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction TurnsLeftThresholdMinus20(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction TurnsLeftThresholdPlus20(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction TurnsLeftThresholdPlus20(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction TurnsLeftThresholdResetToDefault(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction TurnsLeftThresholdResetToDefault(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction CreateNewCity(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, p);
+    private GameAction CreateNewCity(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction NoAction(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, p);
+    private GameAction NoAction(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-
-    private GameAction GeneralMakeUnit(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, p);
+    
+    private GameAction harassWeakestEconomy(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-	
-    private GameAction MakePowerplant(Player p){
-    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, p);
+    
+    private GameAction parseActionCode(byte b) throws Exception {
+		if (b == SEIZE_STRATEGIC_LOCATION){
+			return this.SeizeStrategicLocation();
+		} else if (b == SEIZE_RESOURCE){
+			return this.SeizeResource();
+		} else if (b == ATTACK_PLAYER_1){
+			return this.AttackPlayer1();
+		} else if (b == ATTACK_PLAYER_2){
+			return this.AttackPlayer2();
+		} else if (b == ATTACK_PLAYER_3) {
+			return this.AttackPlayer3();
+		} else if (b == ATTACK_STRONGEST_MILITARY) {
+			return this.AttackStrongestMilitary();
+		} else if (b == ATTACK_STRONGEST_ECONOMY) {
+			return this.AttackStrongestEconomy();
+		} else if (b == ATTACK_WEAKEST_MILITARY) {
+			return this.AttackWeakestMilitary();
+		} else if (b == ATTACK_WEAKEST_ECONOMY) {
+			return this.AttackWeakestEconomy();
+		} else if (b == HARASS_PLAYER_1) {
+			return this.harassPlayer1();
+		} else if (b == HARASS_PLAYER_2) {
+			return this.harassPlayer2();
+		} else if (b == HARASS_PLAYER_3) {
+			return this.HarassPlayer3();
+		} else if (b == HARASS_STRONGEST_MILITARY) {
+			return this.harassStrongestMilitary();
+		} else if (b == HARASS_STRONGEST_ECONOMY) {
+			return this.HarassStrongestEconomy();
+		} else if (b == HARASS_WEAKEST_MILITARY) {
+			return this.HarassWeakestMilitary();
+		} else if (b == HARASS_WEAKEST_ECONOMY) {
+			return this.harassWeakestEconomy();
+		} else if (b == MAKE_WORKER) {
+			return this.makeWorker();
+		} else if (b == MAKE_TANK) {
+			return this.makeTank();
+		} else if (b == MAKE_AIR) {
+			return this.makeAir();
+		} else if (b == MAKE_ANIAIR) {
+			return this.makeAntiAir();
+		} else if (b == FORTIFY_STRATEGIC_LOCATION) {
+			return this.FortifyStrategicLocation();
+		} else if (b == FORTIFY_RESOURCE) {
+			return this.FortifyResource();
+		} else if (b == FORTIFY_CITY) {
+			return this.FortifyCity();
+		} else if (b == CLEAR_UNIT_QUEUE) {
+			return this.ClearUnitQueue();
+		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10) {
+			return this.CombatWinChanceTolerancePlus10();
+		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10) {
+			return this.CombatWinChanceToleranceMinus10();
+		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_RESET_TO_DEFAULT) {
+			return this.CombatWinChanceToleranceResetToDefault();
+		} else if (b == TURNS_LEFT_THRESHOLD_MINUS_20) {
+			return this.TurnsLeftThresholdMinus20();
+		} else if (b == TURNS_LEFT_THRESHOLD_PLUS_20) {
+			return this.TurnsLeftThresholdPlus20();
+		} else if (b == TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT) {
+			return this.TurnsLeftThresholdResetToDefault();
+		} else if (b == CREATE_NEW_CITY) {
+			return this.CreateNewCity();
+		} else if (b == NO_ACTION) {
+			return this.NoAction();
+		} else { 
+			throw new Exception("No action found for byte: " + b);
+		}
 	}
-	
 }

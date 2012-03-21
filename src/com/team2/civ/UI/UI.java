@@ -1,11 +1,3 @@
-/*
-Necessary changes:
-When selected, static objects and units must show their names et cetera
-When selected, player-owned mines must display the metal per turn they are
-giving the player.
-In the build menu, the upkeep and metal costs for units and static objects 
-must be displayed.
-*/
 package com.team2.civ.UI;
 
 import java.awt.Graphics2D;
@@ -47,13 +39,11 @@ public class UI {
 
 	private boolean leftClick = true;
 
-
-
-	public UI(Player player, Resources res,GameController gc) {
-		this.res = res;
+	public UI(Player player, GameController gc) {
+		this.res = Resources.getInstance();
 		this.player = player;
-		miniMap = new MiniMap(WW * 7 / 10 + 10, WH * 7 / 10, WW * 3 / 10,
-				WH * 3 / 10,gc);
+		miniMap = new MiniMap(WW * 13 / 20 + 10, WH * 13 / 20, WW * 7 / 20,
+				WH * 7 / 20,gc);
 		try {
 			endButton = new UIButton(miniMap.x, miniMap.y - 100, new UIEvent(UIEvent.Event.END_TURN), res.getImage("END_TURN"));
 		} catch (ResNotFoundException e) {
@@ -74,6 +64,7 @@ public class UI {
 		}
 		curmetal.text = "Current metal: " + player.metal;
 		curpop.text = "Current population: " + player.population;
+		updateslider();
 	}
 
 	public void draw(Graphics2D g) {
@@ -87,6 +78,7 @@ public class UI {
 		curpop.draw(g);
 		miniMap.draw(g);
 	}
+	
 
 	public void closeVSlide() {
 		synchronized (sliders) {
@@ -113,7 +105,13 @@ public class UI {
 		}
 		return null;
 	}
-	
+	public void updateslider(){
+		try{
+		((UIText) selectionInfo.children.get(1)).text=(currentunit.getHP() + "/" + currentunit.data.HP);
+		((UIText) selectionInfo.children.get(2)).text=(currentunit.getAP() + "/" + currentunit.data.AP);
+		}
+		catch(Exception e){}
+	}
 
 	public void showInfo(ArrayList<MapObject> list) {
 		closeHSlide();
@@ -199,9 +197,12 @@ public class UI {
 		}
 		for (int i = 0; i < unit.data.buildIDs.size(); i++) {
 			try {
-				buildSlider.addChild(new UIText(0, i * 100 + 85,
+				buildSlider.addChild(new UIText(0, i * 150 + 65,res.getUnit(unit.data.buildIDs.get(i)).metalCost+" metal"));
+				buildSlider.addChild(new UIText(0, i * 150 + 80,res.getUnit(unit.data.buildIDs.get(i)).powerUsage+" power"));
+				
+				buildSlider.addChild(new UIText(0, i * 150 + 50,
 						unit.data.buildIDs.get(i)));
-				buildSlider.addChild(new UIButton(0, (i * 100) + 100,
+				buildSlider.addChild(new UIButton(0, (i * 150) + 85,
 						toEvent(unit.data.buildIDs.get(i)), res
 								.getImage(unit.data.buildIDs.get(i))));
 				buildSlider.height += 200;
@@ -231,7 +232,7 @@ public class UI {
 		}
 		currentunit = unit;
 		selectionInfo.addChild(new UIText(10, 15, (unit.name))); //
-		// selectionInfo.addChild(new UIText(10, 35, (unit.data.description)));
+		//selectionInfo.addChild(new UIText(10, 35, (unit.)));
 
 		selectionInfo.addChild(new UIText(10, 55,(unit.getHP() + "/" + unit.data.HP)));
 		selectionInfo.addChild(new UIText(10, 75,(unit.getAP() + "/" + unit.data.AP)));
@@ -284,12 +285,10 @@ public class UI {
 			e.printStackTrace();
 		}
 		curstatobj = unit;
-		// selectionInfo.addChild(new UIText(10, 15, (unit.))); //
-		// selectionInfo.addChild(new UIText(10, 35, (unit.data.description)));
-		// selectionInfo.addChild(new UIText(10, 55,(unit.getHP() + "/" +
-		// unit.data.getHP())));
-		// selectionInfo.addChild(new UIText(10, 75,(unit.getAP() + "/" +
-		// unit.data.getAP())));
+		selectionInfo.addChild(new UIText(10, 15, (unit.name))); //
+		if (curstatobj.data.id.equals("MINE")){
+			selectionInfo.addChild(new UIText(10, 35, "Metal per turn"));	
+		}
 
 		if (!unit.data.buildIDs.isEmpty())
 			try {				
