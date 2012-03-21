@@ -1,3 +1,11 @@
+/*
+Necessary changes:
+When selected, static objects and units must show their names et cetera
+When selected, player-owned mines must display the metal per turn they are
+giving the player.
+In the build menu, the upkeep and metal costs for units and static objects 
+must be displayed.
+*/
 package com.team2.civ.UI;
 
 import java.awt.Graphics2D;
