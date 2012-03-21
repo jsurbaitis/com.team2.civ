@@ -95,10 +95,10 @@ public class Population {
 		}
 		int k = j;
 		Random random = new SecureRandom();
-	    AI parent1 =newAI[random.nextInt(k)];
-	    AI parent2 =newAI[random.nextInt(k)];
 	    if (j < population_size){
-	    	for (int t = j; t < genomes.length; t++){
+	    	for (int t = j; t < genomes.length; t++){		
+	    		AI parent1 =newAI[random.nextInt(k)];
+	    		AI parent2 =newAI[random.nextInt(k)];
 	    		newAI[j] = new AI(game, parent1, parent2);
 	    		j++;
 	    	}
