@@ -17,7 +17,7 @@ public class Player {
 	
 	public int powerUsage = 0;
 	public int powerCapability = 2;
-	public int metal = 2000;
+	public int metal = 125;
 	public int population = 0;
 
 	public AI ai;
