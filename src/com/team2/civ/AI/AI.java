@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.TreeMap;
 
@@ -23,6 +24,7 @@ import com.team2.civ.Game.GameController;
 import com.team2.civ.Game.GameStaticObject;
 import com.team2.civ.Game.GameUnit;
 import com.team2.civ.Game.Player;
+import com.team2.civ.Map.WalkableTile;
 
 public class AI {
 	final static int condition_bits = 21;
@@ -214,6 +216,10 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		}
 		return responses;
 	}
+	
+	private boolean isBitSet(byte b, int bitIndex) {
+		return (b & (1 << bitIndex)) != 0;
+	}
 
 	private byte getFiveBits(int index) {
 		int bitIndex = (index * 5) % 8;
@@ -221,7 +227,8 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		byte rtn = 0;
 
 		for (int i = 0; i < 5; i++) {
-			rtn |= (this.genome[byteIndex] << bitIndex);
+			if(isBitSet(this.genome[byteIndex], bitIndex))
+				rtn |= (1 << i);
 			bitIndex++;
 			if (bitIndex > 7) {
 				bitIndex = 0;
@@ -423,7 +430,44 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 				
 	}
 	
-	private GameAction SeizeStrategicLocation(){
+	private GameAction SeizeStrategicLocation() {
+		Collection<WalkableTile> walkableMap = game.getWalkableMap();
+		double stdev = 0;
+		for(Double d: game.getStratLocValues().values()) {
+			stdev += Math.pow(d - game.avgStratLocValue, 2);
+		}
+		
+		stdev /= walkableMap.size();
+		stdev = Math.sqrt(stdev);
+		
+		for(Entry<WalkableTile, Double> e: game.getStratLocValues().entrySet()) {
+			if(e.getValue() > stdev * current_st_dev_strat_loc) {
+				if(game.isTileFree(e.getKey())) {
+					for(GameUnit u: game.getPlayerUnitsOfType(owner, "TANK", "ANTIAIR", "AIR")) {
+						if(u.AP > 0)
+							return new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE, owner, u, e.getKey());
+					}
+				}
+			}
+		}
+		
+		/*
+		 * 
+		If none free:
+		If have free units:
+		If total free units win chance > current win chance threshold
+		Remove units until win chance < current win chance threshold, then send previous iteration to strat loc
+		If total free units win chance < current win chance threshold
+		Goto generalized "make unit"
+		If strat loc list is empty:
+		If current st.dev != 1:
+		St.dev --
+		Goto 00000 - Seize Strategic location
+		Else
+		If default behavior does not reference contain chain reference to 00000:
+		Goto default behavior
+		Else:
+		Goto 00001 - Seize resource*/
 		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
 	
