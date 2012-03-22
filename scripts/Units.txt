@@ -66,7 +66,7 @@ BaseDmg 20
 Range 2
 FoWRange 2
 PowerUsage 2 
-MetalCost 50
+MetalCost 75
 
 DmgModifier
 {
@@ -103,7 +103,7 @@ BaseDmg 30
 Range 3
 FoWRange 3
 PowerUsage 2
-MetalCost 100
+MetalCost 150
 
 DmgModifier
 {
@@ -141,7 +141,7 @@ BaseDmg 30
 Range 2
 FoWRange 5
 PowerUsage 4
-MetalCost 200
+MetalCost 300
 
 DmgModifier
 {
