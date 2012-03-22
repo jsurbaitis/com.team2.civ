@@ -1,5 +1,5 @@
 CITY
-MetalCost 300
+MetalCost 450
 DefensiveBonus 25
 MovementCost 1
 FoWRange 3
@@ -85,7 +85,7 @@ name
 ENDOBJ
 
 FORTIFICATION
-MetalCost 50
+MetalCost 75
 DefensiveBonus 50
 MovementCost 1
 FoWRange 3
