@@ -464,14 +464,13 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		}
 		
 		List<WalkableTile> tileList = new ArrayList<WalkableTile>(stratLocValues.keySet());
-		Random rnd = new Random();
-		int index = rnd.nextInt(stratLocValues.size());
-		//WalkableTile t = stratLocValues.get
-		
-		for(Entry<WalkableTile, Double> e: game.getStratLocValues().entrySet()) {
-			
+		if(tileList.size() > 0) {
+			Random rnd = new Random();
+			int index = rnd.nextInt(tileList.size());
 		}
 		
+		//WalkableTile t = stratLocValues.get
+
 		/*
 		 * 
 		If have free units:

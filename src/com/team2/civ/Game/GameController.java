@@ -26,7 +26,6 @@ import com.team2.civ.Data.Resources;
 import com.team2.civ.Map.CoordObject;
 import com.team2.civ.Map.MapObject;
 import com.team2.civ.Map.MapObjectImage;
-import com.team2.civ.Map.PathNode;
 import com.team2.civ.Map.WalkableTile;
 import com.team2.civ.Map.WallTile;
 import com.team2.civ.UI.UI;
@@ -72,13 +71,21 @@ public class GameController {
 
 	private Vector<GameUnit> units = new Vector<GameUnit>();
 	private HashMap<CoordObject, GameStaticObject> staticObjects = new HashMap<CoordObject, GameStaticObject>();
-	
+
+	private List<Path> paths = new ArrayList<Path>();
 	private HashMap<WalkableTile, Double> stratLocValues = new HashMap<WalkableTile, Double>();
 	public double avgStratLocValue;
 	private int stratLocPathSum;
+	private boolean stratLocsNeedUpdate = true;
 
 	private Vector<MapObjectImage> unitDraw = new Vector<MapObjectImage>();
 	private Vector<MapObjectImage> lowDraw = new Vector<MapObjectImage>();
+
+	// private HashMap<CoordObject, PathNode> nodeList = new
+	// HashMap<CoordObject, PathNode>();
+	private ArrayList<WalkableTile> openList = new ArrayList<WalkableTile>();
+	private ArrayList<WalkableTile> closedList = new ArrayList<WalkableTile>();
+	private ArrayList<WalkableTile> returnList = new ArrayList<WalkableTile>();
 
 	public List<Player> players = new ArrayList<Player>();
 	public Player humanPlayer;
@@ -120,8 +127,8 @@ public class GameController {
 		players.get(1).ai = a2;
 		players.get(2).ai = a3;
 		players.get(3).ai = a4;
-		
-		for(Player p: players)
+
+		for (Player p : players)
 			p.ai.setGameVars(this, p);
 
 		return null;
@@ -211,7 +218,7 @@ public class GameController {
 				p.ai.setGameVars(this, p);
 			}
 		}
-		
+
 		calcAvgStratLocValue();
 	}
 
@@ -340,18 +347,20 @@ public class GameController {
 
 		g.scale(scale, scale);
 
-		synchronized(lowDraw) {
+		synchronized (lowDraw) {
 			for (MapObjectImage i : lowDraw)
 				i.draw(g, (int) (offsetX), (int) (offsetY), scale);
 		}
-		
+
 		Collections.sort(unitDraw);
 		for (MapObjectImage i : unitDraw)
 			i.draw(g, (int) (offsetX), (int) (offsetY), scale);
 
 		g.scale(1 / scale, 1 / scale);
 
-		ui.draw(g);
+		synchronized (units) {
+			ui.draw(g);
+		}
 	}
 
 	private void zoomIn() {
@@ -501,14 +510,17 @@ public class GameController {
 
 	private void startMovement(GameUnit actor, MapObject target) {
 		endCombatTargeting();
-		List<WalkableTile> path = findPath(actor, target, actor.owner, null, true, true,
-				actor.AP + 1);
-		actor.AP -= path.size() - 1;
+		List<WalkableTile> path = findPath(actor, target, actor.owner, null,
+				true, false, actor.AP + 1);
 
-		if (!Team2Civ.AI_MODE)
-			actor.startMovement(path);
-		else {
-			actor.setPos(path.get(0).mapX, path.get(0).mapY);
+		if (path != null) {
+			actor.AP -= path.size() - 1;
+
+			if (!Team2Civ.AI_MODE)
+				actor.startMovement(path);
+			else {
+				actor.setPos(path.get(0).mapX, path.get(0).mapY);
+			}
 		}
 	}
 
@@ -571,16 +583,17 @@ public class GameController {
 	}
 
 	private void endTurn() {
-		upkeep(currentPlayer);
 		detarget();
-		calcStratValues();
+		updatePathsAndStratLoc();
+		upkeep(currentPlayer);
 		turnsLeft--;
 
 		int nextPlayer = (players.indexOf(currentPlayer) + 1) % players.size();
 		currentPlayer = players.get(nextPlayer);
 
 		if (currentPlayer != humanPlayer) {
-			List<GameAction> actions = currentPlayer.ai.perform(getActionsForOthers(currentPlayer));
+			List<GameAction> actions = currentPlayer.ai
+					.perform(getActionsForOthers(currentPlayer));
 
 			if (Team2Civ.AI_MODE)
 				currentPlayer.previousTurn = performActions(actions);
@@ -635,7 +648,14 @@ public class GameController {
 				// p.powerCapability += so.data.powerGiven;
 
 				if (so.data.id.equals("MINE")) {
-					p.metal += 50 / Math.pow((getDistToClosestCity(so, p)-1), 2);
+					int smallestDist = Integer.MAX_VALUE;
+					for (Path path : paths) {
+						if (path.endObj == so) {
+							if (path.path.size() < smallestDist)
+								smallestDist = path.path.size();
+						}
+					}
+					p.metal += 50 / Math.pow((smallestDist - 1), 2);
 				}
 			}
 		}
@@ -721,8 +741,8 @@ public class GameController {
 				res.getImage(data.id), res.getImage(data.id + "_fow"), p, data);
 		staticObjects.put(so, so);
 		walkableMap.put(so, so);
-		
-		synchronized(lowDraw) {
+
+		synchronized (lowDraw) {
 			lowDraw.add(so.getImage());
 			Collections.sort(lowDraw);
 		}
@@ -939,46 +959,32 @@ public class GameController {
 			CoordObject targetObj) {
 		return findPath(startObj, targetObj, null, null, true, true, -1);
 	}
-	
+
 	public List<WalkableTile> findPath(CoordObject startObj,
 			CoordObject targetObj, WalkableTile exclude, boolean ignoreUnits) {
-		return findPath(startObj, targetObj, null, exclude, true, ignoreUnits, -1);
+		return findPath(startObj, targetObj, null, exclude, true, ignoreUnits,
+				-1);
 	}
 
 	private List<WalkableTile> findPath(CoordObject startObj,
-			CoordObject targetObj, Player owner, WalkableTile exclude, boolean walkOnTarget,
-			boolean ignoreUnits, int lengthLimit) {
-		HashMap<CoordObject, PathNode> nodeList = new HashMap<CoordObject, PathNode>();
-		ArrayList<PathNode> openList = new ArrayList<PathNode>();
-		ArrayList<PathNode> closedList = new ArrayList<PathNode>();
-		ArrayList<WalkableTile> returnList = new ArrayList<WalkableTile>();
+			CoordObject targetObj, Player owner, WalkableTile exclude,
+			boolean walkOnTarget, boolean ignoreUnits, int lengthLimit) {
 
-		for (WalkableTile tile : walkableMap.values()) {
-			boolean canWalkOn = true;
-			if(tile == exclude) {
-				canWalkOn = false;
-			} else if(owner != null || !ignoreUnits) {
-				for (GameUnit u : units) {
-					if(u.mapX == tile.mapX && u.mapY == tile.mapY) {
-						if(!ignoreUnits || u.owner != owner)
-							canWalkOn = false;
-					}
-				}
-			}
-			
-			if (canWalkOn)
-				nodeList.put(tile, new PathNode(tile.mapX, tile.mapY));
-		}
-		nodeList.put(startObj, new PathNode(startObj.mapX, startObj.mapY));
+		if (exclude == startObj || exclude == targetObj)
+			return null;
+
+		openList.clear();
+		closedList.clear();
+		returnList.clear();
 
 		boolean nextToTarget = true;
 		if (walkOnTarget)
 			nextToTarget = false;
 
-		PathNode target = null;
-		PathNode nextTile = null;
-		PathNode minTile = null;
-		PathNode current = nodeList.get(startObj);
+		WalkableTile target = null;
+		WalkableTile nextTile = null;
+		WalkableTile minTile = null;
+		WalkableTile current = walkableMap.get(startObj);
 		current.heuristic = getHeuristic(current.mapX, current.mapY,
 				targetObj.mapX, targetObj.mapY);
 		current.cost = 0;
@@ -1003,10 +1009,20 @@ public class GameController {
 			openList.remove(current);
 
 			for (int i = 0; i < nextPos.length; i++) {
-				nextTile = nodeList.get(new CoordObject(current.mapX
+				nextTile = walkableMap.get(new CoordObject(current.mapX
 						+ nextPos[i][0], current.mapY + nextPos[i][1]));
-				if (nextTile == null || closedList.contains(nextTile))
+
+				if ((nextTile == null || closedList.contains(nextTile))
+						|| exclude == nextTile)
 					continue;
+
+				boolean isFree = isTileFree(nextTile, owner);
+				if (!ignoreUnits) {
+					if (!isFree)
+						if (nextTile.mapX != startObj.mapX
+								&& nextTile.mapY != startObj.mapY)
+							continue;
+				}
 
 				int tentativeScore = current.cost
 						+ getTentativeScore(current.mapX, current.mapY,
@@ -1043,8 +1059,7 @@ public class GameController {
 		}
 
 		while (target != null) {
-			returnList.add(walkableMap.get(new CoordObject(target.mapX,
-					target.mapY)));
+			returnList.add(target);
 			target = target.parent;
 		}
 
@@ -1083,18 +1098,49 @@ public class GameController {
 	public Collection<GameStaticObject> getStaticObjects() {
 		return Collections.unmodifiableCollection(staticObjects.values());
 	}
-	
-	public double calcTileStratLoc(WalkableTile tile) {
-		return calcStratValue(tile) / stratLocPathSum;
-	}
-	
+
+	// public double calcTileStratLoc(WalkableTile tile) {
+	// return calcStratValue(tile) / stratLocPathSum;
+	// }
+
 	public HashMap<WalkableTile, Double> getStratLocValues() {
+		if (stratLocsNeedUpdate) {
+			List<WalkableTile> path;
+			stratLocValues.clear();
+			for (Path p : paths) {
+				for (int i = 0; i < p.path.size(); i++) {
+					WalkableTile t = p.path.get(i);
+					double val = 0;
+					for (Path p2 : paths) {
+						if (p2 != p && p2.path.contains(t)) {
+							path = findPath(p2.startObj, p2.endObj, t, false);
+							if (path != null) {
+								val += path.size();
+							} else
+								val += 500;
+						} else {
+							val += p2.path.size();
+						}
+					}
+					stratLocValues.put(t, val / stratLocPathSum);
+				}
+			}
+		}
+		stratLocsNeedUpdate = false;
 		return stratLocValues;
 	}
-	
+
 	public boolean isTileFree(WalkableTile t) {
-		for(GameUnit u: units) {
-			if(u.mapX == t.mapX && u.mapY == t.mapY)
+		for (GameUnit u : units) {
+			if (u.mapX == t.mapX && u.mapY == t.mapY)
+				return false;
+		}
+		return true;
+	}
+
+	public boolean isTileFree(WalkableTile t, Player p) {
+		for (GameUnit u : units) {
+			if (u.owner != p && u.mapX == t.mapX && u.mapY == t.mapY)
 				return false;
 		}
 		return true;
@@ -1102,26 +1148,28 @@ public class GameController {
 
 	private int calcStratValue(WalkableTile tile) {
 		int rtn = 0;
-		
+
 		List<GameStaticObject> mines = getObjectsOfType("MINE");
 		List<GameStaticObject> cities = getAllCities();
 		List<WalkableTile> path;
-		
-		for(GameStaticObject c1: cities) {
-			for(GameStaticObject c2: cities) {
-				if(c1 != c2) {
+
+		for (GameStaticObject c1 : cities) {
+			for (GameStaticObject c2 : cities) {
+				if (c1 != c2) {
 					path = findPath(c1, c2, tile, false);
-					if(path != null) {
-						if(tile != null) rtn += 500;
+					if (path != null) {
+						if (tile != null)
+							rtn += 500;
 						rtn += path.size();
 					}
 				}
 			}
-			
-			for(GameStaticObject m: mines) {
+
+			for (GameStaticObject m : mines) {
 				path = findPath(c1, m, tile, false);
-				if(path != null) {
-					if(tile != null) rtn += 500;
+				if (path != null) {
+					if (tile != null)
+						rtn += 500;
 					rtn += path.size();
 				}
 			}
@@ -1129,74 +1177,80 @@ public class GameController {
 
 		return rtn;
 	}
-	
+
 	private void calcAvgStratLocValue() {
 		double sum = 0;
 		avgStratLocValue = 0;
-		
-		for(WalkableTile tile: walkableMap.values()) {
+
+		for (WalkableTile tile : walkableMap.values()) {
 			sum += calcStratValue(tile);
 		}
-		
+
 		avgStratLocValue = sum / walkableMap.values().size();
 	}
-	
-	private void calcStratValues() {
-		List<Path> paths = new ArrayList<Path>();
-		
+
+	private boolean needToUpdatePath(GameStaticObject o1, GameStaticObject o2) {
+		for (Path p : paths) {
+			if ((p.startObj == o1 && p.endObj == o2) || (p.startObj == o2 && p.endObj == o1)) {
+				if (p.isFree())
+					return false;
+				else
+					return true;
+			}
+		}
+
+		return true;
+	}
+
+	private void updatePathsAndStratLoc() {
 		List<GameStaticObject> mines = getObjectsOfType("MINE");
 		List<GameStaticObject> cities = getAllCities();
 		List<WalkableTile> path;
 		stratLocPathSum = 0;
-		
-		for(GameStaticObject c1: cities) {
-			for(GameStaticObject c2: cities) {
-				if(c1 != c2) {
+
+		for (GameStaticObject c1 : cities) {
+			for (GameStaticObject c2 : cities) {
+				if (c1 != c2 && needToUpdatePath(c1, c2)) {
 					path = findPath(c1, c2, null, false);
-					if(path != null) {
+					if (path != null) {
 						paths.add(new Path(c1, c2, path));
 						stratLocPathSum += path.size();
 					}
 				}
 			}
-			
-			for(GameStaticObject m: mines) {
-				path = findPath(c1, m, null, false);
-				if(path != null) {
-					paths.add(new Path(c1, m, path));
-					stratLocPathSum += path.size();
+
+			for (GameStaticObject m : mines) {
+				if (needToUpdatePath(c1, m)) {
+					path = findPath(c1, m, null, false);
+					if (path != null) {
+						paths.add(new Path(c1, m, path));
+						stratLocPathSum += path.size();
+					}
 				}
 			}
 		}
 
-		stratLocValues.clear();
-		for(Path p: paths) {
-			for(WalkableTile t: p.path) {
-				double val = 0;
-				for(Path p2: paths) {
-					if(p2.path.contains(t)) {
-						path = findPath(p2.startObj, p2.endObj, t, false);
-						if(path != null) {
-							val += path.size();
-						} else
-							val += 500;
-					} else {
-						val += p2.path.size();
-					}
-				}
-				stratLocValues.put(t, val / stratLocPathSum);
-			}
-		}
+		stratLocsNeedUpdate = true;
 	}
-	
+
 	private class Path {
-		public MapObject startObj, endObj;
+		public GameStaticObject startObj, endObj;
 		public List<WalkableTile> path;
-		
-		public Path(MapObject startObj, MapObject endObj, List<WalkableTile> path) {
+
+		public Path(GameStaticObject startObj, GameStaticObject endObj,
+				List<WalkableTile> path) {
 			this.startObj = startObj;
 			this.endObj = endObj;
 			this.path = path;
+		}
+
+		public boolean isFree() {
+			for (WalkableTile t : path) {
+				if (!isTileFree(t))
+					return false;
+			}
+
+			return true;
 		}
 	}
 }
