@@ -399,10 +399,20 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 	public List<GameAction> perform(List<GameAction> actions) {
 		output.clear();
 		output.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner));
-		
+		Random r = new Random();
 		boolean[] arr = new boolean[21];
-		for(int i = 0; i < 21; i++) arr[i] = true;
-		getResponseCodes(arr);
+		for(int i = 0; i < 21; i++) arr[i] = r.nextBoolean();
+		byte[] b_responses = getResponseCodes(arr);
+		for (byte b : b_responses){
+			System.out.print(b + " ");
+			try {
+				this.parseActionCode(b);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		System.out.println("\n-------");
 		return output;
 	}
 	
