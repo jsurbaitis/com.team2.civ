@@ -450,7 +450,9 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		stdev /= walkableMap.size();
 		stdev = Math.sqrt(stdev);
 		
-		for(Entry<WalkableTile, Double> e: game.getStratLocValues().entrySet()) {
+		HashMap<WalkableTile, Double> stratLocValues = game.getStratLocValues();
+		boolean haveFreeUnits = false;
+		for(Entry<WalkableTile, Double> e: stratLocValues.entrySet()) {
 			if(e.getValue() > stdev * current_st_dev_strat_loc) {
 				if(game.isTileFree(e.getKey())) {
 					for(GameUnit u: game.getPlayerUnitsOfType(owner, "TANK", "ANTIAIR", "AIR")) {
@@ -461,9 +463,17 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 			}
 		}
 		
+		List<WalkableTile> tileList = new ArrayList<WalkableTile>(stratLocValues.keySet());
+		Random rnd = new Random();
+		int index = rnd.nextInt(stratLocValues.size());
+		//WalkableTile t = stratLocValues.get
+		
+		for(Entry<WalkableTile, Double> e: game.getStratLocValues().entrySet()) {
+			
+		}
+		
 		/*
 		 * 
-		If none free:
 		If have free units:
 		If total free units win chance > current win chance threshold
 		Remove units until win chance < current win chance threshold, then send previous iteration to strat loc

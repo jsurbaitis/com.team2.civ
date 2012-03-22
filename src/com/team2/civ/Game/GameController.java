@@ -1142,35 +1142,61 @@ public class GameController {
 	}
 	
 	private void calcStratValues() {
-		stratLocPathSum = calcStratValue(null);
-		stratLocValues.clear();
-
+		List<Path> paths = new ArrayList<Path>();
+		
 		List<GameStaticObject> mines = getObjectsOfType("MINE");
 		List<GameStaticObject> cities = getAllCities();
 		List<WalkableTile> path;
+		stratLocPathSum = 0;
 		
 		for(GameStaticObject c1: cities) {
 			for(GameStaticObject c2: cities) {
 				if(c1 != c2) {
-					path = findPath(c1, c2);
+					path = findPath(c1, c2, null, false);
 					if(path != null) {
-						for(WalkableTile t: path) {
-							if(stratLocValues.get(t) == null)
-								stratLocValues.put(t, calcTileStratLoc(t));
-						}
+						paths.add(new Path(c1, c2, path));
+						stratLocPathSum += path.size();
 					}
 				}
 			}
 			
 			for(GameStaticObject m: mines) {
-				path = findPath(c1, m);
+				path = findPath(c1, m, null, false);
 				if(path != null) {
-					for(WalkableTile t: path) {
-						if(stratLocValues.get(t) == null)
-							stratLocValues.put(t, calcTileStratLoc(t));
-					}
+					paths.add(new Path(c1, m, path));
+					stratLocPathSum += path.size();
 				}
 			}
+		}
+
+		stratLocValues.clear();
+		for(Path p: paths) {
+			for(WalkableTile t: p.path) {
+				double val = 0;
+				for(Path p2: paths) {
+					if(p2.path.contains(t)) {
+						path = findPath(p2.startObj, p2.endObj, t, false);
+						if(path != null) {
+							val += path.size();
+						} else
+							val += 500;
+					} else {
+						val += p2.path.size();
+					}
+				}
+				stratLocValues.put(t, val / stratLocPathSum);
+			}
+		}
+	}
+	
+	private class Path {
+		public MapObject startObj, endObj;
+		public List<WalkableTile> path;
+		
+		public Path(MapObject startObj, MapObject endObj, List<WalkableTile> path) {
+			this.startObj = startObj;
+			this.endObj = endObj;
+			this.path = path;
 		}
 	}
 }
