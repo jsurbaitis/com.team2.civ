@@ -111,6 +111,14 @@ public class GameController {
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
+		
+		humanPlayer = players.get(0);
+
+		for (int i = 1; i < players.size(); i++) {
+			Player p = players.get(i);
+			p.ai = new AI();
+			p.ai.setGameVars(this, p);
+		}
 
 		ui = new UI(humanPlayer, this);
 	}
@@ -206,19 +214,7 @@ public class GameController {
 		}
 
 		Collections.sort(lowDraw);
-
 		currentPlayer = players.get(0);
-
-		if (!Team2Civ.AI_MODE) {
-			humanPlayer = players.get(0);
-
-			for (int i = 1; i < players.size(); i++) {
-				Player p = players.get(i);
-				p.ai = new AI();
-				p.ai.setGameVars(this, p);
-			}
-		}
-
 		calcAvgStratLocValue();
 	}
 
@@ -302,6 +298,13 @@ public class GameController {
 					so.isSeen();
 					updateFow(so, so.data.fowRange);
 				}
+			}
+			
+			for(GameUnit u: units) {
+				if(walkableMap.get(u).beingSeen == true)
+					u.isSeen();
+				else
+					u.beingSeen = false;
 			}
 		}
 	}
@@ -726,8 +729,7 @@ public class GameController {
 		p.metal -= data.metalCost;
 		p.powerUsage += data.powerUsage;
 
-		GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res, p,
-				data);
+		GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res, p, data);
 		unitDraw.add(u.getImage());
 		units.add(u);
 
@@ -950,6 +952,16 @@ public class GameController {
 				offsetX += 12;
 			if (ev.getKeyCode() == KeyEvent.VK_RIGHT)
 				offsetX -= 12;
+			if(ev.getKeyCode() == KeyEvent.VK_F1) {
+				GameUnitData data;
+				try {
+					data = res.getUnit("WORKER");
+					this.addUnitToPlayer(players.get(1), (GameStaticObject)target, data);
+				} catch (ResNotFoundException e) {
+					e.printStackTrace();
+				}
+				
+			}
 		}
 	}
 
@@ -1022,9 +1034,7 @@ public class GameController {
 				boolean isFree = isTileFree(nextTile, owner);
 				if (!ignoreUnits) {
 					if (!isFree)
-						if (nextTile.mapX != startObj.mapX
-								&& nextTile.mapY != startObj.mapY)
-							continue;
+						continue;
 				}
 
 				int tentativeScore = current.cost
