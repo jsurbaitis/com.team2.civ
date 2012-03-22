@@ -36,13 +36,13 @@ public class AI {
 	final boolean[] conditions = new boolean[condition_bits];
 	//tolerances:
 	final int init_st_dev_strat_loc;
-	int current_st_dev_strat_loc;
+	float current_st_dev_strat_loc;
 	final float init_combat_pcent_win_chance;
 	float current_combat_pcent_win_chance;
 	final int init_queue_length;
 	final int init_resource_threshold;
 	final int init_turns_threshold;
-	int current_turns_threshold;
+	float current_turns_threshold;
 	final byte default_behavior_code;
 	
 	final byte SEIZE_STRATEGIC_LOCATION = 0;
@@ -596,36 +596,71 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
     private GameAction FortifyStrategicLocation(){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
+    
     private GameAction FortifyResource(){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
+    
     private GameAction FortifyCity(){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
+    
     private GameAction ClearUnitQueue(){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
-    private GameAction CombatWinChanceTolerancePlus10(){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+    
+    private GameAction CombatWinChanceTolerancePlus10() throws Exception{
+    	this.current_combat_pcent_win_chance *= 1.1;
+    	if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10){
+    		return parseActionCode(this.default_behavior_code);
+    	}
+    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, owner);
 	}
-    private GameAction CombatWinChanceToleranceMinus10(){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+    
+    private GameAction CombatWinChanceToleranceMinus10() throws Exception{
+    	this.current_combat_pcent_win_chance *= .9;
+    	if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10){
+    		return parseActionCode(this.default_behavior_code);
+    	}
+    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, owner);
 	}
-    private GameAction CombatWinChanceToleranceResetToDefault(){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+    
+    private GameAction CombatWinChanceToleranceResetToDefault() throws Exception{
+    	this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
+    	if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_RESET_TO_DEFAULT){
+    		return parseActionCode(this.default_behavior_code);
+    	}
+    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, owner);
 	}
-    private GameAction TurnsLeftThresholdMinus20(){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+    
+    private GameAction TurnsLeftThresholdMinus20() throws Exception{
+    	this.current_turns_threshold *= .8;
+    	if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_MINUS_20){
+    		return parseActionCode(this.default_behavior_code);
+    	}
+    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, owner);
 	}
-    private GameAction TurnsLeftThresholdPlus20(){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+    
+    private GameAction TurnsLeftThresholdPlus20() throws Exception{
+    	this.current_turns_threshold *= 1.2;
+    	if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_PLUS_20){
+    		return parseActionCode(this.default_behavior_code);
+    	}
+    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, owner);
 	}
-    private GameAction TurnsLeftThresholdResetToDefault(){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+    
+    private GameAction TurnsLeftThresholdResetToDefault() throws Exception{
+    	this.current_turns_threshold = this.init_turns_threshold;
+    	if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT){
+    		return parseActionCode(this.default_behavior_code);
+    	}
+    	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, owner);
 	}
+    
     private GameAction CreateNewCity(){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
+    
     private GameAction NoAction(){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
