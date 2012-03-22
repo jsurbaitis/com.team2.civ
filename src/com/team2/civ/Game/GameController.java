@@ -648,14 +648,17 @@ public class GameController {
 				// p.powerCapability += so.data.powerGiven;
 
 				if (so.data.id.equals("MINE")) {
-					int smallestDist = Integer.MAX_VALUE;
+					/*int smallestDist = Integer.MAX_VALUE;
 					for (Path path : paths) {
-						if (path.endObj == so) {
-							if (path.path.size() < smallestDist)
+						if (path.startObj.owner == p && path.endObj == so) {
+							System.out.println("Path "+path.path.size());
+							if (path.path.size() < smallestDist) {
 								smallestDist = path.path.size();
+							}
 						}
 					}
-					p.metal += 50 / Math.pow((smallestDist - 1), 2);
+					p.metal += 50 / Math.pow((smallestDist - 1), 2);*/
+					p.metal += 50 / Math.pow((getDistToClosestCity(so, p) - 1), 2);
 				}
 			}
 		}
