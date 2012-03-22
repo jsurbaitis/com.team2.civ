@@ -631,7 +631,7 @@ public class GameController {
 				// p.powerCapability += so.data.powerGiven;
 
 				if (so.data.id.equals("MINE")) {
-					p.metal += 50 / getDistToClosestCity(so, p);
+					p.metal += 50 / Math.pow(getDistToClosestCity(so, p),2);
 				}
 			}
 		}
