@@ -10,7 +10,7 @@ import com.team2.civ.Map.PathNode;
 public class HeightmapGenerator {
 	private static HashMap<CoordObject, PathNode> nodeList;
 	private static boolean nodeListIncludesWater = false;
-	
+
 	private static final int[][] nextPos = { { -1, 1 }, { 0, 1 }, { 1, 0 },
 			{ 1, -1 }, { 0, -1 }, { -1, 0 } };
 	private static int[][] map;
@@ -57,7 +57,8 @@ public class HeightmapGenerator {
 	private static boolean canPlaceCity(int i, int j,
 			ArrayList<int[]> citiesPlaced) {
 		for (int[] cityCoords : citiesPlaced) {
-			ArrayList<int[]> path = findPath(i, j, cityCoords[0], cityCoords[1], false);
+			ArrayList<int[]> path = findPath(i, j, cityCoords[0],
+					cityCoords[1], false);
 			if (path == null || path.size() < 18)
 				return false;
 		}
@@ -114,14 +115,14 @@ public class HeightmapGenerator {
 
 	private static int getTileWeight(int i, int j) {
 		int weight = 0;
-		for (int m = 1; m <= 3; m++) {
+		//for (int m = 1; m <= 2; m++) {
 			for (int z = 0; z < nextPos.length; z++) {
-				int x = i + nextPos[z][0] * m;
-				int y = j + nextPos[z][1] * m;
+				int x = i + nextPos[z][0];
+				int y = j + nextPos[z][1];
 				if (goodCoords(x, y) && map[x][y] == 4)
-					weight += 6 / m;
+					weight += 6;
 			}
-		}
+		//}
 		return weight;
 	}
 
@@ -183,7 +184,7 @@ public class HeightmapGenerator {
 				}
 			}
 		}
-		
+
 		ArrayList<int[]> riverSources = new ArrayList<int[]>();
 
 		// REMOVE WATER IN THE MIDDLE OF LANDMASS, ADD HILLS
@@ -192,7 +193,7 @@ public class HeightmapGenerator {
 		for (int i = 0; i < width; i++) {
 			for (int j = 0; j < height; j++) {
 				if (map[i][j] == 0) {
-					if (getTileCountAround(i, j, toCountWaterRemove,false) >= 4 
+					if (getTileCountAround(i, j, toCountWaterRemove, false) >= 4
 							&& getTileCountAround(i, j, toCountHillAdd, false) < 2)
 						map[i][j] = 1;
 					else {
@@ -205,13 +206,14 @@ public class HeightmapGenerator {
 				}
 			}
 		}
-		
+
 		// ADD RIVERS
-		for(int[] arr: riverSources) {
+		for (int[] arr : riverSources) {
 			int[] closestWater = getClosestWater(arr[0], arr[1]);
-			ArrayList<int[]> path = findPath(arr[0], arr[1], closestWater[0], closestWater[1], true);
-			if(path != null) {
-				for(int[] tile: path) {
+			ArrayList<int[]> path = findPath(arr[0], arr[1], closestWater[0],
+					closestWater[1], true);
+			if (path != null) {
+				for (int[] tile : path) {
 					map[tile[0]][tile[1]] = 0;
 				}
 			}
@@ -219,17 +221,17 @@ public class HeightmapGenerator {
 
 		map[width / 2][height / 2] = 1;
 	}
-	
+
 	private static int[] getClosestWater(int x, int y) {
-		int[] closest = {x, y};
+		int[] closest = { x, y };
 		int dist = Integer.MAX_VALUE;
 		int tempDist;
-		
+
 		for (int i = 0; i < map.length; i++) {
 			for (int j = 0; j < map[0].length; j++) {
-				if(i != x && j != y && map[i][j] == 0) {
+				if (i != x && j != y && map[i][j] == 0) {
 					tempDist = dist(x, y, i, j);
-					if(tempDist < dist) {
+					if (tempDist < dist) {
 						closest[0] = i;
 						closest[1] = j;
 						dist = tempDist;
@@ -237,7 +239,7 @@ public class HeightmapGenerator {
 				}
 			}
 		}
-		
+
 		return closest;
 	}
 

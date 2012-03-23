@@ -7,6 +7,8 @@ import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.Resources;
 
 public class MapObjectImage implements Comparable<MapObjectImage> {
+	private static final boolean SHOW_COORDS = false;
+	
 	public static BufferedImage selectedImg;
 	
 	private BufferedImage fowImg;
@@ -82,6 +84,9 @@ public class MapObjectImage implements Comparable<MapObjectImage> {
 			g.drawImage(selectedImg, null, (int) parent.x + offsetX + (Resources.TILE_WIDTH - selectedImg.getWidth())/2, 
          	   		 parent.y - (selectedImg.getHeight() - Resources.TILE_HEIGHT) + offsetY);	
 		}
+		
+		if(SHOW_COORDS)
+			g.drawString(""+parent.mapX+" / "+parent.mapY, parent.x + offsetX - getWidth()/2, parent.y + offsetY);
 	}
 	
 	@Override

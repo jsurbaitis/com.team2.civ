@@ -158,14 +158,13 @@ public class GameMap {
 
 		MapObject o;
 		for (int z = 0; z < nextPos.length; z++) {
-			o = walkableMap.get(new CoordObject(co.mapX + nextPos[z][0],
-					co.mapY + nextPos[z][1]));
+			CoordObject key = new CoordObject(co.mapX + nextPos[z][0], co.mapY + nextPos[z][1]);
+			o = walkableMap.get(key);
 			if (o != null) {
 				updateFowAroundRec(o, range - 1);
 				o.isSeen();
 			} else {
-				o = unwalkableMap.get(new CoordObject(co.mapX + nextPos[z][0],
-						co.mapY + nextPos[z][1]));
+				o = unwalkableMap.get(key);
 				if (o != null) {
 					updateFowAroundRec(o, range - 1);
 					o.isSeen();
@@ -395,10 +394,7 @@ public class GameMap {
 		for (Path p : paths) {
 			if ((p.startObj == o1 && p.endObj == o2)
 					|| (p.startObj == o2 && p.endObj == o1)) {
-				if (p.isFree())
-					return false;
-				else
-					return true;
+				return !p.isFree();
 			}
 		}
 

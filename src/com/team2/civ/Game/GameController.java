@@ -98,8 +98,7 @@ public class GameController {
 
 	private void initGame() throws ResNotFoundException {
 		map = new GameMap();
-		graphics = new GameGraphics(map);
-
+		
 		String[] colors = { "#FFFFFF", "#FF5400", "#545454", "#000FFF" };
 		int playerIndex = 1;
 
@@ -109,7 +108,8 @@ public class GameController {
 			players.add(p);
 			city.owner = p;
 
-			if (playerIndex == 1) {
+			if (!Team2Civ.AI_MODE && playerIndex == 1) {
+				graphics = new GameGraphics(map);
 				int offsetX = -city.x + Team2Civ.WINDOW_WIDTH / 2;
 				int offsetY = -city.y + Team2Civ.WINDOW_HEIGHT / 2;
 				graphics.setOffsets(offsetX, offsetY);
@@ -164,8 +164,9 @@ public class GameController {
 			}
 		}
 
-		for (GameUnit u : map.getUnits()) {
-			u.update(gameTime);
+		List<GameUnit> units = map.getUnits();
+		for (int i = 0; i < units.size(); i++) {
+			units.get(i).update(gameTime);
 		}
 
 		map.updateFow(humanPlayer);
