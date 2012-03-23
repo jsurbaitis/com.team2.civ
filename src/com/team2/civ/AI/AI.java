@@ -371,8 +371,6 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 				it.remove();
 		}
 		
-		if(cities.size() == 0) return null;
-		
 		Random rnd = new Random();
 		int index = rnd.nextInt(cities.size());
 		return cities.get(index);
@@ -411,9 +409,7 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		for (byte b : b_responses){
 			System.out.print(b + ": ");
 			try {
-				GameAction ga = this.parseActionCode(b);
-				System.out.print(ga + "  ");
-				output.add(ga);
+				System.out.print(this.parseActionCode(b) + "  ");
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -574,34 +570,48 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 	}
     
     private GameAction makeWorker() {
-    	return makeUnit(GameAction.OneAgentEvent.BUILD_WORKER);
+    	if (owner.canAfford(res.getUnit("WORKER"))){
+    		return makeUnit(GameAction.OneAgentEvent.BUILD_WORKER);
+    	}
+    	if (!owner.canAffordMetal(res.getUnit("WORKER"))){
+    		return this.SeizeResource();
+    	}
+    	if (!owner.canAffordPower(res.getUnit("WORKER"))){
+    		return this.BuildPowerplant();
+    	}
+    	if (this.default_behavior_code != this.MAKE_WORKER 
+    			//TODO: && other things
+    			){
+    		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner); //TODO: replace this later
+    	}
+    	return null;
 	}
     
     private GameAction makeTank() {
     	return makeUnit(GameAction.OneAgentEvent.BUILD_TANK);
 	}
     
-    private GameAction makeAir(){
+    private GameAction makeAir() {
     	return makeUnit(GameAction.OneAgentEvent.BUILD_AIR);
 	}
     
-    private GameAction makeAntiAir(){
+    private GameAction makeAntiAir() {
     	return makeUnit(GameAction.OneAgentEvent.BUILD_ANTIAIR);
 	}
     
     private GameAction makeUnit(GameAction.OneAgentEvent buildEvent) {
     	try {
 			GameUnitData data = res.getUnit(buildEvent.toString().replace("BUILD_", ""));
-			if(owner.canAfford(data)) {
-				GameStaticObject city = getRandomActiveCity();
-				if(city != null) {
-					return new GameAction(buildEvent, owner, getRandomActiveCity());
-				}
-			}
+			if(owner.canAfford(data))
+	    		return new GameAction(buildEvent, owner, getRandomActiveCity());
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
 		return SeizeResource();
+    }
+    
+    private GameAction FortifyLocation(WalkableTile location){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
     }
     
     private GameAction FortifyStrategicLocation(){
@@ -609,7 +619,19 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 	}
     
     private GameAction FortifyResource(){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+    	ArrayList<WalkableTile> locations = new ArrayList<WalkableTile>();
+    	List<GameStaticObject> resources = map.getPlayerObjectsOfType(owner, "CITY", "POWERPLANT");
+    	if (resources.size() == 0){
+    		if (owner.scoreEconomy == 0){
+    			return this.SeizeResource();
+    		}
+    		return this.BuildPowerplant();
+    	}
+    	for (WalkableTile resource : resources){
+    		if (map.getUnitsOnTile(owner).size() != 0) locations.add(resource);
+    	}
+    	Random r = new Random();
+    	return FortifyLocation(locations.get(r.nextInt(locations.size()-1)));
 	}
     
     private GameAction FortifyCity(){
@@ -719,6 +741,10 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 	}
     
     private GameAction harassWeakestEconomy(){
+    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+	}
+    
+    private GameAction BuildPowerplant(){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
     
