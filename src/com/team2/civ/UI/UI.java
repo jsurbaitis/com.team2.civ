@@ -10,6 +10,7 @@ import javax.swing.SwingUtilities;
 import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
+import com.team2.civ.Game.GameGraphics;
 import com.team2.civ.Game.GameMap;
 import com.team2.civ.Game.GameStaticObject;
 import com.team2.civ.Game.GameUnit;
@@ -33,27 +34,27 @@ public class UI {
     private UISlider choiceSlider;
 	private int pressStartX;
 	private int pressStartY;
-
+	public GameGraphics graphics;
 	private int lastMouseX;
 	private int lastMouseY;
 
 	private boolean leftClick = true;
 
-	public UI(Player player, GameMap map) {
+	public UI(Player player, GameMap map,GameGraphics graphics) {
 		this.res = Resources.getInstance();
 		this.player = player;
-		miniMap = new MiniMap(WW * 13 / 20 + 10, WH * 13 / 20, WW * 7 / 20,
-				WH * 7 / 20, map);
+		miniMap = new MiniMap(WW * 28/40, WH * 28/40, WW * 12/40,
+				WH * 12 /40, map,graphics);
 		try {
-			endButton = new UIButton(miniMap.x, miniMap.y - 100, new UIEvent(UIEvent.Event.END_TURN), res.getImage("END_TURN"));
+			endButton = new UIButton(miniMap.x, miniMap.y - 50, new UIEvent(UIEvent.Event.END_TURN),res.getImage("END_TURN"));
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
 
-		curmetal = new UIText(miniMap.x + 175, miniMap.y - 10,
+		curmetal = new UIText(miniMap.x, miniMap.y - 10,
 				"Current metal: " + player.metal);
-		curpop = new UIText(miniMap.x, miniMap.y - 10, "Current population: "
-				+ player.population);
+		curpop = new UIText(miniMap.x, miniMap.y -30, "Current Power Usage: "
+				+ player.powerUsage);
 
 	}
 
@@ -62,8 +63,8 @@ public class UI {
 			for (UISlider s : sliders)
 				s.update(gameTime);
 		}
-		curmetal.text = "Current metal: " + player.metal;
-		curpop.text = "Current population: " + player.population;
+		curmetal.text = "Current Metal: " + player.metal;
+		curpop.text = "Current Power Usage: " + player.powerUsage+"/"+player.powerCapability;
 		updateslider();
 	}
 
@@ -166,7 +167,8 @@ public class UI {
 			try {
 				buildSlider.addChild(new UIText(0, totalheight,
 						unit.data.buildIDs.get(i)));
-				buildSlider.addChild(new UIButton(0, totalheight, toEvent(unit.data.buildIDs.get(i)), res
+				buildSlider.addChild(new UIText(0, totalheight+10,(res.getStaticObject(unit.data.buildIDs.get(i)).metalCost)+" metal"));
+				buildSlider.addChild(new UIButton(0, totalheight+20, toEvent(unit.data.buildIDs.get(i)), res
 								.getImage(unit.data.buildIDs.get(i))));
 				totalheight += res.getImage(unit.data.buildIDs.get(i))
 						.getHeight() + 50;
@@ -188,7 +190,7 @@ public class UI {
 	public void showBuildInfo(GameStaticObject unit) {
 		closeVSlide();
 		closeHSlide();
-
+		int totalheight = 20;
 		try {
 			buildSlider = new UISlider(0, 0, WW / 8, 50, true,
 					res.getImage("slider_vertical_bg"));
@@ -197,16 +199,17 @@ public class UI {
 		}
 		for (int i = 0; i < unit.data.buildIDs.size(); i++) {
 			try {
-				buildSlider.addChild(new UIText(0, i * 150 + 65,res.getUnit(unit.data.buildIDs.get(i)).metalCost+" metal"));
-				buildSlider.addChild(new UIText(0, i * 150 + 80,res.getUnit(unit.data.buildIDs.get(i)).powerUsage+" power"));
+				buildSlider.addChild(new UIText(0, totalheight,res.getUnit(unit.data.buildIDs.get(i)).metalCost+" metal"));
+				buildSlider.addChild(new UIText(0, totalheight+20,res.getUnit(unit.data.buildIDs.get(i)).powerUsage+" power"));
 				
-				buildSlider.addChild(new UIText(0, i * 150 + 50,
+				buildSlider.addChild(new UIText(0, totalheight+40,
 						unit.data.buildIDs.get(i)));
-				buildSlider.addChild(new UIButton(0, (i * 150) + 85,
+				buildSlider.addChild(new UIButton(0, totalheight+60,
 						toEvent(unit.data.buildIDs.get(i)), res
 								.getImage(unit.data.buildIDs.get(i))));
-				buildSlider.height += 200;
-				buildSlider.y -= 200;
+				totalheight+=80+res.getImage(unit.data.buildIDs.get(i)).getHeight();
+				buildSlider.height = totalheight;
+				buildSlider.y -= (80+res.getImage(unit.data.buildIDs.get(i)).getHeight());
 			} catch (ResNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -262,6 +265,7 @@ public class UI {
 			} catch (ResNotFoundException e) {
 				e.printStackTrace();
 			}
+			
 		selectionInfo.slideOut();
 
 		synchronized (sliders) {
@@ -302,6 +306,7 @@ public class UI {
 			} catch (ResNotFoundException e) {
 				e.printStackTrace();
 			}
+			else selectionInfo.width=150;
 		selectionInfo.slideOut();
 
 		synchronized (sliders) {
@@ -324,12 +329,15 @@ public class UI {
 		} else if (ev.getID() == MouseEvent.MOUSE_DRAGGED) {
 			lastMouseX = ev.getX();
 			lastMouseY = ev.getY();
-
+			
+			UIEvent uiev = onClick(ev);
+			if(uiev != null) return new UIEvent(UIEvent.Event.HANDLED);
 			// drag
 		} else if (ev.getID() == MouseEvent.MOUSE_RELEASED && !leftClick) {
 			if (Math.abs(ev.getX() - pressStartX) < 5
 					&& Math.abs(ev.getY() - pressStartY) < 5) {
-				// rightClick
+				UIEvent uiev = onClick(ev);
+				if(uiev != null) return new UIEvent(UIEvent.Event.HANDLED);
 			}
 		} else if (ev.getID() == MouseEvent.MOUSE_RELEASED && leftClick) {
 			if (Math.abs(ev.getX() - pressStartX) < 5
@@ -364,6 +372,8 @@ public class UI {
 				closeVSlide();
 				closeHSlide();
 
+				miniMap.pickedcrd(ev);
+
 				return (new UIEvent(UIEvent.Event.HANDLED));
 			}
 			
@@ -381,6 +391,8 @@ public class UI {
 				return (new UIEvent(UIEvent.Event.END_TURN));
 			}
 		}
+		closeHSlide();
+		closeVSlide();
 		return event;
 	}
 
