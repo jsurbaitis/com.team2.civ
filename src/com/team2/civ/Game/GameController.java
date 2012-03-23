@@ -129,7 +129,6 @@ public class GameController {
 		graphics.updateZoom();
 
 		if (showingActionList != null && currentAction != null) {
-			System.out.println(currentAction.event.toString());
 			if (currentAction.actor != null) {
 				int offsetX = -currentAction.actor.x + Team2Civ.WINDOW_WIDTH / 2;
 				int offsetY = -currentAction.actor.y + Team2Civ.WINDOW_HEIGHT / 2;
@@ -140,9 +139,10 @@ public class GameController {
 				GameUnit u = (GameUnit) currentAction.actor;
 				if (!u.isMoving()) {
 					actionIndex++;
-					if (actionIndex >= showingActionList.size())
+					if (actionIndex >= showingActionList.size()) {
 						showingActionList = null;
-					else {
+						endTurnNormal();
+					} else {
 						currentAction = performAction(showingActionList
 								.get(actionIndex));
 						currentPlayer.previousTurn.add(currentAction);
@@ -151,11 +151,12 @@ public class GameController {
 			} else {
 				if (gameTime % 5 == 0)
 					actionTimer++;
-				if (actionTimer > 12) {
+				if (actionTimer > 4) {
 					actionIndex++;
-					if (actionIndex >= showingActionList.size())
+					if (actionIndex >= showingActionList.size()){ 
 						showingActionList = null;
-					else {
+						endTurnNormal();
+					} else {
 						actionTimer = 0;
 						currentAction = performAction(showingActionList
 								.get(actionIndex));
@@ -167,7 +168,8 @@ public class GameController {
 
 		List<GameUnit> units = map.getUnits();
 		for (int i = 0; i < units.size(); i++) {
-			units.get(i).update(gameTime);
+			GameUnit u = units.get(i);
+			u.update(gameTime);
 		}
 
 		map.updateFow(humanPlayer);
@@ -193,8 +195,8 @@ public class GameController {
 			destroyUnit((GameUnit) action.actor);
 		} else if (action.event == GameAction.Event.ACTION_FORTIFY) {
 			fortifyUnit((GameUnit) action.actor);
-		} else if (action.event == GameAction.Event.END_TURN) {
-			endTurn();
+		//} else if (action.event == GameAction.Event.END_TURN) {
+		//	endTurn();
 		} else if (action.event == GameAction.Event.ACTION_MOVE) {
 			startMovement((GameUnit) action.actor, action.target);
 		} else if (action.event == GameAction.Event.ACTION_DESTROY_TARGET) {
@@ -205,7 +207,6 @@ public class GameController {
 		} else if (action.event.toString().startsWith("BUILD")) {
 			try {
 				String obj = action.event.toString().replace("BUILD_", "");
-				System.out.println(obj);
 				if (!addObjectToPlayer(action.performer, action.actor, obj))
 					return null;
 			} catch (ResNotFoundException e) {
@@ -322,8 +323,9 @@ public class GameController {
 			List<GameAction> actions = currentPlayer.ai
 					.perform(getActionsForOthers(currentPlayer));
 
-			performActions(actions);
-			//displayActions(actions);
+			//performActions(actions);
+			//endTurnNormal();
+			displayActions(actions);
 		}
 	}
 
@@ -384,6 +386,18 @@ public class GameController {
 
 		return rtn;
 	}
+	
+	public int getMineIncome(GameStaticObject mine) {
+		return (int) (50 / Math.pow((map.getDistToClosestCity(mine, mine.owner) - 1), 2));
+	}
+	
+	public int getPlayerMineIncome(Player p) {
+		int sum = 0;
+		for(GameStaticObject so: map.getPlayerObjectsOfType(p, "MINE")) {
+			sum += getMineIncome(so);
+		}
+		return sum;
+	}
 
 	private void upkeep(Player p) {
 		for (GameUnit u : map.getUnits()) {
@@ -404,15 +418,7 @@ public class GameController {
 			// p.powerCapability += so.data.powerGiven;
 
 			if (so.data.id.equals("MINE")) {
-				/*
-				 * int smallestDist = Integer.MAX_VALUE; for (Path path : paths)
-				 * { if (path.startObj.owner == p && path.endObj == so) {
-				 * System.out.println("Path "+path.path.size()); if
-				 * (path.path.size() < smallestDist) { smallestDist =
-				 * path.path.size(); } } } p.metal += 50 /
-				 * Math.pow((smallestDist - 1), 2);
-				 */
-				p.metal += 50 / Math.pow((map.getDistToClosestCity(so, p) - 1), 2);
+				p.metal += getMineIncome(so);
 			}
 		}
 
@@ -433,15 +439,12 @@ public class GameController {
 		p.metal -= data.metalCost;
 		p.powerUsage += data.powerUsage;
 
-		if(target == null) System.out.println("TARGET IS NULL");
+		if(city == null) System.out.println("TARGET IS NULL");
 
-		GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res, p, data);
+		GameUnit u = new GameUnit(city.mapX, city.mapY, data.id, res, p, data);
 
 		graphics.addUnitImage(u.getImage());
 		map.addUnit(u);
-
-		target = u;
-		ui.showUnitInfo((GameUnit) target);
 	}
 
 	private void addStaticObjToPlayer(Player p, GameUnit unit,
@@ -454,9 +457,6 @@ public class GameController {
 		map.addStaticObj(so);
 
 		graphics.addLowImage(so.getImage());
-
-		target = so;
-		ui.showStaticObjectInfo((GameStaticObject) target);
 
 		destroyUnit(unit);
 	}

@@ -34,10 +34,18 @@ public class Player {
 	}
 	
 	public boolean canAfford(GameUnitData data) {
-		return metal >= data.metalCost && (powerCapability - powerUsage) >= data.powerUsage;
+		return canAffordMetal(data) && canAffordPower(data);
+	}
+	
+	public boolean canAffordMetal(GameUnitData data) {
+		return metal >= data.metalCost;
+	}
+	
+	public boolean canAffordPower(GameUnitData data) {
+		return (powerCapability - powerUsage) >= data.powerUsage;
 	}
 	
 	public boolean canAfford(GameStaticObjectData data) {
 		return metal >= data.metalCost;
-	}	
+	}
 }
