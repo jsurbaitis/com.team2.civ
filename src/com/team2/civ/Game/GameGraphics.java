@@ -44,6 +44,14 @@ public class GameGraphics {
 		Collections.sort(lowDraw);
 	}
 	
+	public int getShowingWidth() {
+		return (int) (Team2Civ.WINDOW_WIDTH * (1 / scale));
+	}
+	
+	public int getShowingHeight() {
+		return (int) (Team2Civ.WINDOW_HEIGHT * (1 / scale));
+	}
+	
 	public void setOffsets(int offsetX, int offsetY) {
 		this.offsetX = offsetX;
 		this.offsetY = offsetY;
