@@ -407,9 +407,9 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		for(int i = 0; i < 21; i++) arr[i] = r.nextBoolean();
 		byte[] b_responses = getResponseCodes(arr);
 		for (byte b : b_responses){
-			System.out.print(b + " ");
+			System.out.print(b + ": ");
 			try {
-				this.parseActionCode(b);
+				System.out.print(this.parseActionCode(b) + "  ");
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -660,11 +660,50 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
     	return new GameAction(GameAction.ZeroAgentEvent.NULL_ACTION, owner);
 	}
     
-    private GameAction CreateNewCity(){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
+	    private GameAction CreateNewCity(){
+	    	ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner, "WORKER");
+	    	ArrayList<GameUnit> freeworkers = new ArrayList<GameUnit>();
+	    	for(GameUnit u: ourWorkers) {
+				if(!isUnitUsed(u)) {
+					freeworkers.add(u);
+				}
+	    	}
+	    	if (freeworkers.size() == 0){
+	    		return this.makeWorker();
+	    	}
+	    	ArrayList<WalkableTile> city_candidate_list = getCityCandidates();
+	    	WalkableTile current_candidate = null;
+	    	int candidate_score = Integer.MAX_VALUE;
+	    	for (WalkableTile candidate : city_candidate_list){
+	    		int score = this.map.getDistToClosestCity(candidate, owner);
+	    		if (score < candidate_score){
+	    			candidate_score = score;
+	    			current_candidate = candidate;
+	    		}
+	    	}
+	    	GameUnit closest_worker = null;
+	    	int closest_worker_distance = Integer.MAX_VALUE;
+	    	for (GameUnit u : freeworkers){
+	    		int u_dist = map.getDistBetween(u, current_candidate, owner);
+	    		if (u_dist < closest_worker_distance){
+	    			closest_worker = u;
+	    			closest_worker_distance = u_dist;
+	    		}
+	    		if (closest_worker_distance == 0){
+	        		return new GameAction(GameAction.OneAgentEvent.BUILD_CITY,owner,closest_worker);
+	        	}
+	    	}
+	    	return new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE,owner,closest_worker,current_candidate);
+		}
     
-    private GameAction NoAction(){
+    private ArrayList<WalkableTile> getCityCandidates() {
+		// TODO Auto-generated method stub
+    	/* Find good city locations using map generation criteria
+		Narrow down above by determining which locations are accessible*/
+		return null;
+	}
+
+	private GameAction NoAction(){
     	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
     
