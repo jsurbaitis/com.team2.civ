@@ -21,6 +21,7 @@ import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
 import com.team2.civ.Game.GameAction;
 import com.team2.civ.Game.GameController;
+import com.team2.civ.Game.GameMap;
 import com.team2.civ.Game.GameStaticObject;
 import com.team2.civ.Game.GameUnit;
 import com.team2.civ.Game.Player;
@@ -79,6 +80,7 @@ public class AI {
 	final byte NO_ACTION = 31;
 	
 	private GameController game;
+	private GameMap map;
 	private Player owner;
 	private Resources res;
 
@@ -132,8 +134,9 @@ public class AI {
 		this.default_behavior_code = genome[5];
 	}
 	
-	public void setGameVars(GameController game, Player owner) {
+	public void setGameVars(GameController game, GameMap map, Player owner) {
 		this.game = game;
+		this.map = map;
 		this.owner = owner;
 		this.res = Resources.getInstance();
 	}
@@ -265,7 +268,7 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		HashMap<Player, Integer> temp = new HashMap<Player, Integer>();
 		for (int t = 0; t < 4; t++) {
 			int sum = 0;
-			for (GameUnit u : game.getPlayerUnits(p[t]))
+			for (GameUnit u : map.getPlayerUnits(p[t]))
 				sum += u.data.metalCost;
 			temp.put(p[t], (Integer) sum);
 		}
@@ -361,7 +364,7 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 	}
 	
 	private GameStaticObject getRandomActiveCity() {
-		List<GameStaticObject> cities = game.getPlayerCities(owner);
+		List<GameStaticObject> cities = map.getPlayerCities(owner);
 		Iterator<GameStaticObject> it = cities.iterator();
 		while(it.hasNext()) {
 			if(isStaticObjUsed(it.next()))
@@ -377,8 +380,8 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		HashMap<Player, Integer> temp = new HashMap<Player, Integer>();
 		for (int t = 0; t < 4; t++) {
 			int sum = 0;
-			for (GameStaticObject u : game.getPlayerObjectsOfType(p[t], "MINE"))
-				sum += 50/game.getDistToClosestCity(u ,p[t]);
+			for (GameStaticObject u : map.getPlayerObjectsOfType(p[t], "MINE"))
+				sum += 50/map.getDistToClosestCity(u ,p[t]);
 			temp.put(p[t], (Integer) sum);
 		}
 
@@ -433,7 +436,7 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 	}
 	
 	private boolean hasFreeWorkers() {
-		for(GameUnit u: game.getPlayerUnits(owner))
+		for(GameUnit u: map.getPlayerUnits(owner))
 			if(!isUnitUsed(u)) return true;
 		
 		return false;
@@ -441,21 +444,21 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 	}
 	
 	private GameAction SeizeStrategicLocation() {
-		Collection<WalkableTile> walkableMap = game.getWalkableMap();
+		Collection<WalkableTile> walkableMap = map.getWalkableMap();
 		double stdev = 0;
-		for(Double d: game.getStratLocValues().values()) {
-			stdev += Math.pow(d - game.avgStratLocValue, 2);
+		for(Double d: map.getStratLocValues().values()) {
+			stdev += Math.pow(d - map.avgStratLocValue, 2);
 		}
 		
 		stdev /= walkableMap.size();
 		stdev = Math.sqrt(stdev);
 		
-		HashMap<WalkableTile, Double> stratLocValues = game.getStratLocValues();
+		HashMap<WalkableTile, Double> stratLocValues = map.getStratLocValues();
 		boolean haveFreeUnits = false;
 		for(Entry<WalkableTile, Double> e: stratLocValues.entrySet()) {
 			if(e.getValue() > stdev * current_st_dev_strat_loc) {
-				if(game.isTileFree(e.getKey())) {
-					for(GameUnit u: game.getPlayerUnitsOfType(owner, "TANK", "ANTIAIR", "AIR")) {
+				if(map.isTileFree(e.getKey())) {
+					for(GameUnit u: map.getPlayerUnitsOfType(owner, "TANK", "ANTIAIR", "AIR")) {
 						if(u.AP > 0)
 							return new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE, owner, u, e.getKey());
 					}
@@ -491,16 +494,16 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 	}
 	
 	private GameAction SeizeResource() {
-		ArrayList<GameUnit> ourWorkers = game.getPlayerUnitsOfType(owner, "WORKER");
+		ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner, "WORKER");
 		GameStaticObject best = null;
 		int closestDist = Integer.MAX_VALUE;
 		
-		for(GameStaticObject so: game.getAllResources()) {
+		for(GameStaticObject so: map.getAllResources()) {
 			for(GameUnit u: ourWorkers) {
 				if(!isUnitUsed(u) && u.mapX == so.mapX && u.mapY == so.mapY)
 					return new GameAction(GameAction.OneAgentEvent.BUILD_MINE, owner, u);
 				
-				int dist = game.getDistToClosestCity(so, owner);
+				int dist = map.getDistToClosestCity(so, owner);
 				if(dist < closestDist) {
 					closestDist = dist;
 					best = so;
@@ -513,7 +516,7 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		for(GameUnit u: ourWorkers) {
 			if(isUnitUsed(u)) continue;
 			
-			int dist = game.getDistBetween(u, best, owner);
+			int dist = map.getDistBetween(u, best, owner);
 			if(dist != -1 && dist < closestDist) {
 				closestDist = dist;
 				bestWorker = u;

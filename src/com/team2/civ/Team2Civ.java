@@ -67,7 +67,7 @@ public class Team2Civ extends Thread {
         canvas.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
         game = new GameController();
-        game.initGame();
+        game.runGame();
         
         canvas.addKeyListener(new KeyboardInput(game));
         canvas.addMouseListener(new MouseInput(game));

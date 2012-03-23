@@ -10,7 +10,7 @@ import javax.swing.SwingUtilities;
 import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
-import com.team2.civ.Game.GameController;
+import com.team2.civ.Game.GameMap;
 import com.team2.civ.Game.GameStaticObject;
 import com.team2.civ.Game.GameUnit;
 import com.team2.civ.Game.Player;
@@ -39,11 +39,11 @@ public class UI {
 
 	private boolean leftClick = true;
 
-	public UI(Player player, GameController gc) {
+	public UI(Player player, GameMap map) {
 		this.res = Resources.getInstance();
 		this.player = player;
 		miniMap = new MiniMap(WW * 13 / 20 + 10, WH * 13 / 20, WW * 7 / 20,
-				WH * 7 / 20,gc);
+				WH * 7 / 20, map);
 		try {
 			endButton = new UIButton(miniMap.x, miniMap.y - 100, new UIEvent(UIEvent.Event.END_TURN), res.getImage("END_TURN"));
 		} catch (ResNotFoundException e) {
