@@ -24,6 +24,48 @@ public class Population {
 		fitness = fit;
 	}
 	
+		public Population(File f) {
+		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder dbBuilder = null;
+		Document doc = null;
+		try {
+			dbBuilder = dbFactory.newDocumentBuilder();
+			doc = dbBuilder.parse(f);
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		NodeList nList = doc.getElementsByTagName("genome");
+		ArrayList<AI> ai = new ArrayList<AI>();
+		String[] gens = new String[nList.getLength()];
+		for(int i = 0; i < nList.getLength(); i++) {
+
+
+			Node node = nList.item(i);
+			NodeList children = node.getChildNodes();
+			
+			Node nFilename = children.item(0);
+			AI a = new AI(new File(nFilename.getTextContent()));
+			ai.add(a);
+			Node nFitness = children.item(1);
+			fitness.put(a, Integer.parseInt(nFitness.getTextContent()));
+			Node nTimesUsed = children.item(2);
+			times_used.put(a, Integer.parseInt(nTimesUsed.getTextContent()));
+			
+			String filename = nFilename.getNodeValue();
+			System.out.println(filename);
+		}
+		population_size = ai.size();
+		genomes = (AI[]) ai.toArray();
+	}
+	
+	
 	public void populate() {
 		for (int i = 0; i < genomes.length; i++){
 			genomes[i] = new AI();
