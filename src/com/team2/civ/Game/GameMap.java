@@ -18,7 +18,7 @@ import com.team2.civ.Map.WallTile;
 
 public class GameMap {
 	
-	private static final boolean FOW_ON = true;
+	private static final boolean FOW_ON = false;
 
 	public static final int MAP_WIDTH = 50;
 	public static final int MAP_HEIGHT = 50;
@@ -70,13 +70,14 @@ public class GameMap {
 		BufferedImage metalFowImg = res.getImage("metal_fow");
 		BufferedImage cityFowImg = res.getImage("CITY_fow");
 
-		int[][] map = HeightmapGenerator.generateMap(MAP_WIDTH, MAP_HEIGHT, 4);
+		HeightmapGenerator gen = new HeightmapGenerator();
+		int[][] map = gen.generateMap(MAP_WIDTH, MAP_HEIGHT, 4);
 		for (int x = 0; x < MAP_WIDTH; x++) {
 			for (int y = 0; y < MAP_HEIGHT; y++) {
 				if (map[x][y] == -1)
 					continue;
 				if (map[x][y] == 0) {
-					WallTile wt = new WallTile(x, y, waterImg, waterFowImg);
+					WallTile wt = new WallTile(x, y, waterImg, waterFowImg, WallTile.Type.WATER);
 					unwalkableMap.put(wt, wt);
 				} else if (map[x][y] == 1) {
 					WalkableTile t = new WalkableTile(x, y, tileImg,
@@ -87,7 +88,7 @@ public class GameMap {
 							hillFowImg, null);
 					walkableMap.put(t, t);
 				} else if (map[x][y] == 3) {
-					WallTile wt = new WallTile(x, y, wallImg, wallFowImg);
+					WallTile wt = new WallTile(x, y, wallImg, wallFowImg, WallTile.Type.MOUNTAIN);
 					unwalkableMap.put(wt, wt);
 				} else if (map[x][y] == 4) {
 					GameStaticObject metal = new GameStaticObject(x, y,
@@ -109,13 +110,13 @@ public class GameMap {
 	}
 	
 	public void updateFow(Player humanPlayer) {
-		for (WalkableTile t : walkableMap.values())
-			t.beingSeen = FOW_ON ? false : true;
-
-		for (WallTile t : unwalkableMap.values())
-			t.beingSeen = FOW_ON ? false : true;
-
 		if (FOW_ON) {
+			for (WalkableTile t : walkableMap.values())
+				t.beingSeen = false;
+
+			for (WallTile t : unwalkableMap.values())
+				t.beingSeen = false;
+			
 			for (GameUnit u : units) {
 				if (u.owner == humanPlayer) {
 					u.isSeen();
@@ -543,6 +544,26 @@ public class GameMap {
 
 		for (GameUnit obj : units)
 			if (obj.owner == p && Arrays.asList(id).contains(obj.data.id))
+				rtn.add(obj);
+
+		return rtn;
+	}
+	
+	public List<GameUnit> getUnitsOnTile(WalkableTile t) {
+		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
+
+		for (GameUnit obj : units)
+			if (t.mapX == obj.mapX && t.mapY == obj.mapY)
+				rtn.add(obj);
+
+		return rtn;
+	}
+	
+	public List<GameUnit> getPlayerUnitsOnTile(WalkableTile t, Player p) {
+		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
+
+		for (GameUnit obj : getPlayerUnits(p))
+			if (t.mapX == obj.mapX && t.mapY == obj.mapY)
 				rtn.add(obj);
 
 		return rtn;

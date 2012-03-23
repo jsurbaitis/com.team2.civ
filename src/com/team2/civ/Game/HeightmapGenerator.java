@@ -8,15 +8,15 @@ import com.team2.civ.Map.CoordObject;
 import com.team2.civ.Map.PathNode;
 
 public class HeightmapGenerator {
-	private static HashMap<CoordObject, PathNode> nodeList;
-	private static boolean nodeListIncludesWater = false;
+	private HashMap<CoordObject, PathNode> nodeList;
+	private boolean nodeListIncludesWater = false;
 
-	private static final int[][] nextPos = { { -1, 1 }, { 0, 1 }, { 1, 0 },
+	private final int[][] nextPos = { { -1, 1 }, { 0, 1 }, { 1, 0 },
 			{ 1, -1 }, { 0, -1 }, { -1, 0 } };
-	private static int[][] map;
-	private static int citiesToPlace;
+	private int[][] map;
+	private int citiesToPlace;
 
-	public static int[][] generateMap(int width, int height, int cityCount) {
+	public int[][] generateMap(int width, int height, int cityCount) {
 		citiesToPlace = cityCount;
 
 		generateHeightMap(width, height);
@@ -37,7 +37,7 @@ public class HeightmapGenerator {
 		return map;
 	}
 
-	private static void addCities() {
+	private void addCities() {
 		ArrayList<int[]> tilesByWeight = getTilesByWeight();
 		ArrayList<int[]> citiesPlaced = new ArrayList<int[]>();
 
@@ -54,7 +54,7 @@ public class HeightmapGenerator {
 		}
 	}
 
-	private static boolean canPlaceCity(int i, int j,
+	private boolean canPlaceCity(int i, int j,
 			ArrayList<int[]> citiesPlaced) {
 		for (int[] cityCoords : citiesPlaced) {
 			ArrayList<int[]> path = findPath(i, j, cityCoords[0],
@@ -66,7 +66,7 @@ public class HeightmapGenerator {
 		return true;
 	}
 
-	private static ArrayList<int[]> getTilesByWeight() {
+	private ArrayList<int[]> getTilesByWeight() {
 		int[][] weights = getTileWeights();
 		ArrayList<int[]> tilesByWeight = new ArrayList<int[]>();
 
@@ -81,7 +81,7 @@ public class HeightmapGenerator {
 		return tilesByWeight;
 	}
 
-	private static int[] getHighestWeight(int[][] weights) {
+	private int[] getHighestWeight(int[][] weights) {
 		int maxX = -1, maxY = -1;
 		int maxWeight = Integer.MIN_VALUE;
 
@@ -99,7 +99,7 @@ public class HeightmapGenerator {
 		return maxCoords;
 	}
 
-	private static int[][] getTileWeights() {
+	private int[][] getTileWeights() {
 		int[][] weights = new int[map.length][map[0].length];
 
 		for (int i = 0; i < map.length; i++) {
@@ -113,26 +113,26 @@ public class HeightmapGenerator {
 		return weights;
 	}
 
-	private static int getTileWeight(int i, int j) {
+	private int getTileWeight(int i, int j) {
 		int weight = 0;
-		//for (int m = 1; m <= 2; m++) {
+		for (int m = 1; m <= 2; m++) {
 			for (int z = 0; z < nextPos.length; z++) {
 				int x = i + nextPos[z][0];
 				int y = j + nextPos[z][1];
 				if (goodCoords(x, y) && map[x][y] == 4)
 					weight += 6;
 			}
-		//}
+		}
 		return weight;
 	}
 
-	private static boolean goodCoords(int x, int y) {
+	private boolean goodCoords(int x, int y) {
 		if (x > 0 && y > 0 && x < map.length && y < map[0].length)
 			return true;
 		return false;
 	}
 
-	private static void generateHeightMap(int width, int height) {
+	private void generateHeightMap(int width, int height) {
 		map = new int[width][height];
 
 		int MAX_DIST = (int) (dist(width / 2, height / 2, 0, 0) * 0.7);
@@ -222,7 +222,7 @@ public class HeightmapGenerator {
 		map[width / 2][height / 2] = 1;
 	}
 
-	private static int[] getClosestWater(int x, int y) {
+	private int[] getClosestWater(int x, int y) {
 		int[] closest = { x, y };
 		int dist = Integer.MAX_VALUE;
 		int tempDist;
@@ -243,7 +243,7 @@ public class HeightmapGenerator {
 		return closest;
 	}
 
-	private static int getTileCountAround(int x, int y, int toCount[],
+	private int getTileCountAround(int x, int y, int toCount[],
 			boolean countNone) {
 		int count = 0;
 		for (int z = 0; z < nextPos.length; z++) {
@@ -265,13 +265,13 @@ public class HeightmapGenerator {
 		return count;
 	}
 
-	private static int dist(int x1, int y1, int x2, int y2) {
+	private int dist(int x1, int y1, int x2, int y2) {
 		int dx = Math.abs(x1 - x2);
 		int dy = Math.abs(y1 - y2);
 		return dx * dx + dy * dy;
 	}
 
-	private static ArrayList<int[]> findPath(int startX, int startY, int endX,
+	private ArrayList<int[]> findPath(int startX, int startY, int endX,
 			int endY, boolean includeWater) {
 		ArrayList<PathNode> openList = new ArrayList<PathNode>();
 		ArrayList<PathNode> closedList = new ArrayList<PathNode>();
@@ -354,11 +354,11 @@ public class HeightmapGenerator {
 		return returnList;
 	}
 
-	private static int getTentativeScore(int x, int y, int tx, int ty) {
+	private int getTentativeScore(int x, int y, int tx, int ty) {
 		return Math.abs(x - tx) + Math.abs(y - ty);
 	}
 
-	private static int getHeuristic(int x, int y, int tx, int ty) {
+	private int getHeuristic(int x, int y, int tx, int ty) {
 		int dx = tx - x;
 		int dy = ty - y;
 
@@ -366,7 +366,7 @@ public class HeightmapGenerator {
 		return result;
 	}
 
-	private static void buildNodeList(int[][] map, boolean includeWater) {
+	private void buildNodeList(int[][] map, boolean includeWater) {
 		nodeList = new HashMap<CoordObject, PathNode>();
 		for (int i = 0; i < map.length; i++) {
 			for (int j = 0; j < map[0].length; j++) {

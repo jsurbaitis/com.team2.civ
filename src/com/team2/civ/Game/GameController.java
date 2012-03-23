@@ -74,7 +74,7 @@ public class GameController {
 			p.ai.setGameVars(this, map, p);
 		}
 
-		ui = new UI(humanPlayer, map);
+		ui = new UI(humanPlayer, map, graphics);
 	}
 
 	public AI runGame(AI a1, AI a2, AI a3, AI a4) {
@@ -129,6 +129,7 @@ public class GameController {
 		graphics.updateZoom();
 
 		if (showingActionList != null && currentAction != null) {
+			System.out.println(currentAction.event.toString());
 			if (currentAction.actor != null) {
 				int offsetX = -currentAction.actor.x + Team2Civ.WINDOW_WIDTH / 2;
 				int offsetY = -currentAction.actor.y + Team2Civ.WINDOW_HEIGHT / 2;
@@ -178,6 +179,7 @@ public class GameController {
 	}
 
 	public GameAction performAction(GameAction action) {
+		System.out.println(action.event.toString());
 		if (action.actor != null && action.actor.owner != action.performer)
 			return null;
 
@@ -203,6 +205,7 @@ public class GameController {
 		} else if (action.event.toString().startsWith("BUILD")) {
 			try {
 				String obj = action.event.toString().replace("BUILD_", "");
+				System.out.println(obj);
 				if (!addObjectToPlayer(action.performer, action.actor, obj))
 					return null;
 			} catch (ResNotFoundException e) {
@@ -319,7 +322,8 @@ public class GameController {
 			List<GameAction> actions = currentPlayer.ai
 					.perform(getActionsForOthers(currentPlayer));
 
-			displayActions(actions);
+			performActions(actions);
+			//displayActions(actions);
 		}
 	}
 
@@ -429,8 +433,9 @@ public class GameController {
 		p.metal -= data.metalCost;
 		p.powerUsage += data.powerUsage;
 
-		GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res, p,
-				data);
+		if(target == null) System.out.println("TARGET IS NULL");
+
+		GameUnit u = new GameUnit(target.mapX, target.mapY, data.id, res, p, data);
 
 		graphics.addUnitImage(u.getImage());
 		map.addUnit(u);

@@ -371,6 +371,8 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 				it.remove();
 		}
 		
+		if(cities.size() == 0) return null;
+		
 		Random rnd = new Random();
 		int index = rnd.nextInt(cities.size());
 		return cities.get(index);
@@ -409,7 +411,9 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
 		for (byte b : b_responses){
 			System.out.print(b + ": ");
 			try {
-				System.out.print(this.parseActionCode(b) + "  ");
+				GameAction ga = this.parseActionCode(b);
+				System.out.print(ga + "  ");
+				output.add(ga);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -588,8 +592,12 @@ private static byte[] mate1(byte[] b1, byte[] b2) {
     private GameAction makeUnit(GameAction.OneAgentEvent buildEvent) {
     	try {
 			GameUnitData data = res.getUnit(buildEvent.toString().replace("BUILD_", ""));
-			if(owner.canAfford(data))
-	    		return new GameAction(buildEvent, owner, getRandomActiveCity());
+			if(owner.canAfford(data)) {
+				GameStaticObject city = getRandomActiveCity();
+				if(city != null) {
+					return new GameAction(buildEvent, owner, getRandomActiveCity());
+				}
+			}
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}

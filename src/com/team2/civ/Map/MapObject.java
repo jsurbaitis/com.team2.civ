@@ -12,7 +12,7 @@ public class MapObject extends CoordObject {
 	public boolean highlighted = false;
 	
 	public boolean seen = false;
-	public boolean beingSeen = false;
+	public boolean beingSeen = true;
 	
 	protected MapObjectImage img;
 	
