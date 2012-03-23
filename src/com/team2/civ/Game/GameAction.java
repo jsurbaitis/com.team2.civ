@@ -44,4 +44,8 @@ public class GameAction {
 		this.actor = f1;
 		this.target = f2;
 	}
+	
+	public String toString(){
+		return this.event.toString();
+	}
 }
