@@ -52,6 +52,14 @@ public class GameGraphics {
 		return (int) (Team2Civ.WINDOW_HEIGHT * (1 / scale));
 	}
 	
+	public int getOffsetX() {
+		return offsetX;
+	}
+	
+	public int getOffsetY() {
+		return offsetY;
+	}
+	
 	public void setOffsets(int offsetX, int offsetY) {
 		this.offsetX = offsetX;
 		this.offsetY = offsetY;
