@@ -28,6 +28,7 @@ public class Population {
 	private HashMap<AI, Integer> fitness = new HashMap<AI, Integer>();
 	private HashMap<AI, Integer> times_used = new HashMap<AI, Integer>();
 	private double fitness_level = 0;
+	private int init_generation;
 
 	public Population(int pop_size) {
 		population_size = pop_size;
@@ -58,6 +59,8 @@ public class Population {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		NodeList genlist = doc.getElementsByTagName("generation");
+		this.init_generation = Integer.parseInt(genlist.item(0).getTextContent());
 		NodeList nList = doc.getElementsByTagName("genome");
 		ArrayList<AI> ai = new ArrayList<AI>();
 		String[] gens = new String[nList.getLength()];
@@ -185,7 +188,7 @@ public class Population {
 		}
 	}
 
-	public void writeMetadata() {
+	public void writeMetadata(int generation) {
 		File f = new File("population_metadata.xml");
 		if (f.exists())
 			f.delete();
@@ -200,6 +203,10 @@ public class Population {
 			out.write("<date>");
 			out.write(dateFormat.format(date));
 			out.write("</date>");
+			out.write("<generation>");
+			out.write(""+generation);
+			out.write("</generation>");
+			
 			for (int i = 0; i < genomes.length; i++) {
 				out.write("<genome>");
 				out.write("<filename>");
@@ -219,5 +226,13 @@ public class Population {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public int getPopulationSize(){
+		return this.population_size;
+	}
+	
+	public int getInitGeneration(){
+		return this.init_generation;
 	}
 }
