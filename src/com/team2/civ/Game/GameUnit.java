@@ -59,6 +59,11 @@ public class GameUnit extends MovingMapObject {
 	public void die() {
 
 	}
+	
+	public boolean inCombatRange(GameUnit target) {
+		return Math.abs(target.mapX - mapX) <= data.range
+			&& Math.abs(target.mapY - mapY) <= data.range;
+	}
 
 	public void takeDmg(int dmg) {
 		HP -= dmg * (1 - fortifyBonus / 100);

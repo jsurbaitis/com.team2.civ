@@ -72,16 +72,17 @@ public class MovingMapObject extends MapObject {
 				speedX = 0;
 				speedY = 0;
 				isMoving = true;
+				target = path.get(path.size() - 1);
 			}
 		}
 	}
 	
 	private void updateMovement() {
 		if(speedX == 0 && speedY == 0) {
-			setPos(path.get(path.size() - 1).mapX, path.get(path.size() - 1).mapY);
+			setPos(target.mapX, target.mapY);
 
-			path.get(path.size() - 1).highlighted = false;
-			path.remove(path.size() - 1);
+			target.highlighted = false;
+			path.remove(target);
 			
 			if(path.size() > 0) {	
 				target = path.get(path.size() - 1);

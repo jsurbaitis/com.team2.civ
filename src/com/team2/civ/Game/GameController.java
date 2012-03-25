@@ -46,15 +46,16 @@ public class GameController {
 	private Player currentPlayer;
 	private MapObject target;
 
-	private List<GameAction> showingActionList;
-	private int actionIndex;
+	private List<ActionToShow> showingActions = new ArrayList<ActionToShow>();
 	private int actionTimer;
-	private GameAction currentAction;
+	private ActionToShow currentAction;
 
 	private Vector<GameUnit> combatTargets = new Vector<GameUnit>();
 
 	public int turnsLeft = 630;
 
+	//In showing of actions, if it is movement - queue it up and don't move until it's supposed to show
+	
 	public GameController() {
 		this.res = Resources.getInstance();
 	}
@@ -128,39 +129,37 @@ public class GameController {
 
 		graphics.updateZoom();
 
-		if (showingActionList != null && currentAction != null) {
-			if (currentAction.actor != null) {
-				int offsetX = -currentAction.actor.x + Team2Civ.WINDOW_WIDTH / 2;
-				int offsetY = -currentAction.actor.y + Team2Civ.WINDOW_HEIGHT / 2;
+		if (showingActions.size() > 1) {
+			if(currentAction == null)
+				currentAction = showingActions.get(0);
+			
+			if (currentAction.target != null) {
+				int offsetX = -currentAction.target.x + Team2Civ.WINDOW_WIDTH / 2;
+				int offsetY = -currentAction.target.y + Team2Civ.WINDOW_HEIGHT / 2;
 				graphics.setOffsets(offsetX, offsetY);
 			}
 
-			if (currentAction.event == GameAction.Event.ACTION_MOVE) {
-				GameUnit u = (GameUnit) currentAction.actor;
-				if (!u.isMoving()) {
-					actionIndex++;
-					if (actionIndex >= showingActionList.size()) {
-						showingActionList = null;
+			if (currentAction.movement) {
+				if (!currentAction.target.isMoving()) {
+					this.checkForAttack(currentAction.target);
+					
+					showingActions.remove(0);
+					if (showingActions.size() < 1) {
 						endTurnNormal();
 					} else {
-						currentAction = performAction(showingActionList
-								.get(actionIndex));
-						currentPlayer.previousTurn.add(currentAction);
+						currentAction = showingActions.get(0);
 					}
 				}
 			} else {
 				if (gameTime % 5 == 0)
 					actionTimer++;
 				if (actionTimer > 4) {
-					actionIndex++;
-					if (actionIndex >= showingActionList.size()){ 
-						showingActionList = null;
+					showingActions.remove(0);
+					if (showingActions.size() < 1) {
 						endTurnNormal();
 					} else {
 						actionTimer = 0;
-						currentAction = performAction(showingActionList
-								.get(actionIndex));
-						currentPlayer.previousTurn.add(currentAction);
+						currentAction = showingActions.get(0);
 					}
 				}
 			}
@@ -180,17 +179,18 @@ public class GameController {
 		ui.draw(g);
 	}
 
-	public GameAction performAction(GameAction action) {
+	public void performAction(GameAction action) {
 		System.out.println(action.event.toString());
 		if (action.actor != null && action.actor.owner != action.performer)
-			return null;
+			return;
 
 		if (action.event == GameAction.Event.ACTION_ATTACK) {
-			if (action.actor.owner != action.target.owner) {
+			GameUnit unit = (GameUnit) action.actor;
+			if (unit.owner != action.target.owner && unit.inCombatRange((GameUnit) action.target)) {
 				performCombat((GameUnit) action.actor, (GameUnit) action.target);
-			} else {
-				return null;
 			}
+		} else if (action.event == GameAction.Event.ACTION_CHECK_ATTACK) {
+			checkForAttack((GameUnit) action.actor);
 		} else if (action.event == GameAction.Event.ACTION_DESTROY_SELF) {
 			destroyUnit((GameUnit) action.actor);
 		} else if (action.event == GameAction.Event.ACTION_FORTIFY) {
@@ -198,7 +198,9 @@ public class GameController {
 		//} else if (action.event == GameAction.Event.END_TURN) {
 		//	endTurn();
 		} else if (action.event == GameAction.Event.ACTION_MOVE) {
-			startMovement((GameUnit) action.actor, action.target);
+			startMovement((GameUnit) action.actor, action.target, true);
+		} else if (action.event == GameAction.Event.ACTION_ATTACK_MOVE) {
+			startAttackMove((GameUnit) action.actor, action.target);
 		} else if (action.event == GameAction.Event.ACTION_DESTROY_TARGET) {
 			GameStaticObject target = (GameStaticObject) action.target;
 			if (target.data.destructible && action.actor.mapX == target.mapX
@@ -207,15 +209,11 @@ public class GameController {
 		} else if (action.event.toString().startsWith("BUILD")) {
 			try {
 				String obj = action.event.toString().replace("BUILD_", "");
-				if (!addObjectToPlayer(action.performer, action.actor, obj))
-					return null;
+				addObjectToPlayer(action.performer, action.actor, obj);
 			} catch (ResNotFoundException e) {
 				e.printStackTrace();
-				return null;
 			}
 		}
-
-		return action;
 	}
 
 	private void destroyObject(GameStaticObject target, Player performer) {
@@ -231,10 +229,10 @@ public class GameController {
 		target.owner.powerCapability += target.data.powerGiven;
 	}
 
-	private void startMovement(GameUnit actor, MapObject target) {
+	private void startMovement(GameUnit actor, MapObject target, boolean walkOnTarget) {
 		endCombatTargeting();
 		List<WalkableTile> path = map.findPath(actor, target, actor.owner, null,
-				true, false, actor.AP + 1);
+				walkOnTarget, false, actor.AP + 1);
 
 		if (path != null) {
 			actor.AP -= path.size() - 1;
@@ -243,6 +241,45 @@ public class GameController {
 				actor.startMovement(path);
 			else {
 				actor.setPos(path.get(0).mapX, path.get(0).mapY);
+				checkForAttack(actor);
+			}
+		}
+	}
+	
+	private void startAttackMove(GameUnit actor, MapObject target) {
+		endCombatTargeting();
+		List<WalkableTile> path = map.findPath(actor, target, actor.owner, null,
+				true, true, -1);
+
+		if (path != null) {
+			int offset = 0;
+			for(int i = path.size() - 1; i >= 0; i--) {
+				if(!map.isTileFree(path.get(i), actor.owner)) {
+					offset = i;
+				}
+			}
+			
+			int start = Math.min(offset + 1, path.size() - actor.AP);
+			List<WalkableTile> toWalk = path.subList((start < 0) ? 0 : start, path.size());
+			
+			actor.AP -= toWalk.size() - 1;
+
+			if (!Team2Civ.AI_MODE)
+				actor.startMovement(toWalk);
+			else {
+				actor.setPos(path.get(0).mapX, path.get(0).mapY);
+				checkForAttack(actor);
+			}
+		}
+	}
+	
+	private void checkForAttack(GameUnit unit) {
+		if(unit.AP < 1) return;;
+		
+		for(GameUnit u: map.getUnits()) {
+			if(u.owner != unit.owner && unit.inCombatRange(u)) {
+				performCombat(unit, u);
+				break;
 			}
 		}
 	}
@@ -266,10 +303,10 @@ public class GameController {
 	}
 
 	private void startCombatTargeting() {
+		GameUnit actor = (GameUnit) target;
 		for (GameUnit u : map.getUnits()) {
 			if (u.owner != humanPlayer) {
-				if (Math.abs(target.mapX - u.mapX) <= u.data.range
-						&& Math.abs(target.mapY - u.mapY) <= u.data.range) {
+				if (actor.inCombatRange(u)) {
 					combatTargets.add(u);
 					u.selected = true;
 				}
@@ -302,11 +339,6 @@ public class GameController {
 		target = null;
 	}
 
-	private void endTurn() {
-		if (!Team2Civ.AI_MODE)
-			endTurnNormal();
-	}
-
 	private void endTurnNormal() {
 		detarget();
 		map.updatePathsAndStratLoc();
@@ -323,9 +355,8 @@ public class GameController {
 			List<GameAction> actions = currentPlayer.ai
 					.perform(getActionsForOthers(currentPlayer));
 
-			//performActions(actions);
+			performActions(actions);
 			//endTurnNormal();
-			displayActions(actions);
 		}
 	}
 
@@ -343,7 +374,7 @@ public class GameController {
 
 		List<GameAction> actions = currentPlayer.ai
 				.perform(getActionsForOthers(currentPlayer));
-		currentPlayer.previousTurn = performActions(actions);
+		performActions(actions);
 		return endTurnAIMode();
 	}
 
@@ -361,21 +392,10 @@ public class GameController {
 		return p;
 	}
 
-	private void displayActions(List<GameAction> actions) {
-		showingActionList = actions;
-		actionIndex = 0;
-		actionTimer = 0;
-		currentAction = performAction(actions.get(actionIndex));
-		currentPlayer.previousTurn = new ArrayList<GameAction>();
-		currentPlayer.previousTurn.add(currentAction);
-	}
-
-	private List<GameAction> performActions(List<GameAction> actions) {
-		List<GameAction> rtn = new ArrayList<GameAction>();
+	private void performActions(List<GameAction> actions) {
 		for (GameAction ga : actions) {
-			rtn.add(performAction(ga));
+			performAction(ga);
 		}
-		return rtn;
 	}
 
 	private ArrayList<GameAction> getActionsForOthers(Player exclude) {
@@ -439,8 +459,6 @@ public class GameController {
 		p.metal -= data.metalCost;
 		p.powerUsage += data.powerUsage;
 
-		if(city == null) System.out.println("TARGET IS NULL");
-
 		GameUnit u = new GameUnit(city.mapX, city.mapY, data.id, res, p, data);
 
 		graphics.addUnitImage(u.getImage());
@@ -452,7 +470,7 @@ public class GameController {
 		p.metal -= data.metalCost;
 		p.powerCapability += data.powerGiven;
 
-		GameStaticObject so = new GameStaticObject(target.mapX, target.mapY,
+		GameStaticObject so = new GameStaticObject(unit.mapX, unit.mapY,
 				res.getImage(data.id), res.getImage(data.id + "_fow"), p, data);
 		map.addStaticObj(so);
 
@@ -520,7 +538,7 @@ public class GameController {
 		} else if (event.e == UIEvent.Event.ACTION_FORTIFY)
 			fortifyUnit((GameUnit) target);
 		else if (event.e == UIEvent.Event.END_TURN)
-			endTurn();
+			endTurnNormal();
 		else if (event.e.toString().startsWith("BUILD"))
 			try {
 				addObjectToPlayer(currentPlayer, target, event.e.toString()
@@ -576,7 +594,7 @@ public class GameController {
 					if (t.picked(graphics.mouseToMapX(ev.getX()),
 							graphics.mouseToMapY(ev.getY()))) {
 
-						startMovement(movingUnit, t);
+						startMovement(movingUnit, t, true);
 						endCombatTargeting();
 					}
 				}
@@ -650,6 +668,16 @@ public class GameController {
 				}
 
 			}
+		}
+	}
+	
+	private class ActionToShow {
+		public boolean movement;
+		public GameUnit target;
+		
+		public ActionToShow(GameUnit target, boolean movement) {
+			this.target = target;
+			this.movement = movement;
 		}
 	}
 }

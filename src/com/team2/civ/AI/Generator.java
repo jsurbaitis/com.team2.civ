@@ -1,6 +1,5 @@
 package com.team2.civ.AI;
 
-import java.awt.GraphicsConfiguration;
 import java.io.File;
 
 public class Generator {

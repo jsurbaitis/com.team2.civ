@@ -393,7 +393,7 @@ public class AI {
 		return cities.get(index);
 	}
 
-	private Collection<Player> getmine(Player p[]) {
+	private Collection<Player> getEconomyRanking(Player p[]) {
 		HashMap<Player, Integer> temp = new HashMap<Player, Integer>();
 		for (int t = 0; t < 4; t++) {
 			int sum = 0;
@@ -413,7 +413,8 @@ public class AI {
 		int sum = 0;
 		for (GameUnit u : attackers) {
 			for (GameUnit chase : chases) {
-				sum += game.calcCombatDmg(u, chase) / chase.getHP();
+				if(chase.owner != owner)
+					sum += game.calcCombatDmg(u, chase) / chase.getHP();
 			}
 		}
 		return sum / chases.size();
@@ -439,6 +440,13 @@ public class AI {
 				e.printStackTrace();
 			}
 		}
+		
+		for(GameUnit unit: map.getPlayerUnits(owner)) {
+			if(!isUnitUsed(unit)) {
+				output.add(new GameAction(GameAction.OneAgentEvent.ACTION_CHECK_ATTACK, owner, unit));
+			}
+		}
+		
 		System.out.println("\n-------");
 		output.removeAll(Collections.singleton(null));
 		return output;
@@ -446,7 +454,7 @@ public class AI {
 
 	private boolean isUnitUsed(GameUnit u) {
 		for (GameAction action : output)
-			if (action.actor == u)
+			if (action != null && action.actor == u)
 				return true;
 
 		return false;
@@ -454,7 +462,7 @@ public class AI {
 
 	private boolean isStaticObjUsed(GameStaticObject so) {
 		for (GameAction action : output)
-			if (action.actor == so)
+			if (action != null && action.actor == so)
 				return true;
 
 		return false;
@@ -504,7 +512,7 @@ public class AI {
 		}
 
 		if (stratLocs.size() == 0) {
-			if (this.current_st_dev_strat_loc < 1) {
+			if (this.current_st_dev_strat_loc > 1) {
 				this.current_st_dev_strat_loc--;
 				return SeizeStrategicLocation();
 			} else if (this.default_behavior_code != this.SEIZE_STRATEGIC_LOCATION) {
@@ -529,21 +537,14 @@ public class AI {
 			}
 
 			List<GameUnit> chases = map.getUnitsOnTile(stratLocs.get(0));
-			if (chanceToBeKilled(freeUnits, chases) > current_combat_pcent_win_chance) {
-				GameUnit removed = chases.get(chases.size() - 1);
-				chases.remove(removed);
-				while (chanceToBeKilled(freeUnits, chases) > current_combat_pcent_win_chance) {
-					removed = chases.get(chases.size() - 1);
-					chases.remove(removed);
-				}
-				chases.add(removed);
-
-				for (GameUnit u : chases) {
+			List<GameUnit> toSend = getUnitsToSend(chases);
+			if(toSend != null) {
+				for(GameUnit u: toSend) {
 					rtn.add(new GameAction(
-							GameAction.TwoAgentEvent.ACTION_MOVE, owner, u,
+							GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, u,
 							stratLocs.get(0)));
 				}
-
+				
 				return rtn;
 			}
 		}
@@ -564,10 +565,12 @@ public class AI {
 					return new GameAction(GameAction.OneAgentEvent.BUILD_MINE,
 							owner, u);
 
-				int dist = map.getDistToClosestCity(so, owner);
-				if (dist < closestDist) {
-					closestDist = dist;
-					best = so;
+				if(map.isTileFree(so)) {
+					int dist = map.getDistToClosestCity(so, owner);
+					if (dist < closestDist) {
+						closestDist = dist;
+						best = so;
+					}
 				}
 			}
 		}
@@ -591,58 +594,111 @@ public class AI {
 		else
 			return this.makeWorker();
 	}
+	
+	private List<GameAction> attackPlayer(Player p) {
+		List<GameAction> rtn = new ArrayList<GameAction>();
+		List<GameStaticObject> pCities = map.getPlayerCities(p);
+		List<GameUnit> pUnits = map.getPlayerUnits(p);
+		
+		GameStaticObject closestCity = null;
+		int shortestDist = Integer.MAX_VALUE;
+		
+		for(GameStaticObject enemc: pCities) {
+			for(GameStaticObject myc: map.getPlayerCities(owner)) {
+				int dist = map.getDistBetween(enemc, myc);
+				if (dist != -1 && dist < shortestDist) {
+					shortestDist = dist;
+					closestCity = enemc;
+				}
+			}
+		}
+		
+		if(closestCity != null) {
+			List<GameUnit> chases = map.getUnitsOnAndAroundTile(closestCity);
+			List<GameUnit> toSend = getUnitsToSend(chases);
+			if(toSend != null) {
+				for(GameUnit u: toSend) {
+					rtn.add(new GameAction(
+							GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, u,
+							closestCity));
+				}
+				
+				return rtn;
+			}
+			else {
+				rtn.add(this.makeRandomUnit());
+				return rtn;
+			}
+		}
+		
+		return rtn;
+	}
+	
+	private List<GameAction> AttackStrongestMilitary(){
+        Player[] militaryRankings = (Player[]) getmilitaryrankings((Player[]) game.players.toArray()).toArray();
+        if (militaryRankings[0] == owner) {
+            return attackPlayer(militaryRankings[1]);
+        } 
+        
+        return attackPlayer(militaryRankings[0]);
+    }
+    private List<GameAction> AttackStrongestEconomy(){
+        Player[] economyRankings = (Player[]) getEconomyRanking((Player[]) game.players.toArray()).toArray();
+        if (economyRankings[0] == owner) {
+            return attackPlayer(economyRankings[1]);
+        } 
+        
+        return attackPlayer(economyRankings[0]);
+    }
+    
+    private List<GameAction> AttackWeakestMilitary(){
+        Player[] militaryRankings = (Player[]) getmilitaryrankings((Player[]) game.players.toArray()).toArray();
+        if (militaryRankings[militaryRankings.length-1] == owner) {
+            return attackPlayer(militaryRankings[militaryRankings.length - 2]);
+        } 
+        
+        return attackPlayer(militaryRankings[militaryRankings.length - 1]);
+    }
+    
+    private List<GameAction> AttackWeakestEconomy(){
+        Player[] economyRankings = (Player[]) getEconomyRanking((Player[]) game.players.toArray()).toArray();
+        if (economyRankings[economyRankings.length-1] == owner) {
+            return attackPlayer(economyRankings[economyRankings.length - 2]);
+        } 
+        
+        return attackPlayer(economyRankings[economyRankings.length - 1]);
+    }
 
-	private GameAction AttackPlayer1() {
+	private GameAction harassPlayer(Player p) {
 		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
 
-	private GameAction AttackPlayer2() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction AttackPlayer3() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction AttackStrongestMilitary() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction AttackStrongestEconomy() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction AttackWeakestMilitary() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction AttackWeakestEconomy() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction harassPlayer1() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction harassPlayer2() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction HarassPlayer3() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction harassStrongestMilitary() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction HarassStrongestEconomy() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction HarassWeakestMilitary() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
+	private GameAction harassStrongestMilitary(){
+        Player[] militaryRankings = (Player[]) getmilitaryrankings((Player[]) game.players.toArray()).toArray();
+        if (militaryRankings[0] == owner) {
+            return harassPlayer(militaryRankings[1]);
+        } 
+        
+        return harassPlayer(militaryRankings[0]);
+    }
+    
+    private GameAction HarassStrongestEconomy(){
+        Player[] economyRankings = (Player[]) getEconomyRanking((Player[]) game.players.toArray()).toArray();
+        if (economyRankings[0] == owner) {
+            return harassPlayer(economyRankings[1]);
+        } 
+        
+        return harassPlayer(economyRankings[0]);
+    }
+    
+    private GameAction HarassWeakestMilitary(){
+        Player[] militaryRankings = (Player[]) getmilitaryrankings((Player[]) game.players.toArray()).toArray();
+        if (militaryRankings[militaryRankings.length-1] == owner) {
+            return harassPlayer(militaryRankings[militaryRankings.length - 2]);
+        } 
+        
+        return harassPlayer(militaryRankings[militaryRankings.length - 1]);
+    }
 
 	private GameAction makeRandomUnit() {
 		return makeUnit(GameAction.OneAgentEvent.BUILD_TANK);
@@ -713,7 +769,7 @@ public class AI {
 	}
 
 	private GameAction FortifyResource(){
-    	ArrayList<WalkableTile> locations = new ArrayList<WalkableTile>();
+		ArrayList<WalkableTile> locations = new ArrayList<WalkableTile>();
     	List<GameStaticObject> resources = map.getPlayerObjectsOfType(owner, "CITY", "POWERPLANT");
     	if (resources.size() == 0){
     		if (owner.scoreEconomy == 0){
@@ -725,8 +781,13 @@ public class AI {
     		if (map.getUnitsOnTile(resource).size() != 0) locations.add(resource);
     	}
     	Random r = new Random();
-    	//return FortifyLocation(locations.get(r.nextInt(locations.size()-1)));
-    	return null; //TODO: implement getting locations
+    	if (locations.size() > 0){
+    		return FortifyLocation(locations.get(r.nextInt(locations.size()-1)));
+    	}
+    	if (r.nextBoolean()){
+    		return this.SeizeResource();
+    	}
+    	return this.BuildPowerplant();
 	}
 
 	private GameAction FortifyCity() {
@@ -742,7 +803,7 @@ public class AI {
 		if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10) {
 			return parseActionCode(this.default_behavior_code);
 		}
-		return null;
+		return new ArrayList<GameAction>();
 	}
 
 	private List<GameAction> CombatWinChanceToleranceMinus10() throws Exception {
@@ -750,7 +811,7 @@ public class AI {
 		if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10) {
 			return parseActionCode(this.default_behavior_code);
 		}
-		return null;
+		return new ArrayList<GameAction>();
 	}
 
 	private List<GameAction> CombatWinChanceToleranceResetToDefault()
@@ -759,7 +820,7 @@ public class AI {
 		if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_RESET_TO_DEFAULT) {
 			return parseActionCode(this.default_behavior_code);
 		}
-		return null;
+		return new ArrayList<GameAction>();
 	}
 
 	private List<GameAction> TurnsLeftThresholdMinus20() throws Exception {
@@ -767,7 +828,7 @@ public class AI {
 		if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_MINUS_20) {
 			return parseActionCode(this.default_behavior_code);
 		}
-		return null;
+		return new ArrayList<GameAction>();
 	}
 
 	private List<GameAction> TurnsLeftThresholdPlus20() throws Exception {
@@ -775,7 +836,7 @@ public class AI {
 		if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_PLUS_20) {
 			return parseActionCode(this.default_behavior_code);
 		}
-		return null;
+		return new ArrayList<GameAction>();
 	}
 
 	private List<GameAction> TurnsLeftThresholdResetToDefault()
@@ -784,7 +845,7 @@ public class AI {
 		if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT) {
 			return parseActionCode(this.default_behavior_code);
 		}
-		return null;
+		return new ArrayList<GameAction>();
 	}
 
 	private GameAction CreateNewCity() throws ResNotFoundException {
@@ -816,7 +877,7 @@ public class AI {
 		int closest_worker_distance = Integer.MAX_VALUE;
 		for (GameUnit u : freeworkers) {
 			int u_dist = map.getDistBetween(u, current_candidate, owner);
-			if (u_dist < closest_worker_distance) {
+			if (u_dist != -1 && u_dist < closest_worker_distance) {
 				closest_worker = u;
 				closest_worker_distance = u_dist;
 			}
@@ -854,25 +915,25 @@ public class AI {
 		} else if (b == SEIZE_RESOURCE) {
 			rtn.add(this.SeizeResource());
 		} else if (b == ATTACK_PLAYER_1) {
-			rtn.add(this.AttackPlayer1());
+			rtn.addAll(this.attackPlayer(getPlayer(1)));
 		} else if (b == ATTACK_PLAYER_2) {
-			rtn.add(this.AttackPlayer2());
+			rtn.addAll(this.attackPlayer(getPlayer(2)));
 		} else if (b == ATTACK_PLAYER_3) {
-			rtn.add(this.AttackPlayer3());
+			rtn.addAll(this.attackPlayer(getPlayer(3)));
 		} else if (b == ATTACK_STRONGEST_MILITARY) {
-			rtn.add(this.AttackStrongestMilitary());
+			rtn.addAll(this.AttackStrongestMilitary());
 		} else if (b == ATTACK_STRONGEST_ECONOMY) {
-			rtn.add(this.AttackStrongestEconomy());
+			rtn.addAll(this.AttackStrongestEconomy());
 		} else if (b == ATTACK_WEAKEST_MILITARY) {
-			rtn.add(this.AttackWeakestMilitary());
+			rtn.addAll(this.AttackWeakestMilitary());
 		} else if (b == ATTACK_WEAKEST_ECONOMY) {
-			rtn.add(this.AttackWeakestEconomy());
+			rtn.addAll(this.AttackWeakestEconomy());
 		} else if (b == HARASS_PLAYER_1) {
-			rtn.add(this.harassPlayer1());
+			rtn.add(this.harassPlayer(getPlayer(1)));
 		} else if (b == HARASS_PLAYER_2) {
-			rtn.add(this.harassPlayer2());
+			rtn.add(this.harassPlayer(getPlayer(2)));
 		} else if (b == HARASS_PLAYER_3) {
-			rtn.add(this.HarassPlayer3());
+			rtn.add(this.harassPlayer(getPlayer(3)));
 		} else if (b == HARASS_STRONGEST_MILITARY) {
 			rtn.add(this.harassStrongestMilitary());
 		} else if (b == HARASS_STRONGEST_ECONOMY) {
@@ -919,4 +980,74 @@ public class AI {
 
 		return rtn;
 	}
+	
+	//Gets player 1, 2 or 3
+	private Player getPlayer(int n) {
+		int count = 1;
+		for(Player p: game.players) {
+			if(p != owner && count == n)
+				return p;
+			else
+				count++;
+		}
+		return null;
+	}
+	
+	private List<GameUnit> getUnitsToSend(List<GameUnit> chases) {
+		List<GameUnit> freeUnits = getFreeUnits();
+		
+		if (chanceToBeKilled(freeUnits, chases) > current_combat_pcent_win_chance) {
+			GameUnit removed = freeUnits.get(freeUnits.size() - 1);
+			freeUnits.remove(removed);
+			while (chanceToBeKilled(freeUnits, chases) > current_combat_pcent_win_chance) {
+				removed = freeUnits.get(freeUnits.size() - 1);
+				freeUnits.remove(removed);
+			}
+			freeUnits.add(removed);
+			return freeUnits;
+		} else {
+			return null;
+		}
+	}
+	
+	private boolean[] getAIPosition(Collection <Player> p){
+		for(int i = 0; i < p.size(); i++){
+			if(((ArrayList<Player>) p).get(i) == owner)
+				return this.intToBits(i);
+		}
+		return null;
+	}
+	private boolean isMetalOverThresh(){
+		 return (owner.metal > init_resource_threshold);
+	}
+	private boolean isTurnOverThresh(){
+		 return (game.turnsLeft > current_turns_threshold);
+	}
+	
+	private Collection<Player> strategicLocationRanking(Player p[]){
+		//for ()
+		return null;
+	}
+	
+	private boolean[] majorityUnit() {
+        int tankCount = 0;
+        int airCount = 0;
+        int antiAirCount = 0;
+        boolean[] antiAir = {true,true};
+        boolean[] air = {true,false};
+        boolean[] tank = {false,false};
+        for (GameUnit u : map.getUnits()) {
+            if (u.data.id.equals("TANK") ) {
+                tankCount++;
+            } else if (u.data.id.equals("AIR")){
+                airCount++;
+            } else if (u.data.id.equals("ANTIAIR")) {
+                antiAirCount++;
+            }
+        } if (tankCount > airCount && tankCount > antiAirCount) {
+            return tank;
+        } else if (antiAirCount > airCount && antiAirCount > tankCount) {
+            return antiAir;
+        } return air;
+    }
 }

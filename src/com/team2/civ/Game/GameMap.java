@@ -569,6 +569,16 @@ public class GameMap {
 		return rtn;
 	}
 	
+	public List<GameUnit> getUnitsOnAndAroundTile(WalkableTile t) {
+		ArrayList<GameUnit> rtn = new ArrayList<GameUnit>();
+
+		for (GameUnit obj : units)
+			if (Math.abs(t.mapX - obj.mapX) <= 1 && Math.abs(t.mapY - obj.mapY) <= 1)
+				rtn.add(obj);
+
+		return rtn;
+	}
+	
 	public Collection<WallTile> getUnwalkableMap() {
 		return unwalkableMap.values();
 	}
@@ -604,6 +614,14 @@ public class GameMap {
 	
 	public int getDistBetween(CoordObject obj1, CoordObject obj2, Player p) {
 		List<WalkableTile> path = findPath(obj1, obj2, p);
+		if (path != null) {
+			return path.size();
+		}
+		return -1;
+	}
+	
+	public int getDistBetween(CoordObject obj1, CoordObject obj2) {
+		List<WalkableTile> path = findPath(obj1, obj2);
 		if (path != null) {
 			return path.size();
 		}

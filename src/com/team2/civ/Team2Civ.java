@@ -163,7 +163,7 @@ public class Team2Civ extends Thread {
 			int generations = Integer.parseInt(args[0]);
 			int populationSize = Integer.parseInt(args[1]);
 
-			Generator g = new Generator(generations, populationSize, config);
+			Generator g = new Generator(generations, populationSize);
 			g.generate();
 		}
 	}
