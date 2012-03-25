@@ -8,15 +8,13 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.TreeMap;
 
+import com.team2.civ.Data.GameStaticObjectData;
 import com.team2.civ.Data.GameUnitData;
 import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
@@ -84,7 +82,9 @@ public class AI {
 	private GameMap map;
 	private Player owner;
 	private Resources res;
+	private static Random rnd = new SecureRandom();
 
+	private List<String> unitQueue = new ArrayList<String>();
 	private List<GameAction> output = new ArrayList<GameAction>();
 
 	public AI() {
@@ -102,8 +102,7 @@ public class AI {
 	}
 
 	public AI(AI parent1, AI parent2) {
-		Random rng = new SecureRandom();
-		int num = rng.nextInt(1);
+		int num = rnd.nextInt(1);
 		if (num == 0) {
 			this.genome = mate1(parent1.genome, parent2.genome);
 			mutation(this.genome);
@@ -157,21 +156,19 @@ public class AI {
 																											// to
 																											// 5bits/action
 																											// code
-		Random rng = new SecureRandom();
-		rng.nextBytes(genome);
+		rnd.nextBytes(genome);
 		// tolerances:
-		genome[0] = (byte) rng.nextInt(3); // stdev stratloc
-		genome[1] = (byte) rng.nextInt(15); // win%tol
-		genome[2] = (byte) rng.nextInt(7); // max queue length
-		genome[3] = (byte) rng.nextInt(63); // banked resources (*40 later)
-		genome[4] = (byte) rng.nextInt(63); // turns left (*10 later)
-		genome[5] = (byte) rng.nextInt(31); // default action
+		genome[0] = (byte) rnd.nextInt(3); // stdev stratloc
+		genome[1] = (byte) rnd.nextInt(15); // win%tol
+		genome[2] = (byte) rnd.nextInt(7); // max queue length
+		genome[3] = (byte) rnd.nextInt(63); // banked resources (*40 later)
+		genome[4] = (byte) rnd.nextInt(63); // turns left (*10 later)
+		genome[5] = (byte) rnd.nextInt(31); // default action
 		return genome;
 	}
 
 	private static byte[] mate1(byte[] b1, byte[] b2) {
-		Random random = new SecureRandom();
-		boolean rng = random.nextBoolean();
+		boolean rng = rnd.nextBoolean();
 		byte temp[] = new byte[b1.length];
 		int len = b1.length % 2;
 		if (rng) {
@@ -189,14 +186,11 @@ public class AI {
 	}
 
 	private static byte[] mate2(byte[] b1, byte[] b2) {
-		Random random = new SecureRandom();
-		boolean rng = random.nextBoolean();
-
-		Random random1 = new SecureRandom();
-		int rng2 = random1.nextInt(b1.length);
+		boolean rng = rnd.nextBoolean();
+		int rng2 = rnd.nextInt(b1.length);
 
 		int a = b1.length % 5;
-		rng2 = random.nextInt(a);
+		rng2 = rnd.nextInt(a);
 		byte temp2[] = new byte[b1.length];
 		if (rng) {
 			for (int i = 0; i < rng2 * 5; i++) {
@@ -213,14 +207,13 @@ public class AI {
 	}
 
 	private static void mutation(byte[] b1) {
-		Random random = new SecureRandom();
-		int rng = random.nextInt(19);
+		int rng = rnd.nextInt(19);
 
 		if (rng == 0) {
 			for (int i = 0; i < b1.length; i++) {
-				rng = random.nextInt(19);
+				rng = rnd.nextInt(19);
 				if (rng == 0)
-					b1[i] = (byte) random.nextInt();
+					b1[i] = (byte) rnd.nextInt();
 			}
 		}
 	}
@@ -256,43 +249,6 @@ public class AI {
 		return rtn;
 	}
 
-	@SuppressWarnings("rawtypes")
-	class ValueComparator implements Comparator {
-
-		@SuppressWarnings("rawtypes")
-		Map base;
-
-		public ValueComparator(Map base) {
-			this.base = base;
-		}
-
-		public int compare(Object a, Object b) {
-
-			if ((Integer) base.get(a) < (Integer) base.get(b)) {
-				return 1;
-			} else if ((Integer) base.get(a) == (Integer) base.get(b)) {
-				return 0;
-			} else {
-				return -1;
-			}
-		}
-	}
-
-	private Collection<Player> getmilitaryrankings(Player p[]) {
-		HashMap<Player, Integer> temp = new HashMap<Player, Integer>();
-		for (int t = 0; t < 4; t++) {
-			int sum = 0;
-			for (GameUnit u : map.getPlayerUnits(p[t]))
-				sum += u.data.metalCost;
-			temp.put(p[t], (Integer) sum);
-		}
-
-		ValueComparator vc = new ValueComparator(temp);
-		TreeMap<Player, Integer> sortedMap = new TreeMap<Player, Integer>(vc);
-		sortedMap.putAll(temp);
-		return sortedMap.keySet();
-	}
-
 	private static int bitsToInt(boolean[] bits) {
 		int output = 0;
 		int bit = 0;
@@ -304,31 +260,12 @@ public class AI {
 		return output;
 	}
 
-	// set bit to 1
-	// my_byte = my_byte | (1 << pos);
-
-	// set bit to 0
-	// my_byte = my_byte & ~(1 << pos);
-
-	// 8 * i, where i is an integer
-
-	// http://docs.oracle.com/javase/1.4.2/docs/api/java/io/FileOutputStream.html
-
-	// take 8 booleans from the boolean array
-	// create a byte and set its bits to be equal to the values of the booleans
-
-	private static byte[] boolToBytes(boolean[] bools) {
-		byte[] byteArray = new byte[bools.length / 8];
-		for (int i = 0; i < (bools.length / 8); i++) {
-			for (int j = 0; j < 8; j++) {
-				if (bools[i * 8 + j])
-					byteArray[i] |= (1 << j);
-				else
-					byteArray[i] &= (1 << j);
-			}
-		}
-		return byteArray;
-	}
+	/*
+	 * private static byte[] boolToBytes(boolean[] bools) { byte[] byteArray =
+	 * new byte[bools.length / 8]; for (int i = 0; i < (bools.length / 8); i++)
+	 * { for (int j = 0; j < 8; j++) { if (bools[i * 8 + j]) byteArray[i] |= (1
+	 * << j); else byteArray[i] &= (1 << j); } } return byteArray; }
+	 */
 
 	private static void BytesToFile(byte[] bytes, int genomeNumber) {
 		File f = new File("genome_" + genomeNumber);
@@ -363,18 +300,72 @@ public class AI {
 		return byteArray;
 	}
 
-	private static boolean[] intToBits(int in) {
-		String binaryString = Integer.toBinaryString(in);
-		char[] binaryArray = binaryString.toCharArray();
-		boolean[] boolArray = new boolean[binaryArray.length];
-		for (int i = 0; i < binaryString.length(); i++) {
-			if (binaryArray[i] == '0') {
-				boolArray[i] = false;
-			} else if (binaryArray[i] == '1') {
-				boolArray[i] = true;
-			}
+	/*
+	 * private static boolean[] intToBits(int in) { String binaryString =
+	 * Integer.toBinaryString(in); char[] binaryArray =
+	 * binaryString.toCharArray(); boolean[] boolArray = new
+	 * boolean[binaryArray.length]; for (int i = 0; i < binaryString.length();
+	 * i++) { if (binaryArray[i] == '0') { boolArray[i] = false; } else if
+	 * (binaryArray[i] == '1') { boolArray[i] = true; } } return boolArray; }
+	 */
+
+	private static boolean[] intTo2Bits(int in) {
+		boolean[] rtn = new boolean[2];
+		if (in == 0) {
+			rtn[0] = false;
+			rtn[1] = false;
+		} else if (in == 1) {
+			rtn[0] = false;
+			rtn[1] = true;
+		} else if (in == 2) {
+			rtn[0] = true;
+			rtn[1] = false;
+		} else {
+			rtn[0] = true;
+			rtn[1] = true;
 		}
-		return boolArray;
+
+		return rtn;
+	}
+
+	private boolean[] getEnvironmentalConditions() {
+		boolean[] rtn = new boolean[21];
+		boolean[] temp;
+
+		temp = this.getAIPosition(game.getEconomyRankings());
+		rtn[0] = temp[0];
+		rtn[1] = temp[1];
+
+		temp = this.getAIPosition(game.getMilitaryRankings());
+		rtn[2] = temp[0];
+		rtn[3] = temp[1];
+
+		temp = this.getAIPosition(game.getStratLocRankings());
+		rtn[4] = temp[0];
+		rtn[5] = temp[1];
+
+		rtn[6] = owner.attackedByP1;
+		rtn[7] = owner.attackedByP2;
+		rtn[8] = owner.attackedByP3;
+
+		rtn[9] = owner.lostMine;
+		rtn[10] = owner.lostPowerplant;
+		rtn[11] = owner.lostCity;
+		rtn[12] = owner.lostUnit;
+
+		rtn[13] = owner.builtMine;
+		rtn[14] = owner.builtPowerplant;
+		rtn[15] = owner.builtCity;
+
+		rtn[16] = isUnitsQueuedOverThresh();
+		rtn[17] = isMetalOverThresh();
+		rtn[18] = isTurnOverThresh();
+
+		temp = majorityUnit();
+		rtn[19] = temp[0];
+		rtn[20] = temp[1];
+
+		return rtn;
 	}
 
 	private GameStaticObject getRandomActiveCity() {
@@ -388,32 +379,19 @@ public class AI {
 		if (cities.size() == 0)
 			return null;
 
-		Random rnd = new Random();
 		int index = rnd.nextInt(cities.size());
 		return cities.get(index);
 	}
 
-	private Collection<Player> getEconomyRanking(Player p[]) {
-		HashMap<Player, Integer> temp = new HashMap<Player, Integer>();
-		for (int t = 0; t < 4; t++) {
-			int sum = 0;
-			for (GameStaticObject u : map.getPlayerObjectsOfType(p[t], "MINE"))
-				sum += 50 / map.getDistToClosestCity(u, p[t]);
-			temp.put(p[t], (Integer) sum);
-		}
-
-		ValueComparator vc = new ValueComparator(temp);
-		TreeMap<Player, Integer> sortedMap = new TreeMap<Player, Integer>(vc);
-		sortedMap.putAll(temp);
-		return sortedMap.keySet();
-	}
-
 	private float chanceToBeKilled(List<GameUnit> attackers,
 			List<GameUnit> chases) {
+		if (chases.size() == 0)
+			return 1;
+
 		int sum = 0;
 		for (GameUnit u : attackers) {
 			for (GameUnit chase : chases) {
-				if(chase.owner != owner)
+				if (chase.owner != owner)
 					sum += game.calcCombatDmg(u, chase) / chase.getHP();
 			}
 		}
@@ -422,12 +400,8 @@ public class AI {
 
 	public List<GameAction> perform(List<GameAction> actions) {
 		output.clear();
-		output.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner));
-		Random r = new Random();
-		boolean[] arr = new boolean[21];
-		for (int i = 0; i < 21; i++)
-			arr[i] = r.nextBoolean();
-		byte[] b_responses = getResponseCodes(arr);
+
+		byte[] b_responses = getResponseCodes(getEnvironmentalConditions());
 		for (byte b : b_responses) {
 			System.out.print(b + ": ");
 			try {
@@ -440,13 +414,30 @@ public class AI {
 				e.printStackTrace();
 			}
 		}
-		
-		for(GameUnit unit: map.getPlayerUnits(owner)) {
-			if(!isUnitUsed(unit)) {
-				output.add(new GameAction(GameAction.OneAgentEvent.ACTION_CHECK_ATTACK, owner, unit));
+
+		if (unitQueue.size() > 0) {
+			for (GameStaticObject city : map.getPlayerCities(owner)) {
+				if (!isStaticObjUsed(city)) {
+					String id = "BUILD_" + unitQueue.get(0);
+					GameAction.OneAgentEvent event = GameAction.OneAgentEvent
+							.valueOf(id);
+					output.add(new GameAction(event, owner, city));
+
+					unitQueue.remove(0);
+					if (unitQueue.size() < 1)
+						break;
+				}
 			}
 		}
-		
+
+		for (GameUnit unit : map.getPlayerUnits(owner)) {
+			if (!isUnitUsed(unit)) {
+				output.add(new GameAction(
+						GameAction.OneAgentEvent.ACTION_CHECK_ATTACK, owner,
+						unit));
+			}
+		}
+
 		System.out.println("\n-------");
 		output.removeAll(Collections.singleton(null));
 		return output;
@@ -474,7 +465,6 @@ public class AI {
 				return true;
 
 		return false;
-
 	}
 
 	private List<GameUnit> getFreeUnits() {
@@ -486,9 +476,33 @@ public class AI {
 		}
 		return freeUnits;
 	}
-	
+
 	private GameAction BuildPowerplant() {
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+		ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner,
+				"WORKER");
+		ArrayList<GameUnit> freeworkers = new ArrayList<GameUnit>();
+		for (GameUnit u : ourWorkers) {
+			if (!isUnitUsed(u)) {
+				freeworkers.add(u);
+			}
+			if ((freeworkers.size() > 0) && (map.getObjBelowUnit(u) == null)) {
+				GameStaticObjectData data;
+				try {
+					data = res.getStaticObject("POWERPLANT");
+					if (owner.canAfford(data))
+						return new GameAction(GameAction.OneAgentEvent.BUILD_POWERPLANT,
+								owner, u);
+				} catch (ResNotFoundException e) {
+					e.printStackTrace();
+				}
+
+				return SeizeResource();
+			} else {
+				return  makeWorker();
+			}
+		}
+		
+		return null;
 	}
 
 	private List<GameAction> SeizeStrategicLocation() {
@@ -538,13 +552,13 @@ public class AI {
 
 			List<GameUnit> chases = map.getUnitsOnTile(stratLocs.get(0));
 			List<GameUnit> toSend = getUnitsToSend(chases);
-			if(toSend != null) {
-				for(GameUnit u: toSend) {
+			if (toSend != null) {
+				for (GameUnit u : toSend) {
 					rtn.add(new GameAction(
-							GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, u,
-							stratLocs.get(0)));
+							GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner,
+							u, stratLocs.get(0)));
 				}
-				
+
 				return rtn;
 			}
 		}
@@ -565,7 +579,7 @@ public class AI {
 					return new GameAction(GameAction.OneAgentEvent.BUILD_MINE,
 							owner, u);
 
-				if(map.isTileFree(so)) {
+				if (map.isTileFree(so)) {
 					int dist = map.getDistToClosestCity(so, owner);
 					if (dist < closestDist) {
 						closestDist = dist;
@@ -594,17 +608,16 @@ public class AI {
 		else
 			return this.makeWorker();
 	}
-	
+
 	private List<GameAction> attackPlayer(Player p) {
 		List<GameAction> rtn = new ArrayList<GameAction>();
 		List<GameStaticObject> pCities = map.getPlayerCities(p);
-		List<GameUnit> pUnits = map.getPlayerUnits(p);
-		
+
 		GameStaticObject closestCity = null;
 		int shortestDist = Integer.MAX_VALUE;
-		
-		for(GameStaticObject enemc: pCities) {
-			for(GameStaticObject myc: map.getPlayerCities(owner)) {
+
+		for (GameStaticObject enemc : pCities) {
+			for (GameStaticObject myc : map.getPlayerCities(owner)) {
 				int dist = map.getDistBetween(enemc, myc);
 				if (dist != -1 && dist < shortestDist) {
 					shortestDist = dist;
@@ -612,96 +625,128 @@ public class AI {
 				}
 			}
 		}
-		
-		if(closestCity != null) {
+
+		if (closestCity != null) {
 			List<GameUnit> chases = map.getUnitsOnAndAroundTile(closestCity);
 			List<GameUnit> toSend = getUnitsToSend(chases);
-			if(toSend != null) {
-				for(GameUnit u: toSend) {
+			if (toSend != null) {
+				for (GameUnit u : toSend) {
 					rtn.add(new GameAction(
-							GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, u,
-							closestCity));
+							GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner,
+							u, closestCity));
 				}
-				
+
 				return rtn;
-			}
-			else {
+			} else {
 				rtn.add(this.makeRandomUnit());
 				return rtn;
 			}
 		}
-		
+
 		return rtn;
 	}
-	
-	private List<GameAction> AttackStrongestMilitary(){
-        Player[] militaryRankings = (Player[]) getmilitaryrankings((Player[]) game.players.toArray()).toArray();
-        if (militaryRankings[0] == owner) {
-            return attackPlayer(militaryRankings[1]);
-        } 
-        
-        return attackPlayer(militaryRankings[0]);
-    }
-    private List<GameAction> AttackStrongestEconomy(){
-        Player[] economyRankings = (Player[]) getEconomyRanking((Player[]) game.players.toArray()).toArray();
-        if (economyRankings[0] == owner) {
-            return attackPlayer(economyRankings[1]);
-        } 
-        
-        return attackPlayer(economyRankings[0]);
-    }
-    
-    private List<GameAction> AttackWeakestMilitary(){
-        Player[] militaryRankings = (Player[]) getmilitaryrankings((Player[]) game.players.toArray()).toArray();
-        if (militaryRankings[militaryRankings.length-1] == owner) {
-            return attackPlayer(militaryRankings[militaryRankings.length - 2]);
-        } 
-        
-        return attackPlayer(militaryRankings[militaryRankings.length - 1]);
-    }
-    
-    private List<GameAction> AttackWeakestEconomy(){
-        Player[] economyRankings = (Player[]) getEconomyRanking((Player[]) game.players.toArray()).toArray();
-        if (economyRankings[economyRankings.length-1] == owner) {
-            return attackPlayer(economyRankings[economyRankings.length - 2]);
-        } 
-        
-        return attackPlayer(economyRankings[economyRankings.length - 1]);
-    }
+
+	private List<GameAction> AttackStrongestMilitary() {
+		List<Player> militaryRankings = game.getMilitaryRankings();
+		if (militaryRankings.get(0) == owner) {
+			return attackPlayer(militaryRankings.get(1));
+		}
+
+		return attackPlayer(militaryRankings.get(0));
+	}
+
+	private List<GameAction> AttackStrongestEconomy() {
+		List<Player> economyRankings = game.getEconomyRankings();
+		if (economyRankings.get(0) == owner) {
+			return attackPlayer(economyRankings.get(1));
+		}
+
+		return attackPlayer(economyRankings.get(0));
+	}
+
+	private List<GameAction> AttackWeakestMilitary() {
+		List<Player> militaryRankings = game.getMilitaryRankings();
+		if (militaryRankings.get(militaryRankings.size() - 1) == owner) {
+			return attackPlayer(militaryRankings
+					.get(militaryRankings.size() - 2));
+		}
+
+		return attackPlayer(militaryRankings.get(militaryRankings.size() - 1));
+	}
+
+	private List<GameAction> AttackWeakestEconomy() {
+		List<Player> economyRankings = game.getEconomyRankings();
+		if (economyRankings.get(economyRankings.size() - 1) == owner) {
+			return attackPlayer(economyRankings.get(economyRankings.size() - 2));
+		}
+
+		return attackPlayer(economyRankings.get(economyRankings.size() - 1));
+	}
 
 	private GameAction harassPlayer(Player p) {
 		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
 
-	private GameAction harassStrongestMilitary(){
-        Player[] militaryRankings = (Player[]) getmilitaryrankings((Player[]) game.players.toArray()).toArray();
-        if (militaryRankings[0] == owner) {
-            return harassPlayer(militaryRankings[1]);
-        } 
-        
-        return harassPlayer(militaryRankings[0]);
-    }
-    
-    private GameAction HarassStrongestEconomy(){
-        Player[] economyRankings = (Player[]) getEconomyRanking((Player[]) game.players.toArray()).toArray();
-        if (economyRankings[0] == owner) {
-            return harassPlayer(economyRankings[1]);
-        } 
-        
-        return harassPlayer(economyRankings[0]);
-    }
-    
-    private GameAction HarassWeakestMilitary(){
-        Player[] militaryRankings = (Player[]) getmilitaryrankings((Player[]) game.players.toArray()).toArray();
-        if (militaryRankings[militaryRankings.length-1] == owner) {
-            return harassPlayer(militaryRankings[militaryRankings.length - 2]);
-        } 
-        
-        return harassPlayer(militaryRankings[militaryRankings.length - 1]);
-    }
+	private GameAction harassStrongestMilitary() {
+		List<Player> militaryRankings = game.getMilitaryRankings();
+		if (militaryRankings.get(0) == owner) {
+			return harassPlayer(militaryRankings.get(1));
+		}
+
+		return harassPlayer(militaryRankings.get(0));
+	}
+
+	private GameAction HarassStrongestEconomy() {
+		List<Player> economyRankings = game.getEconomyRankings();
+		if (economyRankings.get(0) == owner) {
+			return harassPlayer(economyRankings.get(1));
+		}
+
+		return harassPlayer(economyRankings.get(0));
+	}
+
+	private GameAction HarassWeakestMilitary() {
+		List<Player> militaryRankings = game.getMilitaryRankings();
+		if (militaryRankings.get(militaryRankings.size() - 1) == owner) {
+			return harassPlayer(militaryRankings
+					.get(militaryRankings.size() - 2));
+		}
+
+		return harassPlayer(militaryRankings.get(militaryRankings.size() - 1));
+	}
+
+	private GameAction harassWeakestEconomy() {
+		List<Player> economyRankings = game.getEconomyRankings();
+		if (economyRankings.get(economyRankings.size() - 1) == owner) {
+			return harassPlayer(economyRankings.get(economyRankings.size() - 2));
+		}
+
+		return harassPlayer(economyRankings.get(economyRankings.size() - 1));
+	}
 
 	private GameAction makeRandomUnit() {
-		return makeUnit(GameAction.OneAgentEvent.BUILD_TANK);
+		List<GameAction.OneAgentEvent> possibilities = new ArrayList<GameAction.OneAgentEvent>();
+
+		GameStaticObjectData data;
+		try {
+			data = res.getStaticObject("TANK");
+			if (owner.canAfford(data))
+				possibilities.add(GameAction.OneAgentEvent.BUILD_TANK);
+			data = res.getStaticObject("AIR");
+			if (owner.canAfford(data))
+				possibilities.add(GameAction.OneAgentEvent.BUILD_AIR);
+			data = res.getStaticObject("ANTIAIR");
+			if (owner.canAfford(data))
+				possibilities.add(GameAction.OneAgentEvent.BUILD_ANTIAIR);
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		if (possibilities.size() == 0)
+			return null;
+
+		int index = rnd.nextInt(possibilities.size());
+		return makeUnit(possibilities.get(index));
 	}
 
 	private GameAction makeWorker() {
@@ -726,7 +771,7 @@ public class AI {
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
-		
+
 		return null;
 	}
 
@@ -751,7 +796,7 @@ public class AI {
 				if (city != null) {
 					return new GameAction(buildEvent, owner, city);
 				} else {
-					return null; //TODO: unit queue
+					return null; // TODO: unit queue
 				}
 			}
 		} catch (ResNotFoundException e) {
@@ -759,43 +804,55 @@ public class AI {
 		}
 		return SeizeResource();
 	}
-	
-	private GameAction FortifyLocation(WalkableTile location){
-    	return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-    }
+
+	private GameAction FortifyLocation(WalkableTile location) {
+		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+	}
 
 	private GameAction FortifyStrategicLocation() {
 		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
 
-	private GameAction FortifyResource(){
+	private GameAction FortifyResource() {
 		ArrayList<WalkableTile> locations = new ArrayList<WalkableTile>();
-    	List<GameStaticObject> resources = map.getPlayerObjectsOfType(owner, "CITY", "POWERPLANT");
-    	if (resources.size() == 0){
-    		if (owner.scoreEconomy == 0){
-    			return this.SeizeResource();
-    		}
-    		return this.BuildPowerplant();
-    	}
-    	for (WalkableTile resource : resources){
-    		if (map.getUnitsOnTile(resource).size() != 0) locations.add(resource);
-    	}
-    	Random r = new Random();
-    	if (locations.size() > 0){
-    		return FortifyLocation(locations.get(r.nextInt(locations.size()-1)));
-    	}
-    	if (r.nextBoolean()){
-    		return this.SeizeResource();
-    	}
-    	return this.BuildPowerplant();
+		List<GameStaticObject> resources = map.getPlayerObjectsOfType(owner,
+				"CITY", "POWERPLANT");
+		if (resources.size() == 0) {
+			if (owner.scoreEconomy == 0) {
+				return this.SeizeResource();
+			}
+			return this.BuildPowerplant();
+		}
+		for (WalkableTile resource : resources) {
+			if (map.getUnitsOnTile(resource).size() != 0)
+				locations.add(resource);
+		}
+
+		if (locations.size() > 0) {
+			return FortifyLocation(locations
+					.get(rnd.nextInt(locations.size() - 1)));
+		}
+		if (rnd.nextBoolean()) {
+			return this.SeizeResource();
+		}
+		return this.BuildPowerplant();
 	}
 
 	private GameAction FortifyCity() {
 		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
 	}
 
-	private GameAction ClearUnitQueue() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+	private List<GameAction> ClearUnitQueue() {
+		unitQueue.clear();
+		if (default_behavior_code != CLEAR_UNIT_QUEUE) {
+			try {
+				return parseActionCode(default_behavior_code);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		return new ArrayList<GameAction>();
 	}
 
 	private List<GameAction> CombatWinChanceTolerancePlus10() throws Exception {
@@ -899,14 +956,6 @@ public class AI {
 		return null;
 	}
 
-	private GameAction NoAction() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
-	private GameAction harassWeakestEconomy() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
-	}
-
 	private List<GameAction> parseActionCode(byte b) throws Exception {
 		List<GameAction> rtn = new ArrayList<GameAction>();
 
@@ -915,11 +964,11 @@ public class AI {
 		} else if (b == SEIZE_RESOURCE) {
 			rtn.add(this.SeizeResource());
 		} else if (b == ATTACK_PLAYER_1) {
-			rtn.addAll(this.attackPlayer(getPlayer(1)));
+			rtn.addAll(this.attackPlayer(owner.getPlayer(1, game)));
 		} else if (b == ATTACK_PLAYER_2) {
-			rtn.addAll(this.attackPlayer(getPlayer(2)));
+			rtn.addAll(this.attackPlayer(owner.getPlayer(2, game)));
 		} else if (b == ATTACK_PLAYER_3) {
-			rtn.addAll(this.attackPlayer(getPlayer(3)));
+			rtn.addAll(this.attackPlayer(owner.getPlayer(3, game)));
 		} else if (b == ATTACK_STRONGEST_MILITARY) {
 			rtn.addAll(this.AttackStrongestMilitary());
 		} else if (b == ATTACK_STRONGEST_ECONOMY) {
@@ -929,11 +978,11 @@ public class AI {
 		} else if (b == ATTACK_WEAKEST_ECONOMY) {
 			rtn.addAll(this.AttackWeakestEconomy());
 		} else if (b == HARASS_PLAYER_1) {
-			rtn.add(this.harassPlayer(getPlayer(1)));
+			rtn.add(this.harassPlayer(owner.getPlayer(1, game)));
 		} else if (b == HARASS_PLAYER_2) {
-			rtn.add(this.harassPlayer(getPlayer(2)));
+			rtn.add(this.harassPlayer(owner.getPlayer(2, game)));
 		} else if (b == HARASS_PLAYER_3) {
-			rtn.add(this.harassPlayer(getPlayer(3)));
+			rtn.add(this.harassPlayer(owner.getPlayer(3, game)));
 		} else if (b == HARASS_STRONGEST_MILITARY) {
 			rtn.add(this.harassStrongestMilitary());
 		} else if (b == HARASS_STRONGEST_ECONOMY) {
@@ -957,7 +1006,7 @@ public class AI {
 		} else if (b == FORTIFY_CITY) {
 			rtn.add(this.FortifyCity());
 		} else if (b == CLEAR_UNIT_QUEUE) {
-			rtn.add(this.ClearUnitQueue());
+			rtn.addAll(this.ClearUnitQueue());
 		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10) {
 			rtn.addAll(this.CombatWinChanceTolerancePlus10());
 		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10) {
@@ -973,29 +1022,20 @@ public class AI {
 		} else if (b == CREATE_NEW_CITY) {
 			rtn.add(this.CreateNewCity());
 		} else if (b == NO_ACTION) {
-			rtn.add(this.NoAction());
+			rtn.add(null);
 		} else {
 			throw new Exception("No action found for byte: " + b);
 		}
 
 		return rtn;
 	}
-	
-	//Gets player 1, 2 or 3
-	private Player getPlayer(int n) {
-		int count = 1;
-		for(Player p: game.players) {
-			if(p != owner && count == n)
-				return p;
-			else
-				count++;
-		}
-		return null;
-	}
-	
+
 	private List<GameUnit> getUnitsToSend(List<GameUnit> chases) {
 		List<GameUnit> freeUnits = getFreeUnits();
-		
+
+		if (freeUnits.size() < 1)
+			return null;
+
 		if (chanceToBeKilled(freeUnits, chases) > current_combat_pcent_win_chance) {
 			GameUnit removed = freeUnits.get(freeUnits.size() - 1);
 			freeUnits.remove(removed);
@@ -1009,45 +1049,52 @@ public class AI {
 			return null;
 		}
 	}
-	
-	private boolean[] getAIPosition(Collection <Player> p){
-		for(int i = 0; i < p.size(); i++){
-			if(((ArrayList<Player>) p).get(i) == owner)
-				return this.intToBits(i);
+
+	private boolean[] getAIPosition(List<Player> p) {
+		for (int i = 0; i < p.size(); i++) {
+			if (p.get(i) == owner)
+				return AI.intTo2Bits(i);
 		}
 		return null;
 	}
-	private boolean isMetalOverThresh(){
-		 return (owner.metal > init_resource_threshold);
+
+	private boolean isMetalOverThresh() {
+		return (owner.metal > init_resource_threshold);
 	}
-	private boolean isTurnOverThresh(){
-		 return (game.turnsLeft > current_turns_threshold);
+
+	private boolean isTurnOverThresh() {
+		return (game.turnsLeft > current_turns_threshold);
 	}
-	
-	private Collection<Player> strategicLocationRanking(Player p[]){
-		//for ()
-		return null;
+
+	private boolean isUnitsQueuedOverThresh() {
+		return unitQueue.size() > init_queue_length;
 	}
-	
+
 	private boolean[] majorityUnit() {
-        int tankCount = 0;
-        int airCount = 0;
-        int antiAirCount = 0;
-        boolean[] antiAir = {true,true};
-        boolean[] air = {true,false};
-        boolean[] tank = {false,false};
-        for (GameUnit u : map.getUnits()) {
-            if (u.data.id.equals("TANK") ) {
-                tankCount++;
-            } else if (u.data.id.equals("AIR")){
-                airCount++;
-            } else if (u.data.id.equals("ANTIAIR")) {
-                antiAirCount++;
-            }
-        } if (tankCount > airCount && tankCount > antiAirCount) {
-            return tank;
-        } else if (antiAirCount > airCount && antiAirCount > tankCount) {
-            return antiAir;
-        } return air;
-    }
+		int tankCount = 0;
+		int airCount = 0;
+		int antiAirCount = 0;
+		boolean[] antiAir = { true, true };
+		boolean[] air = { true, false };
+		boolean[] tank = { false, false };
+		for (GameUnit u : map.getUnits()) {
+			if (u.data.id.equals("TANK")) {
+				tankCount++;
+			} else if (u.data.id.equals("AIR")) {
+				airCount++;
+			} else if (u.data.id.equals("ANTIAIR")) {
+				antiAirCount++;
+			}
+		}
+		if (tankCount > airCount && tankCount > antiAirCount) {
+			return tank;
+		} else if (antiAirCount > airCount && antiAirCount > tankCount) {
+			return antiAir;
+		}
+		return air;
+	}
+
+	public void addUnitToQueue(String id) {
+		unitQueue.add(id);
+	}
 }

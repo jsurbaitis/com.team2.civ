@@ -48,4 +48,8 @@ public class GameAction {
 	public String toString(){
 		return this.event.toString();
 	}
+	
+	public boolean isMovement() {
+		return event == Event.ACTION_ATTACK_MOVE || event == Event.ACTION_MOVE;
+	}
 }

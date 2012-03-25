@@ -5,6 +5,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
@@ -41,21 +42,23 @@ public class GameController {
 	private GameMap map;
 	private GameGraphics graphics;
 
-	public List<Player> players = new ArrayList<Player>();
+	private List<Player> players = new ArrayList<Player>();
+	private List<Player> militaryRankings = new ArrayList<Player>();
+	private List<Player> economyRankings = new ArrayList<Player>();
+	private List<Player> stratLocRankings = new ArrayList<Player>();
 	public Player humanPlayer;
 	private Player currentPlayer;
 	private MapObject target;
 
-	private List<ActionToShow> showingActions = new ArrayList<ActionToShow>();
+	private List<ActionToShow> toShow = new ArrayList<ActionToShow>();
+	private List<GameAction> toPerform = new ArrayList<GameAction>();
 	private int actionTimer;
-	private ActionToShow currentAction;
+	private ActionToShow currentShowing;
 
 	private Vector<GameUnit> combatTargets = new Vector<GameUnit>();
 
 	public int turnsLeft = 630;
 
-	//In showing of actions, if it is movement - queue it up and don't move until it's supposed to show
-	
 	public GameController() {
 		this.res = Resources.getInstance();
 	}
@@ -118,6 +121,10 @@ public class GameController {
 
 			playerIndex++;
 		}
+		
+		economyRankings = new ArrayList<Player>(players);
+		militaryRankings = new ArrayList<Player>(players);
+		stratLocRankings = new ArrayList<Player>(players);
 
 		currentPlayer = players.get(0);
 	}
@@ -129,40 +136,8 @@ public class GameController {
 
 		graphics.updateZoom();
 
-		if (showingActions.size() > 1) {
-			if(currentAction == null)
-				currentAction = showingActions.get(0);
-			
-			if (currentAction.target != null) {
-				int offsetX = -currentAction.target.x + Team2Civ.WINDOW_WIDTH / 2;
-				int offsetY = -currentAction.target.y + Team2Civ.WINDOW_HEIGHT / 2;
-				graphics.setOffsets(offsetX, offsetY);
-			}
-
-			if (currentAction.movement) {
-				if (!currentAction.target.isMoving()) {
-					this.checkForAttack(currentAction.target);
-					
-					showingActions.remove(0);
-					if (showingActions.size() < 1) {
-						endTurnNormal();
-					} else {
-						currentAction = showingActions.get(0);
-					}
-				}
-			} else {
-				if (gameTime % 5 == 0)
-					actionTimer++;
-				if (actionTimer > 4) {
-					showingActions.remove(0);
-					if (showingActions.size() < 1) {
-						endTurnNormal();
-					} else {
-						actionTimer = 0;
-						currentAction = showingActions.get(0);
-					}
-				}
-			}
+		if(toPerform.size() > 0) {
+			updateActionShowing();
 		}
 
 		List<GameUnit> units = map.getUnits();
@@ -172,6 +147,40 @@ public class GameController {
 		}
 
 		map.updateFow(humanPlayer);
+	}
+	
+	private void updateActionShowing() {
+		if(toShow.size() > 1) {
+			if(currentShowing == null)
+				currentShowing = toShow.get(0);
+			
+			int offsetX = -currentShowing.target.x + Team2Civ.WINDOW_WIDTH / 2;
+			int offsetY = -currentShowing.target.y + Team2Civ.WINDOW_HEIGHT / 2;
+			graphics.setOffsets(offsetX, offsetY);
+			
+			if (currentShowing.movement) {
+				GameUnit u = (GameUnit) currentShowing.target;
+				if (!u.isMoving()) {
+					checkForAttack(u);	
+					toShow.remove(0);
+				}
+			} else {
+				if (gameTime % 5 == 0)
+					actionTimer++;
+				if (actionTimer > 4) {
+					toShow.remove(0);
+					actionTimer = 0;
+				}
+			}
+		} else {
+			toPerform.remove(0);
+			
+			if(toPerform.size() > 0) {
+				performAction(toPerform.get(0));
+			} else {
+				endTurnNormal();
+			}
+		}
 	}
 
 	public void draw(Graphics2D g) {
@@ -217,6 +226,8 @@ public class GameController {
 	}
 
 	private void destroyObject(GameStaticObject target, Player performer) {
+		showAction(new ActionToShow(target, false));
+		
 		graphics.removeLowImage(target.getImage());
 		map.removeStaticObj(target);
 		performer.metal += target.data.metalCost * 0.2;
@@ -237,9 +248,10 @@ public class GameController {
 		if (path != null) {
 			actor.AP -= path.size() - 1;
 
-			if (!Team2Civ.AI_MODE)
+			if (!Team2Civ.AI_MODE) {
 				actor.startMovement(path);
-			else {
+				showAction(new ActionToShow(actor, true));
+			} else {
 				actor.setPos(path.get(0).mapX, path.get(0).mapY);
 				checkForAttack(actor);
 			}
@@ -264,9 +276,10 @@ public class GameController {
 			
 			actor.AP -= toWalk.size() - 1;
 
-			if (!Team2Civ.AI_MODE)
+			if (!Team2Civ.AI_MODE) {
 				actor.startMovement(toWalk);
-			else {
+				showAction(new ActionToShow(actor, true));
+			} else {
 				actor.setPos(path.get(0).mapX, path.get(0).mapY);
 				checkForAttack(actor);
 			}
@@ -286,7 +299,13 @@ public class GameController {
 
 	private void performCombat(GameUnit attacker, GameUnit target) {
 		target.takeDmg(calcCombatDmg(attacker, target));
+		if (target.getHP() <= 0) {
+			target.owner.updateLost(target);
+			unitDead(target);
+		}
+		target.owner.updateAttacked(attacker.owner, this);
 		attacker.AP = 0;
+		showAction(new ActionToShow(attacker, false));
 	}
 
 	public int calcCombatDmg(GameUnit attacker, GameUnit target) {
@@ -321,8 +340,19 @@ public class GameController {
 		combatTargets.clear();
 	}
 
-	public void destroyUnit(GameUnit u) {
+	private void destroyUnit(GameUnit u) {
+		showAction(new ActionToShow(u, false));
+		
 		u.owner.metal += u.data.metalCost * 0.25;
+		u.owner.powerUsage -= u.data.powerUsage;
+
+		graphics.removeUnitImage(u.getImage());
+		map.removeUnit(u);
+	}
+	
+	private void unitDead(GameUnit u) {
+		showAction(new ActionToShow(u, false));
+
 		u.owner.powerUsage -= u.data.powerUsage;
 
 		graphics.removeUnitImage(u.getImage());
@@ -330,6 +360,7 @@ public class GameController {
 	}
 
 	private void fortifyUnit(GameUnit u) {
+		showAction(new ActionToShow(u, false));
 		u.fortify();
 	}
 
@@ -343,6 +374,7 @@ public class GameController {
 		detarget();
 		map.updatePathsAndStratLoc();
 		upkeep(currentPlayer);
+		globalUpkeep();
 		turnsLeft--;
 
 		Player winner = checkForWinner();
@@ -352,11 +384,10 @@ public class GameController {
 		currentPlayer = players.get(nextPlayer);
 
 		if (currentPlayer != humanPlayer) {
-			List<GameAction> actions = currentPlayer.ai
-					.perform(getActionsForOthers(currentPlayer));
-
-			performActions(actions);
-			//endTurnNormal();
+			toPerform.addAll(currentPlayer.ai
+					.perform(getActionsForOthers(currentPlayer)));
+			
+			currentPlayer.resetConditions();
 		}
 	}
 
@@ -374,6 +405,8 @@ public class GameController {
 
 		List<GameAction> actions = currentPlayer.ai
 				.perform(getActionsForOthers(currentPlayer));
+		
+		currentPlayer.resetConditions();
 		performActions(actions);
 		return endTurnAIMode();
 	}
@@ -420,14 +453,17 @@ public class GameController {
 	}
 
 	private void upkeep(Player p) {
-		for (GameUnit u : map.getUnits()) {
-			if (u.owner == p) {
-				GameStaticObject so = map.getStaticObj(u);
-				if (so != null && so.owner != p) {
-					if (so.data.capturable)
-						so.owner = p;
-					else if (so.data.destructible)
-						map.removeStaticObj(so);
+		for (GameUnit u : map.getPlayerUnits(p)) {
+			u.AP = u.data.AP;
+			
+			GameStaticObject so = map.getStaticObj(u);
+			if (so != null && so.owner != p) {
+				if (so.data.capturable) {
+					so.owner.updateLost(so);
+					captureObject(so, p);
+				} else if (so.data.destructible) {
+					so.owner.updateLost(so);
+					map.removeStaticObj(so);
 				}
 			}
 		}
@@ -441,17 +477,25 @@ public class GameController {
 				p.metal += getMineIncome(so);
 			}
 		}
-
-		// p.powerUsage = 0;
-		for (GameUnit u : map.getPlayerUnits(p)) {
-			u.AP = u.data.AP;
-			// p.powerUsage += u.data.powerUsage;
-
-			GameStaticObject target = map.getStaticObj(u);
-			if (target != null && target.owner != p
-					&& target.data.capturable)
-				captureObject(target, p);
+	}
+	
+	private void globalUpkeep() {
+		for(Player p: players) {
+			p.scoreEconomy = 0;
+			for (GameStaticObject u : map.getPlayerObjectsOfType(p, "MINE"))
+				p.scoreEconomy += 50 / map.getDistToClosestCity(u, p);
+			
+			p.scoreMilitary = 0;
+			for (GameUnit u : map.getPlayerUnits(p)) {
+				p.scoreMilitary += u.data.metalCost;
+			}
+			
+			p.scoreStratLoc = map.getPlayerStratLocScore(p);
 		}
+		
+		Collections.sort(militaryRankings, Player.militaryComparator);
+		Collections.sort(economyRankings, Player.economyComparator);
+		Collections.sort(stratLocRankings, Player.stratLocComparator);
 	}
 
 	private void addUnitToPlayer(Player p, GameStaticObject city,
@@ -473,26 +517,28 @@ public class GameController {
 		GameStaticObject so = new GameStaticObject(unit.mapX, unit.mapY,
 				res.getImage(data.id), res.getImage(data.id + "_fow"), p, data);
 		map.addStaticObj(so);
+		
+		p.updateBuilt(so);
 
 		graphics.addLowImage(so.getImage());
 
 		destroyUnit(unit);
 	}
 
-	private boolean addObjectToPlayer(Player p, CoordObject location,
+	private void addObjectToPlayer(Player p, CoordObject location,
 			String objId) throws ResNotFoundException {
 		if (isStaticData(objId)) {
 			GameUnit unit = (GameUnit) location;
 			GameStaticObjectData data = res.getStaticObject(objId);
 			if (unit.data.buildIDs.contains(objId) && p.canAfford(data)) {
 				if (!objId.equals("MINE") && map.getStaticObj(unit) == null) {
+					showAction(new ActionToShow(unit, false));
 					addStaticObjToPlayer(p, unit, data);
-					return true;
 				} else if (objId.equals("MINE")) {
 					GameStaticObject so = map.getStaticObj(unit);
 					if (so != null && so.data.id.equals("METAL")) {
+						showAction(new ActionToShow(unit, false));
 						addStaticObjToPlayer(p, unit, data);
-						return true;
 					}
 				}
 			}
@@ -501,11 +547,12 @@ public class GameController {
 			GameUnitData data = res.getUnit(objId);
 			if (so.active && so.data.buildIDs.contains(objId)
 					&& p.canAfford(data)) {
+				showAction(new ActionToShow(so, false));
 				addUnitToPlayer(p, so, data);
-				return true;
+			} else if(p.ai != null) {
+				p.ai.addUnitToQueue(objId);
 			}
 		}
-		return false;
 	}
 
 	private boolean isStaticData(String objId) {
@@ -671,13 +718,36 @@ public class GameController {
 		}
 	}
 	
+	private void showAction(ActionToShow show) {
+		if(!Team2Civ.AI_MODE && currentPlayer != humanPlayer) {
+			if(map.getTileAt(show.target).beingSeen)
+				toShow.add(show);
+		}
+	}
+	
 	private class ActionToShow {
 		public boolean movement;
-		public GameUnit target;
+		public MapObject target;
 		
-		public ActionToShow(GameUnit target, boolean movement) {
+		public ActionToShow(MapObject target, boolean movement) {
 			this.target = target;
 			this.movement = movement;
 		}
+	}
+	
+	public List<Player> getPlayers() {
+		return players;
+	}
+	
+	public List<Player> getMilitaryRankings() {
+		return militaryRankings;
+	}
+	
+	public List<Player> getEconomyRankings() {
+		return economyRankings;
+	}
+	
+	public List<Player> getStratLocRankings() {
+		return stratLocRankings;
 	}
 }

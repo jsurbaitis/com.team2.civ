@@ -579,6 +579,31 @@ public class GameMap {
 		return rtn;
 	}
 	
+	public int getPlayerStratLocScore(Player p) {
+		int score = 0;
+		for(WalkableTile wt: stratLocValues.keySet()) {
+			for(GameUnit u: getPlayerUnits(p)) {
+				if(u.mapX == wt.mapX && u.mapY == wt.mapY) {
+					score++;
+					break;
+				}
+			}
+		}
+		return score;
+	}
+	
+	public boolean isOnStratLoc(GameUnit unit) {
+		return stratLocValues.containsKey(getTileAt(unit));
+	}
+	
+	public WalkableTile getTileAt(CoordObject key) {
+		return walkableMap.get(key);
+	}
+	
+	public GameStaticObject getObjBelowUnit(GameUnit u) {
+		return staticObjects.get(u);
+	}
+	
 	public Collection<WallTile> getUnwalkableMap() {
 		return unwalkableMap.values();
 	}
