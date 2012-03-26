@@ -80,18 +80,18 @@ public class GameGraphics {
 	
 	public void updateZoom() {
 		if (zoomingIn || zoomingOut) {
-			double os = scale;
+			int oldWidth = getShowingWidth();
+			int oldHeight = getShowingHeight();
 
 			if (zoomingIn) {
 				scale += ZOOM_FACTOR;
+				offsetX -= (oldWidth - getShowingWidth()) / 2;
+				offsetY -= (oldHeight - getShowingHeight()) / 2;
 			} else {
 				scale -= ZOOM_FACTOR;
+				offsetX += (getShowingWidth() - oldWidth) / 2;
+				offsetY += (getShowingHeight() - oldHeight) / 2;
 			}
-
-			offsetX += ((float) Team2Civ.WINDOW_WIDTH) * (os - scale) / 2
-					* (1 / scale);
-			offsetY += ((float) Team2Civ.WINDOW_HEIGHT) * (os - scale) / 2
-					* (1 / scale);
 
 			if (Math.abs(oldScale - scale) >= ZOOM_DELTA) {
 				zoomingIn = false;
