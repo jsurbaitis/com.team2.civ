@@ -4,6 +4,7 @@ import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -73,14 +74,28 @@ public class GameController {
 		}
 
 		humanPlayer = players.get(0);
-
+		
+		File folder = new File("genomes/");
+		String[] genomes = folder.list();
+		
+		Random rnd = new Random();
+		int rndGenome;
+		
 		for (int i = 1; i < players.size(); i++) {
 			Player p = players.get(i);
-			p.ai = new AI();
+			
+			if(genomes.length > 2) {
+				rndGenome = rnd.nextInt(genomes.length);
+				p.ai = new AI(new File("genomes/genome_"+rndGenome));
+			} else {
+				p.ai = new AI();
+			}
+			
 			p.ai.setGameVars(this, map, p);
 		}
 
-		ui = new UI(humanPlayer, map, graphics, this);
+		if(!Team2Civ.AI_MODE)
+			ui = new UI(humanPlayer, map, graphics, this);
 	}
 
 	public AIGameResult runGame(AI a1, AI a2, AI a3, AI a4) {
@@ -113,8 +128,8 @@ public class GameController {
 					colors[playerIndex - 1], null);
 			players.add(p);
 			city.owner = p;
-			city.getImage().setBitmap(res.getImage("CITY_"+p.colour.toString()));
-			city.getImage().setFowImg(res.getImage("CITY_fow_"+p.colour.toString()));
+			city.updateImage("CITY");
+			city.updateFowImage("CITY");
 
 			if (!Team2Civ.AI_MODE && playerIndex == 1) {
 				graphics = new GameGraphics(map);
@@ -168,6 +183,8 @@ public class GameController {
 					checkForAttack(u);	
 					toShow.remove(0);
 					currentShowing = null;
+				} else {
+					System.out.println("UNIT IS MOVING");
 				}
 			} else {
 				if (gameTime % 5 == 0)
@@ -231,7 +248,8 @@ public class GameController {
 	private void destroyObject(GameStaticObject target, Player performer) {
 		showAction(new ActionToShow(target, false));
 		
-		graphics.removeLowImage(target.getImage());
+		if(!Team2Civ.AI_MODE)
+			graphics.removeLowImage(target.getImage());
 		map.removeStaticObj(target);
 		performer.metal += target.data.metalCost * 0.2;
 		target.owner.powerCapability -= target.data.powerGiven;
@@ -241,12 +259,10 @@ public class GameController {
 		target.owner.powerCapability -= target.data.powerGiven;
 		target.owner = performer;
 		target.owner.powerCapability += target.data.powerGiven;
-		try {
-			target.getImage().setBitmap(res.getImage(target.data.id+"_"+performer.colour.toString()));
-			target.getImage().setFowImg(res.getImage(target.data.id+"_fow_"+performer.colour.toString()));
-		} catch (ResNotFoundException e) {
-			e.printStackTrace();
-		}
+		
+		target.updateImage(target.data.id);
+		target.updateFowImage(target.data.id);
+
 	}
 
 	private void startMovement(GameUnit actor, MapObject target) {
@@ -289,7 +305,7 @@ public class GameController {
 				actor.startMovement(toWalk);
 				showAction(new ActionToShow(actor, true));
 			} else {
-				actor.setPos(path.get(0).mapX, path.get(0).mapY);
+				actor.setPos(toWalk.get(0).mapX, toWalk.get(0).mapY);
 				checkForAttack(actor);
 			}
 		}
@@ -357,7 +373,8 @@ public class GameController {
 		u.owner.metal += u.data.metalCost * 0.25;
 		u.owner.powerUsage -= u.data.powerUsage;
 
-		graphics.removeUnitImage(u.getImage());
+		if (!Team2Civ.AI_MODE)
+			graphics.removeUnitImage(u.getImage());
 		map.removeUnit(u);
 	}
 	
@@ -366,7 +383,8 @@ public class GameController {
 
 		u.owner.powerUsage -= u.data.powerUsage;
 
-		graphics.removeUnitImage(u.getImage());
+		if (!Team2Civ.AI_MODE)
+			graphics.removeUnitImage(u.getImage());
 		map.removeUnit(u);
 	}
 
@@ -396,6 +414,7 @@ public class GameController {
 					System.out.println("AI "+winner.colour.toString()+" won!");
 				else
 					System.out.println("Human player "+winner.colour.toString()+" won!");
+				return;
 			}
 			// TODO: do something if winner != null
 		}
@@ -407,6 +426,7 @@ public class GameController {
 			turnsLeft--;
 			if(turnsLeft == 0) {
 				System.out.println("No more turns left!");
+				return;
 			}
 		}
 		
@@ -414,9 +434,13 @@ public class GameController {
 			endTurnNormal();
 		} else if (currentPlayer != humanPlayer) {
 			toPerform.addAll(currentPlayer.ai.perform());
-			if(toPerform.size() > 0) performAction(toPerform.get(0));
+			if(toPerform.size() > 0) {
+				performAction(toPerform.get(0));
+			}
 			
 			currentPlayer.resetConditions();
+		} else {
+			graphics.resetOffsets();
 		}
 	}
 
@@ -518,7 +542,9 @@ public class GameController {
 				} else if (so.data.destructible) {
 					so.owner.updateLost(so);
 					so.owner.powerCapability -= so.data.powerGiven;
-					graphics.removeLowImage(so.getImage());
+					
+					if (!Team2Civ.AI_MODE)
+						graphics.removeLowImage(so.getImage());
 					map.removeStaticObj(so);
 				}
 			}
@@ -575,9 +601,10 @@ public class GameController {
 		p.metal -= data.metalCost;
 		p.powerUsage += data.powerUsage;
 
-		GameUnit u = new GameUnit(city.mapX, city.mapY, data.id, res, p, data);
+		GameUnit u = new GameUnit(city.mapX, city.mapY, p, data);
 
-		graphics.addUnitImage(u.getImage());
+		if (!Team2Civ.AI_MODE)
+			graphics.addUnitImage(u.getImage());
 		map.addUnit(u);
 	}
 
@@ -586,14 +613,13 @@ public class GameController {
 		p.metal -= data.metalCost;
 		p.powerCapability += data.powerGiven;
 
-		GameStaticObject so = new GameStaticObject(unit.mapX, unit.mapY,
-				res.getImage(data.id+"_"+p.colour.toString()),
-				res.getImage(data.id + "_fow_"+p.colour.toString()), p, data);
+		GameStaticObject so = new GameStaticObject(unit.mapX, unit.mapY, p, data);
 		map.addStaticObj(so);
 		
 		p.updateBuilt(so);
 
-		graphics.addLowImage(so.getImage());
+		if (!Team2Civ.AI_MODE)
+			graphics.addLowImage(so.getImage());
 
 		destroyUnit(unit);
 	}
@@ -648,7 +674,7 @@ public class GameController {
 	}
 
 	public void performEvent(UIEvent event) {
-		if (event.e == UIEvent.Event.HANDLED)
+		if (currentPlayer != humanPlayer || event.e == UIEvent.Event.HANDLED)
 			return;
 
 		if (event.e == UIEvent.Event.ACTION_ATTACK)
@@ -658,9 +684,10 @@ public class GameController {
 			target = null;
 		} else if (event.e == UIEvent.Event.ACTION_FORTIFY)
 			fortifyUnit((GameUnit) target);
-		else if (event.e == UIEvent.Event.END_TURN)
+		else if (event.e == UIEvent.Event.END_TURN) {
+			graphics.saveOffsets();
 			endTurnNormal();
-		else if (event.e.toString().startsWith("BUILD"))
+		} else if (event.e.toString().startsWith("BUILD"))
 			try {
 				addObjectToPlayer(currentPlayer, target, event.e.toString()
 						.replace("BUILD_", ""));
@@ -788,6 +815,9 @@ public class GameController {
 					e.printStackTrace();
 				}
 
+			}
+			else if(ev.getKeyCode() == KeyEvent.VK_ENTER) {
+				this.performEvent(new UIEvent(UIEvent.Event.END_TURN));
 			}
 		}
 	}

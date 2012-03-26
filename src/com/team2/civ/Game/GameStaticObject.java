@@ -1,6 +1,5 @@
 package com.team2.civ.Game;
 
-import java.awt.image.BufferedImage;
 import java.util.Random;
 
 import com.team2.civ.Data.GameStaticObjectData;
@@ -14,9 +13,9 @@ public class GameStaticObject extends WalkableTile {
 	
 	public boolean active = true;
 
-	public GameStaticObject(int mapX, int mapY, BufferedImage bitmap, BufferedImage fowImg, Player owner,
+	public GameStaticObject(int mapX, int mapY, Player owner,
 			GameStaticObjectData data) {
-		super(mapX, mapY, bitmap, fowImg, owner);
+		super(mapX, mapY, data.id, owner);
 
 		this.owner = owner;
 		this.data = data;

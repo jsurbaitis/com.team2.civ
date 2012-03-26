@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
 import com.team2.civ.Game.Player;
@@ -20,12 +21,11 @@ public class MovingMapObject extends MapObject {
 
 	protected List<WalkableTile> path;
 	
-	public MovingMapObject(int mapX, int mapY, String imgId, Resources res, Player owner) throws ResNotFoundException {
-		super(mapX, mapY, res.getImage(imgId+"_0_"+owner.colour.toString()), owner);
+	public MovingMapObject(int mapX, int mapY, String imgId, Player owner) throws ResNotFoundException {
+		super(mapX, mapY, imgId + "_1", owner);
 		
-		orientations = new BufferedImage[6];
-		for(int i = 0; i < 6; i++)
-			orientations[i] = res.getImage(imgId+"_"+i+"_"+owner.colour.toString());
+		if(!Team2Civ.AI_MODE) initImages(imgId);
+		
 		
 		/*BufferedImage frames[] = new BufferedImage[7];
 		try {
@@ -46,6 +46,18 @@ public class MovingMapObject extends MapObject {
 		a.frames = frames;
 		
 		movingAnim = new Animation(a);*/
+	}
+	
+	private void initImages(String imgId) {
+		orientations = new BufferedImage[6];
+		
+		Resources res = Resources.getInstance();
+		try {
+			for(int i = 0; i < 6; i++)
+				orientations[i] = res.getImage(imgId+"_"+i+"_"+owner.colour.toString());
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public boolean isMoving() {
@@ -162,6 +174,6 @@ public class MovingMapObject extends MapObject {
 		else if(speedX > 0 && speedY > 0)
 			orientationId = 5;
 
-		this.getImage().setBitmap(orientations[orientationId]);
+		this.setImage(orientations[orientationId]);
 	}
 }

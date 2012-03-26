@@ -2,6 +2,8 @@ package com.team2.civ.Map;
 
 import java.awt.image.BufferedImage;
 
+import com.team2.civ.Team2Civ;
+import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
 import com.team2.civ.Game.Player;
 
@@ -14,14 +16,14 @@ public class MapObject extends CoordObject {
 	public boolean seen = false;
 	public boolean beingSeen = true;
 	
-	protected MapObjectImage img;
+	protected MapObjectImage image;
 	
-	public MapObject(int mapX, int mapY, BufferedImage bitmap, Player owner) {
+	public MapObject(int mapX, int mapY, String imgId, Player owner) {
 		super(mapX, mapY);
-		img = new MapObjectImage(bitmap, this);
-		this.owner = owner;
+		this.owner = owner;		
+		updateImage(imgId);
 	}
-	
+
 	public void isSeen() {
 		beingSeen = true;
 		seen = true;
@@ -31,11 +33,48 @@ public class MapObject extends CoordObject {
 	}
 
 	public MapObjectImage getImage() {
-		return img;
+		return image;
+	}
+	
+	public void setImage(BufferedImage img) {
+		if(Team2Civ.AI_MODE) return; 
+		
+		image.setBitmap(img);
+	}
+	
+	public void updateImage(String imgId) {
+		if(Team2Civ.AI_MODE) return; 
+		
+		Resources res = Resources.getInstance();
+		try {
+			if(owner != null) imgId += "_"+owner.colour.toString();
+			BufferedImage img = res.getImage(imgId);
+			
+			if(image != null)
+				image.setBitmap(img);
+			else
+				image = new MapObjectImage(img, this);
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void updateFowImage(String imgId) {
+		if(Team2Civ.AI_MODE) return; 
+		
+		Resources res = Resources.getInstance();
+		try {
+			imgId += "_fow";
+			if(owner != null) imgId += "_"+owner.colour.toString();
+			BufferedImage fowImg = res.getImage(imgId);
+			image.setFowImg(fowImg);
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public boolean picked(int f, int g) {
-		if(!img.isVisible())
+		if(!image.isVisible())
 			return false;
 		
 		if(f > x + Resources.TILE_WIDTH / 10 && f < x + Resources.TILE_WIDTH - Resources.TILE_WIDTH / 10 && 

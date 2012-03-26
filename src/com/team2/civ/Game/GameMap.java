@@ -56,19 +56,6 @@ public class GameMap {
 	
 	private void createMap() throws ResNotFoundException {
 		MapObjectImage.selectedImg = res.getImage("selected");
-		BufferedImage tileImg = res.getImage("tile_grass");
-		BufferedImage wallImg = res.getImage("wall");
-		BufferedImage waterImg = res.getImage("water");
-		BufferedImage hillImg = res.getImage("hill");
-		BufferedImage metalImg = res.getImage("metal");
-		BufferedImage cityImg = res.getImage("CITY");
-
-		BufferedImage tileFowImg = res.getImage("tile_grass_fow");
-		BufferedImage wallFowImg = res.getImage("wall_fow");
-		BufferedImage waterFowImg = res.getImage("water_fow");
-		BufferedImage hillFowImg = res.getImage("hill_fow");
-		BufferedImage metalFowImg = res.getImage("metal_fow");
-		BufferedImage cityFowImg = res.getImage("CITY_fow");
 
 		HeightmapGenerator gen = new HeightmapGenerator();
 		int[][] map = gen.generateMap(MAP_WIDTH, MAP_HEIGHT, 4);
@@ -77,28 +64,24 @@ public class GameMap {
 				if (map[x][y] == -1)
 					continue;
 				if (map[x][y] == 0) {
-					WallTile wt = new WallTile(x, y, waterImg, waterFowImg, WallTile.Type.WATER);
+					WallTile wt = new WallTile(x, y, "water", WallTile.Type.WATER);
 					unwalkableMap.put(wt, wt);
 				} else if (map[x][y] == 1) {
-					WalkableTile t = new WalkableTile(x, y, tileImg,
-							tileFowImg, null);
+					WalkableTile t = new WalkableTile(x, y, "tile_grass", null);
 					walkableMap.put(t, t);
 				} else if (map[x][y] == 2) {
-					WalkableTile t = new WalkableTile(x, y, hillImg,
-							hillFowImg, null);
+					WalkableTile t = new WalkableTile(x, y, "hill", null);
 					walkableMap.put(t, t);
 				} else if (map[x][y] == 3) {
-					WallTile wt = new WallTile(x, y, wallImg, wallFowImg, WallTile.Type.MOUNTAIN);
+					WallTile wt = new WallTile(x, y, "wall", WallTile.Type.MOUNTAIN);
 					unwalkableMap.put(wt, wt);
 				} else if (map[x][y] == 4) {
-					GameStaticObject metal = new GameStaticObject(x, y,
-							metalImg, metalFowImg, null,
+					GameStaticObject metal = new GameStaticObject(x, y, null,
 							res.getStaticObject("METAL"));
 					staticObjects.put(metal, metal);
 					walkableMap.put(metal, metal);
 				} else if (map[x][y] == 5) {
-					GameStaticObject city = new GameStaticObject(x, y, cityImg,
-							cityFowImg, null, res.getStaticObject("CITY"));
+					GameStaticObject city = new GameStaticObject(x, y, null, res.getStaticObject("CITY"));
 
 					staticObjects.put(city, city);
 					walkableMap.put(city, city);
@@ -240,9 +223,8 @@ public class GameMap {
 						|| exclude == nextTile)
 					continue;
 
-				boolean isFree = isTileFree(nextTile, owner);
 				if (!ignoreUnits) {
-					if (!isFree)
+					if (!isTileFree(nextTile, owner))
 						continue;
 				}
 

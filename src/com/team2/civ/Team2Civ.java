@@ -33,7 +33,7 @@ public class Team2Civ extends Thread {
 	public static final int FPS_LIMIT = 60;
 	private static final long FPS_WAIT = (long) (1.0 / FPS_LIMIT * 1000);
 	
-	public static final boolean AI_MODE = false;
+	public static final boolean AI_MODE = true;
 	public static final boolean DEBUG_OUTPUT = true;
 	
 	private long timeStartMillis;

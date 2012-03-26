@@ -92,7 +92,7 @@ public class AI {
 		this.genome = generateNewGenome();
 		this.init_st_dev_strat_loc = (int) this.genome[0];
 		this.current_st_dev_strat_loc = this.init_st_dev_strat_loc;
-		this.init_combat_pcent_win_chance = ((float) this.genome[1]) / 7;
+		this.init_combat_pcent_win_chance = (float) (((float) this.genome[1]) / 15);
 		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
 		this.init_queue_length = (int) this.genome[2];
 		this.init_resource_threshold = ((int) this.genome[3]) * 40;
@@ -113,7 +113,7 @@ public class AI {
 		}
 		this.init_st_dev_strat_loc = (int) this.genome[0];
 		this.current_st_dev_strat_loc = this.init_st_dev_strat_loc;
-		this.init_combat_pcent_win_chance = ((float) this.genome[1]) / 7;
+		this.init_combat_pcent_win_chance = (float) (((float) this.genome[1]) / 15);
 		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
 		this.init_queue_length = (int) this.genome[2];
 		this.init_resource_threshold = ((int) this.genome[3]) * 40;
@@ -126,7 +126,7 @@ public class AI {
 		this.genome = FileToBytes(f);
 		this.init_st_dev_strat_loc = (int) this.genome[0];
 		this.current_st_dev_strat_loc = this.init_st_dev_strat_loc;
-		this.init_combat_pcent_win_chance = ((float) this.genome[1]) / 7;
+		this.init_combat_pcent_win_chance = (float) (((float) this.genome[1]) / 15);
 		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
 		this.init_queue_length = (int) this.genome[2];
 		this.init_resource_threshold = ((int) this.genome[3]) * 40;
@@ -249,7 +249,7 @@ public class AI {
 	}
 
 	private static void BytesToFile(byte[] bytes, int genomeNumber) {
-		File f = new File("genome_" + genomeNumber);
+		File f = new File("genomes/genome_" + genomeNumber);
 		if (f.exists())
 			f.delete();
 
@@ -476,8 +476,16 @@ public class AI {
 				}
 
 				out.addAll(SeizeResource());
+				return out;
 			} else {
-				out.addAll(makeWorker());
+				for (GameUnit worker: freeworkers){
+					for (WalkableTile tile : map.getWalkableMap()){
+						if (map.getDistBetween(worker, tile, owner) != -1){
+							out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE,owner,worker,tile));
+						}
+					}
+				}
+				//out.addAll(makeWorker()); //TODO: suspicious 2
 			}
 		}
 
@@ -757,8 +765,12 @@ public class AI {
 		List<GameAction.OneAgentEvent> possibilities = new ArrayList<GameAction.OneAgentEvent>();
 
 		GameUnitData data;
+		
 		try {
 			data = res.getUnit("TANK");
+			if (!owner.canAffordPower(data)){
+				return this.BuildPowerplant();
+			}
 			if (owner.canAfford(data))
 				possibilities.add(GameAction.OneAgentEvent.BUILD_TANK);
 			data = res.getUnit("AIR");
@@ -790,14 +802,18 @@ public class AI {
 				out.addAll(this.SeizeResource());
 			}
 			else if (!owner.canAffordPower(res.getUnit("WORKER")) && this.hasFreeWorkers()) {
-				out.addAll(this.BuildPowerplant());
+				out.addAll(this.BuildPowerplant()); //TODO: suspicious 1
 			}
 			else if (this.default_behavior_code != this.MAKE_WORKER 
 				  && this.default_behavior_code != this.FORTIFY_CITY
 				  && this.default_behavior_code != this.SEIZE_RESOURCE
 				  && this.default_behavior_code != this.MAKE_AIR
 				  && this.default_behavior_code != this.MAKE_ANIAIR
-				  && this.default_behavior_code != this.MAKE_TANK) {
+				  && this.default_behavior_code != this.MAKE_TANK
+				  && this.default_behavior_code != this.SEIZE_STRATEGIC_LOCATION
+				  && this.default_behavior_code != this.CREATE_NEW_CITY
+				  && this.default_behavior_code != this.FORTIFY_RESOURCE
+				  && this.default_behavior_code != this.FORTIFY_STRATEGIC_LOCATION) {
 				return this.parseActionCode(this.default_behavior_code);
 			}
 		} catch (ResNotFoundException e) {
@@ -1005,7 +1021,7 @@ public class AI {
 	private List<GameAction> CombatWinChanceTolerancePlus10() {
 		if(Team2Civ.DEBUG_OUTPUT) System.out.print("CombatPercPlus10 -> ");
 		
-		this.current_combat_pcent_win_chance *= 1.1;
+		if (this.current_combat_pcent_win_chance * 1.1 < .95) this.current_combat_pcent_win_chance *= 1.1;
 		if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10) {
 			return parseActionCode(this.default_behavior_code);
 		}
@@ -1015,7 +1031,7 @@ public class AI {
 	private List<GameAction> CombatWinChanceToleranceMinus10() {
 		if(Team2Civ.DEBUG_OUTPUT) System.out.print("CombatPercMinus10 -> ");
 		
-		this.current_combat_pcent_win_chance *= .9;
+		if (this.current_combat_pcent_win_chance * .9 > .05) this.current_combat_pcent_win_chance *= .9;
 		if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10) {
 			return parseActionCode(this.default_behavior_code);
 		}
@@ -1035,7 +1051,7 @@ public class AI {
 	private List<GameAction> TurnsLeftThresholdMinus20() {
 		if(Team2Civ.DEBUG_OUTPUT) System.out.print("TurnsThreshMinus20 -> ");
 		
-		this.current_turns_threshold *= .8;
+		if (this.current_turns_threshold * .8 > 10) this.current_turns_threshold *= .8;
 		if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_MINUS_20) {
 			return parseActionCode(this.default_behavior_code);
 		}
@@ -1045,7 +1061,7 @@ public class AI {
 	private List<GameAction> TurnsLeftThresholdPlus20() {
 		if(Team2Civ.DEBUG_OUTPUT) System.out.print("TurnsThreshPlus20 -> ");
 		
-		this.current_turns_threshold *= 1.2;
+		if (this.current_turns_threshold * 1.2 < 620) this.current_turns_threshold *= 1.2;
 		if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_PLUS_20) {
 			return parseActionCode(this.default_behavior_code);
 		}

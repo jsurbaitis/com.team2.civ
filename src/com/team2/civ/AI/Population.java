@@ -36,7 +36,6 @@ public class Population {
 	public Population(int pop_size) {
 		population_size = pop_size;
 		genomes = new AI[pop_size];
-		this.populate();
 	}
 
 	public Population(int pop_size, HashMap<AI, Float> fit, AI[] genome_array) {
@@ -91,25 +90,20 @@ public class Population {
 		for (int i = 0; i < genomes.length; i++) {
 			genomes[i] = new AI();
 			fitness.put(genomes[i], 0f);
+			
+			if(i != 0 && (i + 1) % 10 == 0)
+				System.out.println("Completed "+(i+1)+" AIs");
 		}
 	}
 
-	public int getFitness(int index) {
-		return fitness.get(genomes[index]).intValue();
-	}
-
-	public int getAIFitness(AI ai) {
-		return fitness.get(ai).intValue();
-	}
-
-	public void compete(AI ai1, AI ai2, AI ai3, AI ai4) throws Exception {
+	public void compete(AI ai1, AI ai2, AI ai3, AI ai4) {
 		if (getTimesUsed(ai1) > 5 || getTimesUsed(ai2) > 5
 				|| getTimesUsed(ai3) > 5 || getTimesUsed(ai4) > 5) {
-			throw new Exception("AI has already competed 5 times.");
+			return;
 		}
 
 		AIGameResult winner = (new GameController()).runGame(ai1, ai2, ai3, ai4);
-		fitness.put(winner.winner, (fitness.get(winner.winner) + winner.score));
+		fitness.put(winner.winner, (getFitness(winner.winner) + winner.score));
 		
 		incTimesUsed(ai1);
 		incTimesUsed(ai2);
@@ -118,6 +112,12 @@ public class Population {
 		
 		game++;
 		System.out.println("\nGame "+game+" completed\n");
+	}
+	
+	public float getFitness(AI ai) {
+		if(!fitness.containsKey(ai))
+			return 0;
+		else return fitness.get(ai);
 	}
 
 	private int getTimesUsed(AI ai) {
@@ -135,15 +135,15 @@ public class Population {
 	}
 
 	public void competeAll() {
+		this.fitness.clear();
+		this.times_used.clear();
+		
 		for (int i = genomes.length - 1; i > 0; i--) {
 			Random random = new SecureRandom();
-			for (int j = 0; j < 6; j++) {
-				try {
-					compete(genomes[i], genomes[random.nextInt(i - 1)],
-							genomes[random.nextInt(i - 1)],
-							genomes[random.nextInt(i - 1)]);
-				} catch (Exception e) {
-				}
+			for (int j = 0; j < 5; j++) {
+				compete(genomes[i], genomes[random.nextInt(i - 1)],
+						genomes[random.nextInt(i - 1)],
+						genomes[random.nextInt(i - 1)]);
 			}
 		}
 	}
@@ -157,7 +157,7 @@ public class Population {
 		AI[] newAI = new AI[population_size];
 		int j = 0;
 		for (int i = 0; i < genomes.length; i++) {
-			if (fitness.get(genomes[i]) > fitness_level) {
+			if (getFitness(genomes[i]) > fitness_level) {
 				newAI[j] = genomes[i];
 				j++;
 			}
@@ -174,11 +174,9 @@ public class Population {
 				newAI[j] = new AI(parent1, parent2);
 				j++;
 			}
+			
+			this.genomes = newAI;
 		}
-
-		this.genomes = newAI;
-		this.fitness.clear();
-		this.times_used.clear();
 	}
 
 	public void writeAIs() {
@@ -211,13 +209,13 @@ public class Population {
 			for (int i = 0; i < genomes.length; i++) {
 				out.write("<genome>");
 				out.write("<filename>");
-				out.write("genome" + i + ".txt");
+				out.write("genome_" + i);
 				out.write("</filename>");
 				out.write("<fitness>");
-				out.write("" + fitness.get(genomes[i]));
+				out.write("" + getFitness(genomes[i]));
 				out.write("</fitness>");
 				out.write("<times_used>");
-				out.write("" + times_used.get(genomes[i]));
+				out.write("" + getTimesUsed(genomes[i]));
 				out.write("</times_used>");
 				out.write("</genome>");
 			}

@@ -15,6 +15,8 @@ public class GameGraphics {
 	private int offsetX = 0;
 	private int offsetY = 0;
 	
+	private int oldOffsetX, oldOffsetY;
+	
 	private static final double SCALE_MAX = 1.0;
 	private static final double SCALE_MIN = 0.2;
 	private static final double ZOOM_DELTA = 0.2;
@@ -58,6 +60,16 @@ public class GameGraphics {
 	
 	public int getOffsetY() {
 		return offsetY;
+	}
+	
+	public void saveOffsets() {
+		oldOffsetX = offsetX;
+		oldOffsetY = offsetY;
+	}
+	
+	public void resetOffsets() {
+		offsetX = oldOffsetX;
+		offsetY = oldOffsetY;
 	}
 	
 	public void setOffsets(int offsetX, int offsetY) {

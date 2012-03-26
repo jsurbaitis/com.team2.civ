@@ -20,6 +20,7 @@ public class UIEvent {
 	public UIEvent(Event ev) {
 		this.e = ev;
 	}
+	
 	public UIEvent(MapObject ob){
 		e = Event.TARGET_CHANGED;
 		actor = ob;
