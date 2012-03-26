@@ -398,7 +398,7 @@ public class AI {
 		return sum / chases.size();
 	}
 
-	public List<GameAction> perform(List<GameAction> actions) {
+	public List<GameAction> perform() {
 		output.clear();
 
 		byte[] b_responses = getResponseCodes(getEnvironmentalConditions());
@@ -410,7 +410,6 @@ public class AI {
 					System.out.print(g + "  ");
 				output.addAll(ga);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -477,9 +476,10 @@ public class AI {
 		return freeUnits;
 	}
 
-	private GameAction BuildPowerplant() {
-		ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner,
-				"WORKER");
+	private List<GameAction> BuildPowerplant() {
+		List<GameAction> out = new ArrayList<GameAction>();
+		
+		ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner, "WORKER");
 		ArrayList<GameUnit> freeworkers = new ArrayList<GameUnit>();
 		for (GameUnit u : ourWorkers) {
 			if (!isUnitUsed(u)) {
@@ -489,20 +489,22 @@ public class AI {
 				GameStaticObjectData data;
 				try {
 					data = res.getStaticObject("POWERPLANT");
-					if (owner.canAfford(data))
-						return new GameAction(GameAction.OneAgentEvent.BUILD_POWERPLANT,
-								owner, u);
+					if (owner.canAfford(data)) {
+						out.add(new GameAction(GameAction.OneAgentEvent.BUILD_POWERPLANT,
+								owner, u));
+						return out;
+					}
 				} catch (ResNotFoundException e) {
 					e.printStackTrace();
 				}
 
-				return SeizeResource();
+				out.addAll(SeizeResource());
 			} else {
-				return  makeWorker();
+				out.addAll(makeWorker());
 			}
 		}
-		
-		return null;
+
+		return out;
 	}
 
 	private List<GameAction> SeizeStrategicLocation() {
@@ -534,7 +536,7 @@ public class AI {
 						owner)); // TODO: fix
 				return rtn;
 			} else {
-				rtn.add(SeizeResource());
+				rtn.addAll(SeizeResource());
 				return rtn;
 			}
 		}
@@ -563,11 +565,12 @@ public class AI {
 			}
 		}
 
-		rtn.add(makeRandomUnit());
+		rtn.addAll(makeRandomUnit());
 		return rtn;
 	}
 
-	private GameAction SeizeResource() {
+	private List<GameAction> SeizeResource() {
+		List<GameAction> out = new ArrayList<GameAction>();
 		ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner,
 				"WORKER");
 		GameStaticObject best = null;
@@ -575,10 +578,11 @@ public class AI {
 
 		for (GameStaticObject so : map.getAllResources()) {
 			for (GameUnit u : ourWorkers) {
-				if (!isUnitUsed(u) && u.mapX == so.mapX && u.mapY == so.mapY)
-					return new GameAction(GameAction.OneAgentEvent.BUILD_MINE,
-							owner, u);
-
+				if (!isUnitUsed(u) && u.mapX == so.mapX && u.mapY == so.mapY) {
+					out.add(new GameAction(GameAction.OneAgentEvent.BUILD_MINE,
+							owner, u));
+					return out;
+				}
 				if (map.isTileFree(so)) {
 					int dist = map.getDistToClosestCity(so, owner);
 					if (dist < closestDist) {
@@ -603,10 +607,12 @@ public class AI {
 		}
 
 		if (bestWorker != null)
-			return new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE, owner,
-					bestWorker, best);
+			out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE, owner,
+					bestWorker, best));
 		else
-			return this.makeWorker();
+			out.addAll(this.makeWorker());
+		
+		return out;
 	}
 
 	private List<GameAction> attackPlayer(Player p) {
@@ -638,7 +644,7 @@ public class AI {
 
 				return rtn;
 			} else {
-				rtn.add(this.makeRandomUnit());
+				rtn.addAll(this.makeRandomUnit());
 				return rtn;
 			}
 		}
@@ -683,11 +689,29 @@ public class AI {
 		return attackPlayer(economyRankings.get(economyRankings.size() - 1));
 	}
 
-	private GameAction harassPlayer(Player p) {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+	private List<GameAction> harassPlayer(Player p) {
+		ArrayList<GameAction> out = new ArrayList<GameAction>();
+		int least_dist = Integer.MAX_VALUE;
+		GameStaticObject best_candidate = null;
+		List<GameStaticObject> resources = map.getPlayerObjectsOfType(p, "MINE", "POWERPLANT");
+		for (GameStaticObject resource : resources) {
+			int dist = map.getDistToClosestCity(resource, owner);
+			if ((dist != -1) && (dist < least_dist)) {
+				least_dist = dist;
+				best_candidate = resource;
+			} 
+		} 
+		
+		if(best_candidate == null) return out;
+		
+		for (GameUnit u : getUnitsToSend(map.getUnitsOnTile(best_candidate))) {
+			out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE,owner, u, best_candidate));
+		}
+		
+		return out;
 	}
 
-	private GameAction harassStrongestMilitary() {
+	private List<GameAction> harassStrongestMilitary() {
 		List<Player> militaryRankings = game.getMilitaryRankings();
 		if (militaryRankings.get(0) == owner) {
 			return harassPlayer(militaryRankings.get(1));
@@ -696,7 +720,7 @@ public class AI {
 		return harassPlayer(militaryRankings.get(0));
 	}
 
-	private GameAction HarassStrongestEconomy() {
+	private List<GameAction> HarassStrongestEconomy() {
 		List<Player> economyRankings = game.getEconomyRankings();
 		if (economyRankings.get(0) == owner) {
 			return harassPlayer(economyRankings.get(1));
@@ -705,7 +729,7 @@ public class AI {
 		return harassPlayer(economyRankings.get(0));
 	}
 
-	private GameAction HarassWeakestMilitary() {
+	private List<GameAction> HarassWeakestMilitary() {
 		List<Player> militaryRankings = game.getMilitaryRankings();
 		if (militaryRankings.get(militaryRankings.size() - 1) == owner) {
 			return harassPlayer(militaryRankings
@@ -715,7 +739,7 @@ public class AI {
 		return harassPlayer(militaryRankings.get(militaryRankings.size() - 1));
 	}
 
-	private GameAction harassWeakestEconomy() {
+	private List<GameAction> harassWeakestEconomy() {
 		List<Player> economyRankings = game.getEconomyRankings();
 		if (economyRankings.get(economyRankings.size() - 1) == owner) {
 			return harassPlayer(economyRankings.get(economyRankings.size() - 2));
@@ -724,18 +748,18 @@ public class AI {
 		return harassPlayer(economyRankings.get(economyRankings.size() - 1));
 	}
 
-	private GameAction makeRandomUnit() {
+	private List<GameAction> makeRandomUnit() {
 		List<GameAction.OneAgentEvent> possibilities = new ArrayList<GameAction.OneAgentEvent>();
 
-		GameStaticObjectData data;
+		GameUnitData data;
 		try {
-			data = res.getStaticObject("TANK");
+			data = res.getUnit("TANK");
 			if (owner.canAfford(data))
 				possibilities.add(GameAction.OneAgentEvent.BUILD_TANK);
-			data = res.getStaticObject("AIR");
+			data = res.getUnit("AIR");
 			if (owner.canAfford(data))
 				possibilities.add(GameAction.OneAgentEvent.BUILD_AIR);
-			data = res.getStaticObject("ANTIAIR");
+			data = res.getUnit("ANTIAIR");
 			if (owner.canAfford(data))
 				possibilities.add(GameAction.OneAgentEvent.BUILD_ANTIAIR);
 		} catch (ResNotFoundException e) {
@@ -749,97 +773,184 @@ public class AI {
 		return makeUnit(possibilities.get(index));
 	}
 
-	private GameAction makeWorker() {
+	private List<GameAction> makeWorker() {
+		List<GameAction> out = new ArrayList<GameAction>();
 		try {
 			if (owner.canAfford(res.getUnit("WORKER"))) {
-				return makeUnit(GameAction.OneAgentEvent.BUILD_WORKER);
+				out.addAll(makeUnit(GameAction.OneAgentEvent.BUILD_WORKER));
 			}
-			if (!owner.canAffordMetal(res.getUnit("WORKER"))) {
-				return this.SeizeResource();
+			else if (!owner.canAffordMetal(res.getUnit("WORKER"))) {
+				out.addAll(this.SeizeResource());
 			}
-			if (!owner.canAffordPower(res.getUnit("WORKER"))) {
-				return this.BuildPowerplant();
+			else if (!owner.canAffordPower(res.getUnit("WORKER"))) {
+				out.addAll(this.BuildPowerplant());
 			}
-			if (this.default_behavior_code != this.MAKE_WORKER
-			// TODO: && other things
-			) {
-				return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner); // TODO:
-																					// replace
-																					// this
-																					// later
+			else if (this.default_behavior_code != this.MAKE_WORKER 
+				  && this.default_behavior_code != this.FORTIFY_CITY) {
+				return this.parseActionCode(this.default_behavior_code);
 			}
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
-		return null;
+		return out;
 	}
 
-	private GameAction makeTank() {
+	private List<GameAction> makeTank() {
 		return makeUnit(GameAction.OneAgentEvent.BUILD_TANK);
 	}
 
-	private GameAction makeAir() {
+	private List<GameAction> makeAir() {
 		return makeUnit(GameAction.OneAgentEvent.BUILD_AIR);
 	}
 
-	private GameAction makeAntiAir() {
+	private List<GameAction> makeAntiAir() {
 		return makeUnit(GameAction.OneAgentEvent.BUILD_ANTIAIR);
 	}
 
-	private GameAction makeUnit(GameAction.OneAgentEvent buildEvent) {
+	private List<GameAction> makeUnit(GameAction.OneAgentEvent buildEvent) {
+		List<GameAction> out = new ArrayList<GameAction>();
+		
 		try {
 			GameUnitData data = res.getUnit(buildEvent.toString().replace(
 					"BUILD_", ""));
 			if (owner.canAfford(data)) {
 				GameStaticObject city = getRandomActiveCity();
 				if (city != null) {
-					return new GameAction(buildEvent, owner, city);
+					out.add(new GameAction(buildEvent, owner, city));
+					return out;
 				} else {
-					return null; // TODO: unit queue
+					this.unitQueue.add(data.id);
 				}
 			}
 		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
-		return SeizeResource();
+		
+		out.addAll(SeizeResource());
+		return out;
 	}
 
-	private GameAction FortifyLocation(WalkableTile location) {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+	private List<GameAction> FortifyLocation(WalkableTile location) {
+		ArrayList<GameAction> out = new ArrayList<GameAction>();
+		//&& !((GameStaticObject)location).data.id.equals("FORTIFICATION")
+		if (location instanceof GameStaticObject) {
+			List<GameUnit> units_on_tile = map.getPlayerUnitsOnTile(location, owner);
+			for (GameUnit u : units_on_tile){
+				out.add(new GameAction(GameAction.OneAgentEvent.ACTION_FORTIFY, owner, u));
+			}
+			
+			GameUnit closest = null;
+			int closestDist = Integer.MAX_VALUE;
+			for(GameUnit unit: map.getPlayerUnitsOfType(owner, "AIR", "ANTIAIR", "TANK")) {
+				int dist = map.getDistBetween(unit, location);
+				if(dist < closestDist) {
+					closestDist = dist;
+					closest = unit;
+				}
+			}
+			
+			out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, closest, location));
+		} else {
+			
+			ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner,
+					"WORKER");
+			ArrayList<GameUnit> freeworkers = new ArrayList<GameUnit>();
+			for (GameUnit u : ourWorkers) {
+				if (u.mapX == location.mapX && u.mapY == location.mapY){
+					out.add(new GameAction(GameAction.OneAgentEvent.BUILD_FORTIFICATION, owner, u));
+					return out;
+				}
+				if (!isUnitUsed(u)) {
+					freeworkers.add(u);
+				}
+				if ((freeworkers.size() > 0)
+						&& (map.getObjBelowUnit(u) == null)) {
+					GameUnit closest = null;
+					int closestDist = Integer.MAX_VALUE;
+					for(GameUnit unit: freeworkers) {
+						int dist = map.getDistBetween(unit, location);
+						if(dist < closestDist) {
+							closestDist = dist;
+							closest = unit;
+						}
+					}
+					out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, closest, location));
+					return out;
+					
+				}
+				out.addAll(this.makeWorker());
+			}
+		}
+		return out;
 	}
 
-	private GameAction FortifyStrategicLocation() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+	private List<GameAction> FortifyStrategicLocation() {
+		ArrayList<GameAction> out = new ArrayList<GameAction>();
+
+		WalkableTile worst_stratloc = null;
+		int worst_stratloc_score = Integer.MAX_VALUE;
+		for (WalkableTile stratloc : map.getStratLocValues().keySet()) {
+			int defending_units = map.getPlayerUnitsOnTile(stratloc, owner)
+					.size();
+			if (defending_units > 0 && defending_units < worst_stratloc_score) {
+				worst_stratloc_score = defending_units;
+				worst_stratloc = stratloc;
+			}
+		}
+		if(worst_stratloc != null) out.addAll(FortifyLocation(worst_stratloc));
+		
+		return out;
+
 	}
 
-	private GameAction FortifyResource() {
+	private List<GameAction> FortifyResource() {
+		List<GameAction> out = new ArrayList<GameAction>();
 		ArrayList<WalkableTile> locations = new ArrayList<WalkableTile>();
 		List<GameStaticObject> resources = map.getPlayerObjectsOfType(owner,
-				"CITY", "POWERPLANT");
+				"MINE", "POWERPLANT");
 		if (resources.size() == 0) {
 			if (owner.scoreEconomy == 0) {
-				return this.SeizeResource();
+				out.addAll(this.SeizeResource());
+				return out;
 			}
-			return this.BuildPowerplant();
+			out.addAll(this.BuildPowerplant());
+			return out;
 		}
-		for (WalkableTile resource : resources) {
-			if (map.getUnitsOnTile(resource).size() != 0)
+		for (GameStaticObject resource : resources) {
+			if (map.getUnitsOnTile(resource).size() == 0)
 				locations.add(resource);
 		}
 
 		if (locations.size() > 0) {
-			return FortifyLocation(locations
-					.get(rnd.nextInt(locations.size() - 1)));
+			return FortifyLocation(locations.get(rnd.nextInt(locations.size() - 1)));
 		}
 		if (rnd.nextBoolean()) {
-			return this.SeizeResource();
+			out.addAll(this.SeizeResource());
+			return out;
 		}
-		return this.BuildPowerplant();
+		out.addAll(this.BuildPowerplant());
+		return out;
 	}
 
-	private GameAction FortifyCity() {
-		return new GameAction(GameAction.ZeroAgentEvent.END_TURN, owner);
+	private List<GameAction> FortifyCity() {
+		List<GameStaticObject> cities = map.getPlayerObjectsOfType(owner,
+				"CITY");
+		GameStaticObject worst_city = null;
+		int worst_city_score = 0;
+		int city_sum = 0;
+		for (GameStaticObject city : cities) {
+			for (GameUnit u : map.getPlayerUnitsOnTile(city, owner)) {
+				city_sum += u.data.metalCost;
+			}
+			if (city_sum < worst_city_score) {
+				worst_city_score = city_sum;
+				worst_city = city;
+			}
+		}
+		return FortifyLocation(worst_city);
 	}
 
 	private List<GameAction> ClearUnitQueue() {
@@ -905,7 +1016,7 @@ public class AI {
 		return new ArrayList<GameAction>();
 	}
 
-	private GameAction CreateNewCity() throws ResNotFoundException {
+	private List<GameAction> CreateNewCity() throws ResNotFoundException {
 		if (!owner.canAfford(res.getStaticObject("CITY"))) {
 			return this.SeizeResource();
 		}
@@ -920,16 +1031,11 @@ public class AI {
 		if (freeworkers.size() == 0) {
 			return this.makeWorker();
 		}
-		ArrayList<WalkableTile> city_candidate_list = getCityCandidates();
-		WalkableTile current_candidate = null;
-		int candidate_score = Integer.MAX_VALUE;
-		for (WalkableTile candidate : city_candidate_list) {
-			int score = this.map.getDistToClosestCity(candidate, owner);
-			if (score < candidate_score) {
-				candidate_score = score;
-				current_candidate = candidate;
-			}
-		}
+		
+		WalkableTile current_candidate = getBestCityTile();
+		if(current_candidate == null) return null;
+		
+		List<GameAction> out = new ArrayList<GameAction>();
 		GameUnit closest_worker = null;
 		int closest_worker_distance = Integer.MAX_VALUE;
 		for (GameUnit u : freeworkers) {
@@ -939,21 +1045,34 @@ public class AI {
 				closest_worker_distance = u_dist;
 			}
 			if (closest_worker_distance == 0) {
-				return new GameAction(GameAction.OneAgentEvent.BUILD_CITY,
-						owner, closest_worker);
+				out.add(new GameAction(GameAction.OneAgentEvent.BUILD_CITY,
+						owner, closest_worker));
+				return out;
 			}
 		}
-		return new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE, owner,
-				closest_worker, current_candidate);
+		out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE, owner,
+				closest_worker, current_candidate));
+		return out;
 	}
 
-	private ArrayList<WalkableTile> getCityCandidates() {
-		// TODO Auto-generated method stub
-		/*
-		 * Find good city locations using map generation criteria Narrow down
-		 * above by determining which locations are accessible to AI
-		 */
-		return null;
+	private WalkableTile getBestCityTile() {
+		WalkableTile best = null;
+		int bestScore = Integer.MIN_VALUE;
+		
+		for(WalkableTile wt: map.getWalkableMap()) {
+			if(!(wt instanceof GameStaticObject)) {
+				int dist = map.getDistToClosestCity(wt, owner);
+				if(dist > 2 && dist < 20) {
+					int score = map.getTileResourceScore(wt, owner);
+					if(score > bestScore) {
+						bestScore = score;
+						best = wt;
+					}
+				}
+			}
+		}
+
+		return best;
 	}
 
 	private List<GameAction> parseActionCode(byte b) throws Exception {
@@ -962,7 +1081,7 @@ public class AI {
 		if (b == SEIZE_STRATEGIC_LOCATION) {
 			rtn.addAll(this.SeizeStrategicLocation());
 		} else if (b == SEIZE_RESOURCE) {
-			rtn.add(this.SeizeResource());
+			rtn.addAll(this.SeizeResource());
 		} else if (b == ATTACK_PLAYER_1) {
 			rtn.addAll(this.attackPlayer(owner.getPlayer(1, game)));
 		} else if (b == ATTACK_PLAYER_2) {
@@ -978,33 +1097,33 @@ public class AI {
 		} else if (b == ATTACK_WEAKEST_ECONOMY) {
 			rtn.addAll(this.AttackWeakestEconomy());
 		} else if (b == HARASS_PLAYER_1) {
-			rtn.add(this.harassPlayer(owner.getPlayer(1, game)));
+			rtn.addAll(this.harassPlayer(owner.getPlayer(1, game)));
 		} else if (b == HARASS_PLAYER_2) {
-			rtn.add(this.harassPlayer(owner.getPlayer(2, game)));
+			rtn.addAll(this.harassPlayer(owner.getPlayer(2, game)));
 		} else if (b == HARASS_PLAYER_3) {
-			rtn.add(this.harassPlayer(owner.getPlayer(3, game)));
+			rtn.addAll(this.harassPlayer(owner.getPlayer(3, game)));
 		} else if (b == HARASS_STRONGEST_MILITARY) {
-			rtn.add(this.harassStrongestMilitary());
+			rtn.addAll(this.harassStrongestMilitary());
 		} else if (b == HARASS_STRONGEST_ECONOMY) {
-			rtn.add(this.HarassStrongestEconomy());
+			rtn.addAll(this.HarassStrongestEconomy());
 		} else if (b == HARASS_WEAKEST_MILITARY) {
-			rtn.add(this.HarassWeakestMilitary());
+			rtn.addAll(this.HarassWeakestMilitary());
 		} else if (b == HARASS_WEAKEST_ECONOMY) {
-			rtn.add(this.harassWeakestEconomy());
+			rtn.addAll(this.harassWeakestEconomy());
 		} else if (b == MAKE_WORKER) {
-			rtn.add(this.makeWorker());
+			rtn.addAll(this.makeWorker());
 		} else if (b == MAKE_TANK) {
-			rtn.add(this.makeTank());
+			rtn.addAll(this.makeTank());
 		} else if (b == MAKE_AIR) {
-			rtn.add(this.makeAir());
+			rtn.addAll(this.makeAir());
 		} else if (b == MAKE_ANIAIR) {
-			rtn.add(this.makeAntiAir());
+			rtn.addAll(this.makeAntiAir());
 		} else if (b == FORTIFY_STRATEGIC_LOCATION) {
-			rtn.add(this.FortifyStrategicLocation());
+			rtn.addAll(this.FortifyStrategicLocation());
 		} else if (b == FORTIFY_RESOURCE) {
-			rtn.add(this.FortifyResource());
+			rtn.addAll(this.FortifyResource());
 		} else if (b == FORTIFY_CITY) {
-			rtn.add(this.FortifyCity());
+			rtn.addAll(this.FortifyCity());
 		} else if (b == CLEAR_UNIT_QUEUE) {
 			rtn.addAll(this.ClearUnitQueue());
 		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10) {
@@ -1020,9 +1139,7 @@ public class AI {
 		} else if (b == TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT) {
 			rtn.addAll(this.TurnsLeftThresholdResetToDefault());
 		} else if (b == CREATE_NEW_CITY) {
-			rtn.add(this.CreateNewCity());
-		} else if (b == NO_ACTION) {
-			rtn.add(null);
+			rtn.addAll(this.CreateNewCity());
 		} else {
 			throw new Exception("No action found for byte: " + b);
 		}
@@ -1039,7 +1156,8 @@ public class AI {
 		if (chanceToBeKilled(freeUnits, chases) > current_combat_pcent_win_chance) {
 			GameUnit removed = freeUnits.get(freeUnits.size() - 1);
 			freeUnits.remove(removed);
-			while (chanceToBeKilled(freeUnits, chases) > current_combat_pcent_win_chance) {
+			while (freeUnits.size() > 0
+					&& chanceToBeKilled(freeUnits, chases) > current_combat_pcent_win_chance) {
 				removed = freeUnits.get(freeUnits.size() - 1);
 				freeUnits.remove(removed);
 			}

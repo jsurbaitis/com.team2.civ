@@ -43,6 +43,9 @@ name
     St_Petersburg
     Leningrad
     Stalingrad
+    Vilnius
+    Kaunas
+    Nottingham
 }
 
 build

@@ -2,15 +2,16 @@ package com.team2.civ.Game;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 
 import com.team2.civ.AI.AI;
 import com.team2.civ.Data.GameStaticObjectData;
 import com.team2.civ.Data.GameUnitData;
 
 public class Player {
+	public static enum Color { RED, BLUE, GREEN, PINK };
+	
 	public String name;
-	public String colour;
+	public Color colour;
 	
 	public int scoreMilitary = 0;
 	public int scoreEconomy = 0;
@@ -26,13 +27,11 @@ public class Player {
 	public boolean builtPowerplant, builtMine, builtCity;
 
 	public AI ai;
-	
-	public List<GameAction> previousTurn = new ArrayList<GameAction>();
-	
+
 	public ArrayList<GameUnit> units = new ArrayList<GameUnit>();
 	public ArrayList<GameStaticObject> objects = new ArrayList<GameStaticObject>();
 	
-	public Player(String name, String colour, AI ai) {
+	public Player(String name, Color colour, AI ai) {
 		this.name = name;
 		this.colour = colour;
 		this.ai = ai;

@@ -32,12 +32,15 @@ public class HeightmapGenerator {
 		}
 
 		// ADD SOME CITIES
-		addCities();
+		int citiesPlaced = addCities();
 
-		return map;
+		if(citiesPlaced == citiesToPlace)
+			return map;
+		else
+			return generateMap(width, height, cityCount);
 	}
 
-	private void addCities() {
+	private int addCities() {
 		ArrayList<int[]> tilesByWeight = getTilesByWeight();
 		ArrayList<int[]> citiesPlaced = new ArrayList<int[]>();
 
@@ -48,10 +51,11 @@ public class HeightmapGenerator {
 			if (canPlaceCity(coords[0], coords[1], citiesPlaced)) {
 				citiesPlaced.add(coords);
 				map[coords[0]][coords[1]] = 5;
-
 			}
 			tileIndex++;
 		}
+		
+		return citiesPlaced.size();
 	}
 
 	private boolean canPlaceCity(int i, int j,

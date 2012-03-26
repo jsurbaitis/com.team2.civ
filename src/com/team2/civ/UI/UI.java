@@ -10,6 +10,7 @@ import javax.swing.SwingUtilities;
 import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
+import com.team2.civ.Game.GameController;
 import com.team2.civ.Game.GameGraphics;
 import com.team2.civ.Game.GameMap;
 import com.team2.civ.Game.GameStaticObject;
@@ -35,14 +36,16 @@ public class UI {
 	private int pressStartX;
 	private int pressStartY;
 	public GameGraphics graphics;
+	public GameController game;
 	private int lastMouseX;
 	private int lastMouseY;
 
 	private boolean leftClick = true;
 
-	public UI(Player player, GameMap map,GameGraphics graphics) {
+	public UI(Player player, GameMap map,GameGraphics graphics, GameController game) {
 		this.res = Resources.getInstance();
 		this.player = player;
+		this.game = game;
 		miniMap = new MiniMap(WW * 28/40, WH * 28/40, WW * 12/40,
 				WH * 12 /40, map,graphics);
 		try {
@@ -133,8 +136,8 @@ public class UI {
 		for(int i=0;i<list.size();i++) {
 			if(list.get(i) instanceof GameUnit) {
 				choiceSlider.addChild(new UIText(totalwidth-10,10,((GameUnit) list.get(i)).name));
-				choiceSlider.addChild(new UIButton(totalwidth,40,(new UIEvent(list.get(i))),res.getImage(((GameUnit) list.get(i)).data.id)));
-				totalwidth+=res.getImage(((GameUnit) list.get(i)).data.id).getWidth()+50;
+				choiceSlider.addChild(new UIButton(totalwidth,40,(new UIEvent(list.get(i))),res.getImage(((GameUnit) list.get(i)).data.id+"_1")));
+				totalwidth+=res.getImage(((GameUnit) list.get(i)).data.id+"_1").getWidth()+50;
 			}
 			else {
 				choiceSlider.addChild(new UIText(totalwidth-10,10,((GameStaticObject) list.get(i)).name));
@@ -206,10 +209,10 @@ public class UI {
 						unit.data.buildIDs.get(i)));
 				buildSlider.addChild(new UIButton(0, totalheight+60,
 						toEvent(unit.data.buildIDs.get(i)), res
-								.getImage(unit.data.buildIDs.get(i))));
-				totalheight+=80+res.getImage(unit.data.buildIDs.get(i)).getHeight();
+								.getImage(unit.data.buildIDs.get(i)+"_1")));
+				totalheight+=80+res.getImage(unit.data.buildIDs.get(i)+"_1").getHeight();
 				buildSlider.height = totalheight;
-				buildSlider.y -= (80+res.getImage(unit.data.buildIDs.get(i)).getHeight());
+				buildSlider.y -= (80+res.getImage(unit.data.buildIDs.get(i)+"_1").getHeight());
 			} catch (ResNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -291,7 +294,7 @@ public class UI {
 		curstatobj = unit;
 		selectionInfo.addChild(new UIText(10, 15, (unit.name))); //
 		if (curstatobj.data.id.equals("MINE")){
-			selectionInfo.addChild(new UIText(10, 35, "Metal per turn"));	
+			selectionInfo.addChild(new UIText(10, 35, "Metal per turn: " + game.getMineIncome(curstatobj)));	
 		}
 
 		if (!unit.data.buildIDs.isEmpty())
@@ -330,8 +333,12 @@ public class UI {
 			lastMouseX = ev.getX();
 			lastMouseY = ev.getY();
 			
-			UIEvent uiev = onClick(ev);
-			if(uiev != null) return new UIEvent(UIEvent.Event.HANDLED);
+			if (Math.abs(ev.getX() - pressStartX) > 5
+					&& Math.abs(ev.getY() - pressStartY) > 5) {
+			
+				UIEvent uiev = onClick(ev);
+				if(uiev != null) return new UIEvent(UIEvent.Event.HANDLED);
+			}
 			// drag
 		} else if (ev.getID() == MouseEvent.MOUSE_RELEASED && !leftClick) {
 			if (Math.abs(ev.getX() - pressStartX) < 5

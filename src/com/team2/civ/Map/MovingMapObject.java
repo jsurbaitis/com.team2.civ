@@ -1,6 +1,7 @@
 package com.team2.civ.Map;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.team2.civ.Data.ResNotFoundException;
@@ -20,11 +21,11 @@ public class MovingMapObject extends MapObject {
 	protected List<WalkableTile> path;
 	
 	public MovingMapObject(int mapX, int mapY, String imgId, Resources res, Player owner) throws ResNotFoundException {
-		super(mapX, mapY, res.getImage(imgId+"_0"), owner);
+		super(mapX, mapY, res.getImage(imgId+"_0_"+owner.colour.toString()), owner);
 		
 		orientations = new BufferedImage[6];
 		for(int i = 0; i < 6; i++)
-			orientations[i] = res.getImage(imgId+"_"+i);
+			orientations[i] = res.getImage(imgId+"_"+i+"_"+owner.colour.toString());
 		
 		/*BufferedImage frames[] = new BufferedImage[7];
 		try {
@@ -62,7 +63,7 @@ public class MovingMapObject extends MapObject {
 		if(!isMoving) {
 			if(path.size() == 0) return;
 			
-			this.path = path;
+			this.path = new ArrayList<WalkableTile>(path);
 			if(path != null) {
 				//movingAnim.reset();
 				

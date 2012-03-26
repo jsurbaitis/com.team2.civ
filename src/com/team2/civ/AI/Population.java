@@ -21,6 +21,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.team2.civ.Game.GameController;
+
 
 public class Population {
 	private int population_size;
@@ -99,44 +101,33 @@ public class Population {
 		return fitness.get(ai).intValue();
 	}
 
-	public void compete(AI ai1, AI ai2, AI ai3, AI ai4) throws Exception { // fails
-																			// to
-																			// apply
-																			// competitive
-																			// pressures
-																			// to
-																			// sections
-																			// of
-																			// genome
-																			// dealing
-																			// with
-																			// players
-																			// 3
-																			// and
-																			// 4!
-		if (!times_used.containsKey(ai1)) {
-			times_used.put(ai1, 0);
-		}
-		if (!times_used.containsKey(ai2)) {
-			times_used.put(ai2, 0);
-		}
-		if (!times_used.containsKey(ai3)) {
-			times_used.put(ai3, 0);
-		}
-		if (!times_used.containsKey(ai4)) {
-			times_used.put(ai4, 0);
-		}
-		if (times_used.get(ai1) > 5 || times_used.get(ai2) > 5
-				|| times_used.get(ai3) > 5 || times_used.get(ai4) > 5) {
+	public void compete(AI ai1, AI ai2, AI ai3, AI ai4) throws Exception {
+		if (getTimesUsed(ai1) > 5 || getTimesUsed(ai2) > 5
+				|| getTimesUsed(ai3) > 5 || getTimesUsed(ai4) > 5) {
 			throw new Exception("AI has already competed 5 times.");
 		}
-		// AI winner = rungame(ai1, ai2);
-		/* put two AIs in game, fuck some shit up, returns the winner */
-		// fitness.put(winner, (fitness.get(winner) + 1));
-		times_used.put(ai1, times_used.get(ai1) + 1);
-		times_used.put(ai2, times_used.get(ai2) + 1);
-		times_used.put(ai3, times_used.get(ai3) + 1);
-		times_used.put(ai4, times_used.get(ai4) + 1);
+
+		AI winner = (new GameController()).runGame(ai1, ai2, ai3, ai4);
+		fitness.put(winner, (fitness.get(winner) + 1));
+		
+		incTimesUsed(ai1);
+		incTimesUsed(ai2);
+		incTimesUsed(ai3);
+		incTimesUsed(ai4);
+	}
+
+	private int getTimesUsed(AI ai) {
+		if (!times_used.containsKey(ai))
+			return 0;
+		else
+			return times_used.get(ai);
+	}
+	
+	private void incTimesUsed(AI ai) {
+		if (!times_used.containsKey(ai))
+			times_used.put(ai, 1);
+		else
+			times_used.put(ai, times_used.get(ai) + 1);
 	}
 
 	public void competeAll() {

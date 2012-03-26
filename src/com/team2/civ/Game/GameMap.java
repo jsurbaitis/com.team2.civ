@@ -652,6 +652,20 @@ public class GameMap {
 		}
 		return -1;
 	}
+	
+	public int getTileResourceScore(WalkableTile wt, Player p) {
+		int sum = 0;
+		for(int i = 0; i < nextPos.length; i++) {
+			GameStaticObject so = staticObjects.get(wt);
+			if(so != null) {
+				if(so.data.id.equals("MINE"))
+					sum++;
+				else if(so.data.id.equals("METAL"))
+					sum++;
+			}
+		}
+		return sum;
+	}
 
 	public GameStaticObject getClosestCity(Player agent, Player target) {
 		int smallestDist = Integer.MAX_VALUE;

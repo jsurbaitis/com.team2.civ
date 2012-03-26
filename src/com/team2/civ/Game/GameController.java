@@ -78,7 +78,7 @@ public class GameController {
 			p.ai.setGameVars(this, map, p);
 		}
 
-		ui = new UI(humanPlayer, map, graphics);
+		ui = new UI(humanPlayer, map, graphics, this);
 	}
 
 	public AI runGame(AI a1, AI a2, AI a3, AI a4) {
@@ -103,7 +103,7 @@ public class GameController {
 	private void initGame() throws ResNotFoundException {
 		map = new GameMap();
 		
-		String[] colors = { "#FFFFFF", "#FF5400", "#545454", "#000FFF" };
+		Player.Color[] colors = { Player.Color.RED, Player.Color.GREEN, Player.Color.BLUE, Player.Color.PINK };
 		int playerIndex = 1;
 
 		for (GameStaticObject city : map.getAllCities()) {
@@ -111,6 +111,8 @@ public class GameController {
 					colors[playerIndex - 1], null);
 			players.add(p);
 			city.owner = p;
+			city.getImage().setBitmap(res.getImage("CITY_"+p.colour.toString()));
+			city.getImage().setFowImg(res.getImage("CITY_fow_"+p.colour.toString()));
 
 			if (!Team2Civ.AI_MODE && playerIndex == 1) {
 				graphics = new GameGraphics(map);
@@ -150,7 +152,7 @@ public class GameController {
 	}
 	
 	private void updateActionShowing() {
-		if(toShow.size() > 1) {
+		if(toShow.size() > 0) {
 			if(currentShowing == null)
 				currentShowing = toShow.get(0);
 			
@@ -163,12 +165,14 @@ public class GameController {
 				if (!u.isMoving()) {
 					checkForAttack(u);	
 					toShow.remove(0);
+					currentShowing = null;
 				}
 			} else {
 				if (gameTime % 5 == 0)
 					actionTimer++;
 				if (actionTimer > 4) {
 					toShow.remove(0);
+					currentShowing = null;
 					actionTimer = 0;
 				}
 			}
@@ -189,7 +193,6 @@ public class GameController {
 	}
 
 	public void performAction(GameAction action) {
-		System.out.println(action.event.toString());
 		if (action.actor != null && action.actor.owner != action.performer)
 			return;
 
@@ -204,10 +207,8 @@ public class GameController {
 			destroyUnit((GameUnit) action.actor);
 		} else if (action.event == GameAction.Event.ACTION_FORTIFY) {
 			fortifyUnit((GameUnit) action.actor);
-		//} else if (action.event == GameAction.Event.END_TURN) {
-		//	endTurn();
 		} else if (action.event == GameAction.Event.ACTION_MOVE) {
-			startMovement((GameUnit) action.actor, action.target, true);
+			startMovement((GameUnit) action.actor, action.target);
 		} else if (action.event == GameAction.Event.ACTION_ATTACK_MOVE) {
 			startAttackMove((GameUnit) action.actor, action.target);
 		} else if (action.event == GameAction.Event.ACTION_DESTROY_TARGET) {
@@ -240,10 +241,10 @@ public class GameController {
 		target.owner.powerCapability += target.data.powerGiven;
 	}
 
-	private void startMovement(GameUnit actor, MapObject target, boolean walkOnTarget) {
+	private void startMovement(GameUnit actor, MapObject target) {
 		endCombatTargeting();
 		List<WalkableTile> path = map.findPath(actor, target, actor.owner, null,
-				walkOnTarget, false, actor.AP + 1);
+				true, false, actor.AP + 1);
 
 		if (path != null) {
 			actor.AP -= path.size() - 1;
@@ -375,17 +376,18 @@ public class GameController {
 		map.updatePathsAndStratLoc();
 		upkeep(currentPlayer);
 		globalUpkeep();
-		turnsLeft--;
 
 		Player winner = checkForWinner();
 		// TODO: do something if winner != null
 
 		int nextPlayer = (players.indexOf(currentPlayer) + 1) % players.size();
 		currentPlayer = players.get(nextPlayer);
+		
+		if(nextPlayer == 0) turnsLeft--;
 
 		if (currentPlayer != humanPlayer) {
-			toPerform.addAll(currentPlayer.ai
-					.perform(getActionsForOthers(currentPlayer)));
+			toPerform.addAll(currentPlayer.ai.perform());
+			if(toPerform.size() > 0) performAction(toPerform.get(0));
 			
 			currentPlayer.resetConditions();
 		}
@@ -403,8 +405,7 @@ public class GameController {
 		int nextPlayer = (players.indexOf(currentPlayer) + 1) % players.size();
 		currentPlayer = players.get(nextPlayer);
 
-		List<GameAction> actions = currentPlayer.ai
-				.perform(getActionsForOthers(currentPlayer));
+		List<GameAction> actions = currentPlayer.ai.perform();
 		
 		currentPlayer.resetConditions();
 		performActions(actions);
@@ -431,15 +432,6 @@ public class GameController {
 		}
 	}
 
-	private ArrayList<GameAction> getActionsForOthers(Player exclude) {
-		ArrayList<GameAction> rtn = new ArrayList<GameAction>();
-		for (Player p : players)
-			if (p != exclude)
-				rtn.addAll(p.previousTurn);
-
-		return rtn;
-	}
-	
 	public int getMineIncome(GameStaticObject mine) {
 		return (int) (50 / Math.pow((map.getDistToClosestCity(mine, mine.owner) - 1), 2));
 	}
@@ -515,7 +507,8 @@ public class GameController {
 		p.powerCapability += data.powerGiven;
 
 		GameStaticObject so = new GameStaticObject(unit.mapX, unit.mapY,
-				res.getImage(data.id), res.getImage(data.id + "_fow"), p, data);
+				res.getImage(data.id+"_"+p.colour.toString()),
+				res.getImage(data.id + "_fow_"+p.colour.toString()), p, data);
 		map.addStaticObj(so);
 		
 		p.updateBuilt(so);
@@ -527,6 +520,7 @@ public class GameController {
 
 	private void addObjectToPlayer(Player p, CoordObject location,
 			String objId) throws ResNotFoundException {
+
 		if (isStaticData(objId)) {
 			GameUnit unit = (GameUnit) location;
 			GameStaticObjectData data = res.getStaticObject(objId);
@@ -641,7 +635,7 @@ public class GameController {
 					if (t.picked(graphics.mouseToMapX(ev.getX()),
 							graphics.mouseToMapY(ev.getY()))) {
 
-						startMovement(movingUnit, t, true);
+						startMovement(movingUnit, t);
 						endCombatTargeting();
 					}
 				}
