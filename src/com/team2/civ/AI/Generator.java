@@ -23,7 +23,7 @@ public class Generator {
 		int current_generation = 0;
 		
 		if (resume) {
-			current_generation = pop.getInitGeneration();
+			current_generation = pop.getInitGeneration() + 1;
 		} else {
 			pop.populate();
 		}

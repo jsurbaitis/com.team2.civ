@@ -2,24 +2,17 @@ package com.team2.civ.AI;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Random;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import java.util.Scanner;
 
 import com.team2.civ.Game.GameController;
 
@@ -45,45 +38,37 @@ public class Population {
 	}
 
 	public Population(File f) {
-		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder dbBuilder = null;
-		Document doc = null;
+		Scanner in;
 		try {
-			dbBuilder = dbFactory.newDocumentBuilder();
-			doc = dbBuilder.parse(f);
-		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SAXException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			in = new Scanner(new FileInputStream(f));
+			
+			in.next(); in.next(); in.next();
+			in.next(); in.next(); in.next();
+			
+			this.init_generation = in.nextInt();
+			in.next(); in.next();
+			
+			genomes = new AI[in.nextInt()];
+			population_size = genomes.length;
+			in.next();
+
+			for (int i = 0; i < genomes.length; i++) {
+				in.next(); in.next();
+				String fileName = in.next();
+				in.next(); in.next();
+				Float fitnessVal = in.nextFloat();
+				in.next(); in.next();
+				Integer timesUsed = in.nextInt();
+
+				genomes[i] = new AI(new File("genomes/"+fileName));
+				fitness.put(genomes[i], fitnessVal);
+				times_used.put(genomes[i], timesUsed);
+				
+				in.next(); in.next();
+			}
+		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		NodeList genlist = doc.getElementsByTagName("generation");
-		this.init_generation = Integer.parseInt(genlist.item(0).getTextContent());
-		NodeList nList = doc.getElementsByTagName("genome");
-		ArrayList<AI> ai = new ArrayList<AI>();
-		String[] gens = new String[nList.getLength()];
-		for (int i = 0; i < nList.getLength(); i++) {
-
-			Node node = nList.item(i);
-			NodeList children = node.getChildNodes();
-
-			Node nFilename = children.item(0);
-			AI a = new AI(new File(nFilename.getTextContent()));
-			ai.add(a);
-			Node nFitness = children.item(1);
-			fitness.put(a, Float.parseFloat(nFitness.getTextContent()));
-			Node nTimesUsed = children.item(2);
-			times_used.put(a, Integer.parseInt(nTimesUsed.getTextContent()));
-
-			String filename = nFilename.getNodeValue();
-			System.out.println(filename);
-		}
-		population_size = ai.size();
-		genomes = (AI[]) ai.toArray();
 	}
 
 	public void populate() {
@@ -138,12 +123,12 @@ public class Population {
 		this.fitness.clear();
 		this.times_used.clear();
 		
-		for (int i = genomes.length - 1; i > 0; i--) {
-			Random random = new SecureRandom();
+		Random random = new SecureRandom();
+		for (int i = genomes.length - 1; i > 1; i--) {
 			for (int j = 0; j < 5; j++) {
-				compete(genomes[i], genomes[random.nextInt(i - 1)],
-						genomes[random.nextInt(i - 1)],
-						genomes[random.nextInt(i - 1)]);
+				compete(genomes[i], genomes[random.nextInt(i)],
+						genomes[random.nextInt(i)],
+						genomes[random.nextInt(i)]);
 			}
 		}
 	}
@@ -198,26 +183,29 @@ public class Population {
 			out = new BufferedWriter(new FileWriter(f));
 			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			Date date = new Date();
-			out.write("<genome_metadata>");
-			out.write("<date>");
-			out.write(dateFormat.format(date));
-			out.write("</date>");
-			out.write("<generation>");
-			out.write(""+generation);
-			out.write("</generation>");
+			out.write("<genome_metadata>\n");
+			out.write("<date>\n");
+			out.write(dateFormat.format(date)+"\n");
+			out.write("</date>\n");
+			out.write("<generation>\n");
+			out.write(""+generation+"\n");
+			out.write("</generation>\n");
+			out.write("<genome_count>\n");
+			out.write(""+genomes.length+"\n");
+			out.write("</genome_count>\n");
 			
 			for (int i = 0; i < genomes.length; i++) {
-				out.write("<genome>");
-				out.write("<filename>");
-				out.write("genome_" + i);
-				out.write("</filename>");
-				out.write("<fitness>");
-				out.write("" + getFitness(genomes[i]));
-				out.write("</fitness>");
-				out.write("<times_used>");
-				out.write("" + getTimesUsed(genomes[i]));
-				out.write("</times_used>");
-				out.write("</genome>");
+				out.write("<genome>\n");
+				out.write("<filename>\n");
+				out.write("genome_" + i + "\n");
+				out.write("</filename>\n");
+				out.write("<fitness>\n");
+				out.write("" + getFitness(genomes[i]) + "\n");
+				out.write("</fitness>\n");
+				out.write("<times_used>\n");
+				out.write("" + getTimesUsed(genomes[i]) + "\n");
+				out.write("</times_used>\n");
+				out.write("</genome>\n");
 			}
 			out.write("</genome_metadata>");
 

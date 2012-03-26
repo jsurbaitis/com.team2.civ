@@ -103,7 +103,7 @@ public class AI {
 	}
 
 	public AI(AI parent1, AI parent2) {
-		int num = rnd.nextInt(1);
+		int num = rnd.nextInt(2);
 		if (num == 0) {
 			this.genome = mate1(parent1.genome, parent2.genome);
 			mutation(this.genome);
@@ -146,62 +146,72 @@ public class AI {
 		byte[] genome = new byte[(int) (6 + (((int) Math.pow(2, condition_bits) * action_points) / 1.6))];// 1.6 not smart
 		rnd.nextBytes(genome);
 		// tolerances:
-		genome[0] = (byte) rnd.nextInt(3); // stdev stratloc
-		genome[1] = (byte) rnd.nextInt(15); // win%tol
-		genome[2] = (byte) rnd.nextInt(7); // max queue length
-		genome[3] = (byte) rnd.nextInt(63); // banked resources (*40 later)
-		genome[4] = (byte) rnd.nextInt(63); // turns left (*10 later)
+		genome[0] = (byte) rnd.nextInt(4); // stdev stratloc
+		genome[1] = (byte) rnd.nextInt(16); // win%tol
+		genome[2] = (byte) rnd.nextInt(8); // max queue length
+		genome[3] = (byte) rnd.nextInt(64); // banked resources (*40 later)
+		genome[4] = (byte) rnd.nextInt(64); // turns left (*10 later)
 		genome[5] = (byte) rnd.nextInt(31); // default action
 		return genome;
 	}
 
-	private static byte[] mate1(byte[] b1, byte[] b2) {
+	private static byte[] mate1(byte[] parent1, byte[] parent2) {
 		boolean rng = rnd.nextBoolean();
-		byte temp[] = new byte[b1.length];
-		int len = b1.length % 2;
+		byte out[] = new byte[parent1.length];
+		int len = parent1.length / 2;
+
 		if (rng) {
 			for (int i = 0; i < len; i++) {
-				temp[i] = b1[i];
-				temp[len + i] = b2[len + i];
+				out[i] = parent1[i];
+			}
+			for (int i = len; i < parent1.length; i++) {
+				out[i] = parent2[i];
 			}
 		} else {
 			for (int i = 0; i < len; i++) {
-				temp[i] = b2[i];
-				temp[len + i] = b1[len + i];
+				out[i] = parent2[i];
+			}
+			for (int i = len; i < parent1.length; i++) {
+				out[i] = parent1[i];
 			}
 		}
-		return temp;
+		return out;
 	}
 
-	private static byte[] mate2(byte[] b1, byte[] b2) {
-		boolean rng = rnd.nextBoolean();
-		int rng2 = rnd.nextInt(b1.length);
-
-		int a = b1.length % 5;
-		rng2 = rnd.nextInt(a);
-		byte temp2[] = new byte[b1.length];
-		if (rng) {
-			for (int i = 0; i < rng2 * 5; i++) {
-				temp2[i] = b1[i];
-				temp2[rng2 * 5 + i] = b2[rng2 * 5 + i];
+	private static byte[] mate2(byte[] parent1, byte[] parent2) {
+		boolean male = rnd.nextBoolean();
+		int dominance = rnd.nextInt(parent1.length);
+		byte[] out = new byte[parent1.length];
+		int index = 0;
+		if (male){
+			for (int i = 0; i < dominance; i++){
+				out[i] = parent1[i];
+				index++;
+			}
+			while (index < parent1.length){
+				out[index] = parent2[index];
+				index++;
 			}
 		} else {
-			for (int i = 0; i < rng2 * 5; i++) {
-				temp2[i] = b2[i];
-				temp2[rng2 * 5 + i] = b1[rng2 * 5 + i];
+			for (int i = 0; i < dominance; i++){
+				out[i] = parent2[i];
+				index++;
+			}
+			while (index < parent1.length){
+				out[index] = parent1[index];
+				index++;
 			}
 		}
-		return temp2;
+		return out;
 	}
 
-	private static void mutation(byte[] b1) {
-		int rng = rnd.nextInt(19);
-
-		if (rng == 0) {
-			for (int i = 0; i < b1.length; i++) {
-				rng = rnd.nextInt(19);
-				if (rng == 0)
-					b1[i] = (byte) rnd.nextInt();
+	private static void mutation(byte[] parent1) {
+		int rng = rnd.nextInt(20);
+		if (rng == 1) {
+			for (int i = 0; i < parent1.length; i++) {
+				rng = rnd.nextInt(15);
+				if (rng == 1)
+					parent1[i] = (byte) rnd.nextInt();
 			}
 		}
 	}
@@ -480,8 +490,11 @@ public class AI {
 			} else {
 				for (GameUnit worker: freeworkers){
 					for (WalkableTile tile : map.getWalkableMap()){
-						if (map.getDistBetween(worker, tile, owner) != -1){
-							out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE,owner,worker,tile));
+						if (Math.abs(tile.mapX - worker.mapX) < 5 && Math.abs(tile.mapY - worker.mapY) < 5) {
+							if(map.getDistBetween(tile, worker) != 0) {
+								out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE,owner,worker,tile));
+								return out;
+							}
 						}
 					}
 				}
@@ -598,7 +611,7 @@ public class AI {
 			out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE, owner,
 					bestWorker, best));
 		else
-			out.addAll(this.makeWorker());
+			if (!this.hasFreeWorkers()) out.addAll(this.makeWorker());
 		
 		return out;
 	}

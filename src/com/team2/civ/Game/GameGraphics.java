@@ -146,9 +146,11 @@ public class GameGraphics {
 				i.draw(g, (int) (offsetX), (int) (offsetY), scale);
 		}
 
-		Collections.sort(unitDraw);
-		for (MapObjectImage i : unitDraw)
-			i.draw(g, (int) (offsetX), (int) (offsetY), scale);
+		synchronized(unitDraw) {
+			Collections.sort(unitDraw);
+			for (MapObjectImage i : unitDraw)
+				i.draw(g, (int) (offsetX), (int) (offsetY), scale);
+		}
 
 		g.scale(1 / scale, 1 / scale);
 	}

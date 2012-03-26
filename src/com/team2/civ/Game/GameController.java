@@ -76,6 +76,7 @@ public class GameController {
 		humanPlayer = players.get(0);
 		
 		File folder = new File("genomes/");
+		if(!folder.exists()) folder.mkdir();
 		String[] genomes = folder.list();
 		
 		Random rnd = new Random();
@@ -270,7 +271,7 @@ public class GameController {
 		List<WalkableTile> path = map.findPath(actor, target, actor.owner, null,
 				true, false, actor.AP + 1);
 
-		if (path != null) {
+		if (path != null && path.size() > 0) {
 			actor.AP -= path.size() - 1;
 
 			if (!Team2Civ.AI_MODE) {
@@ -288,7 +289,7 @@ public class GameController {
 		List<WalkableTile> path = map.findPath(actor, target, actor.owner, null,
 				true, true, actor.AP + 1);
 
-		if (path != null) {
+		if (path != null && path.size() > 0) {
 			int offset = 0;
 			for(int i = path.size() - 1; i >= 0; i--) {
 				if(!map.isTileFree(path.get(i), actor.owner)) {
@@ -451,9 +452,9 @@ public class GameController {
 			globalUpkeep();
 			checkPlayersForCityLose();
 			
-			Player winner = checkForWinner();
+			AIGameResult winner = checkForAIWinner();
 			if (winner != null)
-				return new AIGameResult(winner.ai);
+				return winner;
 		}
 
 		int nextPlayer = (players.indexOf(currentPlayer) + 1) % players.size();
@@ -461,19 +462,9 @@ public class GameController {
 		if(nextPlayer == 0) {
 			turnsLeft--;
 			
-			Player best = null;
-			int bestScore = Integer.MIN_VALUE;
-			int totalScore = 0;
-			for(Player p: players) {
-				int score = map.getPlayerCities(p).size();
-				totalScore += score;
-				if(score > bestScore) {
-					best = p;
-					bestScore = score;
-				}
+			if(turnsLeft == 0) {
+				return getBestResult();
 			}
-			
-			return new AIGameResult(best.ai, bestScore / totalScore / 5);
 		}
 		
 		if(!lostPlayers.contains(currentPlayer)) {
@@ -485,21 +476,54 @@ public class GameController {
 			
 		return endTurnAIMode();
 	}
-
-	private Player checkForWinner() {
-		if (turnsLeft < 1) {
-			return players.get(0); // TODO: return by some statistic
-			
+	
+	private AIGameResult getBestResult() {
+		Player best = null;
+		float bestScore = Integer.MIN_VALUE;
+		float totalScore = 0;
+		for(Player p: players) {
+			int score = map.getPlayerCities(p).size();
+			totalScore += score;
+			if(score > bestScore) {
+				best = p;
+				bestScore = score;
+			}
 		}
-		
+
+		return new AIGameResult(best.ai, bestScore / totalScore / 5);
+	}
+	
+	private AIGameResult checkForAIWinner() {
 		if(lostPlayers.size() == 3) {
 			for(Player p: players) {
-				if(!lostPlayers.contains(p))
-					return p;
+				if(!lostPlayers.contains(p)) {
+					if(map.getPlayerCities(p).size() > 1)
+						return new AIGameResult(p.ai);
+					else
+						return getBestResult();
+				}
 			}
+		}
 
-			Exception e = new Exception("3 LOST PLAYERS BUT NO WINNER FOUND, BUG");
-			e.printStackTrace();
+		List<GameStaticObject> cities = map.getAllCities();
+		Player p = cities.get(0).owner;
+		for (GameStaticObject c : cities) {
+			if (c.owner != p) {
+				return null;
+			}
+		}
+
+		return new AIGameResult(p.ai);
+	}
+
+	private Player checkForWinner() {
+		if(lostPlayers.size() == 3) {
+			for(Player p: players) {
+				if(!lostPlayers.contains(p)) {
+					if(map.getPlayerCities(p).size() > 1)
+						return p;
+				}
+			}
 		}
 
 		List<GameStaticObject> cities = map.getAllCities();

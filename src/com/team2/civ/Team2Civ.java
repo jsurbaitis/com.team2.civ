@@ -10,6 +10,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
+import java.io.File;
 
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
@@ -164,7 +165,8 @@ public class Team2Civ extends Thread {
 			int generations = Integer.parseInt(args[0]);
 			int populationSize = Integer.parseInt(args[1]);
 
-			Generator g = new Generator(generations, populationSize);
+			//Generator g = new Generator(generations, populationSize);
+			Generator g = new Generator(generations, new File("population_metadata.xml"));
 			g.generate();
 		}
 	}
