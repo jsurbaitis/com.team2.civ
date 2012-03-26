@@ -532,8 +532,7 @@ public class AI {
 				this.current_st_dev_strat_loc--;
 				return SeizeStrategicLocation();
 			} else if (this.default_behavior_code != this.SEIZE_STRATEGIC_LOCATION) {
-				rtn.add(new GameAction(GameAction.ZeroAgentEvent.END_TURN,
-						owner)); // TODO: fix
+				rtn.addAll(this.parseActionCode(this.default_behavior_code));
 				return rtn;
 			} else {
 				rtn.addAll(SeizeResource());
@@ -576,7 +575,7 @@ public class AI {
 		GameStaticObject best = null;
 		int closestDist = Integer.MAX_VALUE;
 
-		for (GameStaticObject so : map.getAllResources()) {
+		for (GameStaticObject so : map.getMetalNodes()) {
 			for (GameUnit u : ourWorkers) {
 				if (!isUnitUsed(u) && u.mapX == so.mapX && u.mapY == so.mapY) {
 					out.add(new GameAction(GameAction.OneAgentEvent.BUILD_MINE,
@@ -704,8 +703,11 @@ public class AI {
 		
 		if(best_candidate == null) return out;
 		
-		for (GameUnit u : getUnitsToSend(map.getUnitsOnTile(best_candidate))) {
-			out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE,owner, u, best_candidate));
+		List<GameUnit> unitsToSend = getUnitsToSend(map.getUnitsOnTile(best_candidate));
+		if(unitsToSend != null) {
+			for (GameUnit u : unitsToSend) {
+				out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE,owner, u, best_candidate));
+			}
 		}
 		
 		return out;
@@ -767,7 +769,7 @@ public class AI {
 		}
 
 		if (possibilities.size() == 0)
-			return null;
+			return new ArrayList<GameAction>();
 
 		int index = rnd.nextInt(possibilities.size());
 		return makeUnit(possibilities.get(index));
@@ -779,14 +781,18 @@ public class AI {
 			if (owner.canAfford(res.getUnit("WORKER"))) {
 				out.addAll(makeUnit(GameAction.OneAgentEvent.BUILD_WORKER));
 			}
-			else if (!owner.canAffordMetal(res.getUnit("WORKER"))) {
+			else if (!owner.canAffordMetal(res.getUnit("WORKER")) && this.hasFreeWorkers()) {
 				out.addAll(this.SeizeResource());
 			}
-			else if (!owner.canAffordPower(res.getUnit("WORKER"))) {
+			else if (!owner.canAffordPower(res.getUnit("WORKER")) && this.hasFreeWorkers()) {
 				out.addAll(this.BuildPowerplant());
 			}
 			else if (this.default_behavior_code != this.MAKE_WORKER 
-				  && this.default_behavior_code != this.FORTIFY_CITY) {
+				  && this.default_behavior_code != this.FORTIFY_CITY
+				  && this.default_behavior_code != this.SEIZE_RESOURCE
+				  && this.default_behavior_code != this.MAKE_AIR
+				  && this.default_behavior_code != this.MAKE_ANIAIR
+				  && this.default_behavior_code != this.MAKE_TANK) {
 				return this.parseActionCode(this.default_behavior_code);
 			}
 		} catch (ResNotFoundException e) {
@@ -823,6 +829,7 @@ public class AI {
 					return out;
 				} else {
 					this.unitQueue.add(data.id);
+					return out;
 				}
 			}
 		} catch (ResNotFoundException e) {
@@ -853,13 +860,12 @@ public class AI {
 			}
 			
 			out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, closest, location));
-		} else {
-			
-			ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner,
-					"WORKER");
+		} 
+		else {
+			ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner, "WORKER");
 			ArrayList<GameUnit> freeworkers = new ArrayList<GameUnit>();
 			for (GameUnit u : ourWorkers) {
-				if (u.mapX == location.mapX && u.mapY == location.mapY){
+				if (u.mapX == location.mapX && u.mapY == location.mapY) {
 					out.add(new GameAction(GameAction.OneAgentEvent.BUILD_FORTIFICATION, owner, u));
 					return out;
 				}
@@ -939,7 +945,7 @@ public class AI {
 		List<GameStaticObject> cities = map.getPlayerObjectsOfType(owner,
 				"CITY");
 		GameStaticObject worst_city = null;
-		int worst_city_score = 0;
+		int worst_city_score = Integer.MAX_VALUE;
 		int city_sum = 0;
 		for (GameStaticObject city : cities) {
 			for (GameUnit u : map.getPlayerUnitsOnTile(city, owner)) {
@@ -950,7 +956,11 @@ public class AI {
 				worst_city = city;
 			}
 		}
-		return FortifyLocation(worst_city);
+		
+		if(worst_city != null)
+			return FortifyLocation(worst_city);
+		else
+			return new ArrayList<GameAction>();
 	}
 
 	private List<GameAction> ClearUnitQueue() {
@@ -966,7 +976,7 @@ public class AI {
 		return new ArrayList<GameAction>();
 	}
 
-	private List<GameAction> CombatWinChanceTolerancePlus10() throws Exception {
+	private List<GameAction> CombatWinChanceTolerancePlus10() {
 		this.current_combat_pcent_win_chance *= 1.1;
 		if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10) {
 			return parseActionCode(this.default_behavior_code);
@@ -974,7 +984,7 @@ public class AI {
 		return new ArrayList<GameAction>();
 	}
 
-	private List<GameAction> CombatWinChanceToleranceMinus10() throws Exception {
+	private List<GameAction> CombatWinChanceToleranceMinus10() {
 		this.current_combat_pcent_win_chance *= .9;
 		if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10) {
 			return parseActionCode(this.default_behavior_code);
@@ -982,8 +992,7 @@ public class AI {
 		return new ArrayList<GameAction>();
 	}
 
-	private List<GameAction> CombatWinChanceToleranceResetToDefault()
-			throws Exception {
+	private List<GameAction> CombatWinChanceToleranceResetToDefault() {
 		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
 		if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_RESET_TO_DEFAULT) {
 			return parseActionCode(this.default_behavior_code);
@@ -991,7 +1000,7 @@ public class AI {
 		return new ArrayList<GameAction>();
 	}
 
-	private List<GameAction> TurnsLeftThresholdMinus20() throws Exception {
+	private List<GameAction> TurnsLeftThresholdMinus20() {
 		this.current_turns_threshold *= .8;
 		if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_MINUS_20) {
 			return parseActionCode(this.default_behavior_code);
@@ -999,7 +1008,7 @@ public class AI {
 		return new ArrayList<GameAction>();
 	}
 
-	private List<GameAction> TurnsLeftThresholdPlus20() throws Exception {
+	private List<GameAction> TurnsLeftThresholdPlus20() {
 		this.current_turns_threshold *= 1.2;
 		if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_PLUS_20) {
 			return parseActionCode(this.default_behavior_code);
@@ -1007,8 +1016,7 @@ public class AI {
 		return new ArrayList<GameAction>();
 	}
 
-	private List<GameAction> TurnsLeftThresholdResetToDefault()
-			throws Exception {
+	private List<GameAction> TurnsLeftThresholdResetToDefault() {
 		this.current_turns_threshold = this.init_turns_threshold;
 		if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT) {
 			return parseActionCode(this.default_behavior_code);
@@ -1016,10 +1024,15 @@ public class AI {
 		return new ArrayList<GameAction>();
 	}
 
-	private List<GameAction> CreateNewCity() throws ResNotFoundException {
-		if (!owner.canAfford(res.getStaticObject("CITY"))) {
-			return this.SeizeResource();
+	private List<GameAction> CreateNewCity() {
+		try {
+			if (!owner.canAfford(res.getStaticObject("CITY"))) {
+				return this.SeizeResource();
+			}
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
 		}
+		
 		ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner,
 				"WORKER");
 		ArrayList<GameUnit> freeworkers = new ArrayList<GameUnit>();
@@ -1075,7 +1088,7 @@ public class AI {
 		return best;
 	}
 
-	private List<GameAction> parseActionCode(byte b) throws Exception {
+	private List<GameAction> parseActionCode(byte b) {
 		List<GameAction> rtn = new ArrayList<GameAction>();
 
 		if (b == SEIZE_STRATEGIC_LOCATION) {
@@ -1139,9 +1152,10 @@ public class AI {
 		} else if (b == TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT) {
 			rtn.addAll(this.TurnsLeftThresholdResetToDefault());
 		} else if (b == CREATE_NEW_CITY) {
-			rtn.addAll(this.CreateNewCity());
-		} else {
-			throw new Exception("No action found for byte: " + b);
+			rtn.addAll(this.CreateNewCity());			
+		} else if (b != NO_ACTION) {
+			Exception e = new Exception("No action found for byte: " + b);
+			e.printStackTrace();
 		}
 
 		return rtn;

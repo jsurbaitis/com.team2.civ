@@ -273,7 +273,7 @@ public class GameController {
 				}
 			}
 			
-			int start = Math.min(offset + 1, path.size() - actor.AP);
+			int start = Math.max(offset, path.size() - actor.AP - 1);
 			List<WalkableTile> toWalk = path.subList((start < 0) ? 0 : start, path.size());
 			
 			actor.AP -= toWalk.size() - 1;
@@ -374,13 +374,22 @@ public class GameController {
 
 	private void endTurnNormal() {
 		detarget();
-		map.updatePathsAndStratLoc();
-		upkeep(currentPlayer);
-		globalUpkeep();
-		checkPlayersForCityLose();
-
-		Player winner = checkForWinner();
-		// TODO: do something if winner != null
+		
+		if(!lostPlayers.contains(currentPlayer)) {
+			map.updatePathsAndStratLoc();
+			upkeep(currentPlayer);
+			globalUpkeep();
+			checkPlayersForCityLose();
+			
+			Player winner = checkForWinner();
+			if(winner != null) {
+				if(winner.ai != null)
+					System.out.println("AI "+winner.colour.toString()+" won!");
+				else
+					System.out.println("Human player "+winner.colour.toString()+" won!");
+			}
+			// TODO: do something if winner != null
+		}
 
 		int nextPlayer = (players.indexOf(currentPlayer) + 1) % players.size();
 		currentPlayer = players.get(nextPlayer);
@@ -398,14 +407,16 @@ public class GameController {
 	}
 
 	private AI endTurnAIMode() {
-		map.updatePathsAndStratLoc();
-		upkeep(currentPlayer);
-		globalUpkeep();
-		checkPlayersForCityLose();
-
-		Player winner = checkForWinner();
-		if (winner != null)
-			return winner.ai;
+		if(!lostPlayers.contains(currentPlayer)) {
+			map.updatePathsAndStratLoc();
+			upkeep(currentPlayer);
+			globalUpkeep();
+			checkPlayersForCityLose();
+			
+			Player winner = checkForWinner();
+			if (winner != null)
+				return winner.ai;
+		}
 
 		int nextPlayer = (players.indexOf(currentPlayer) + 1) % players.size();
 		currentPlayer = players.get(nextPlayer);
@@ -424,6 +435,16 @@ public class GameController {
 	private Player checkForWinner() {
 		if (turnsLeft < 1)
 			return players.get(0); // TODO: return by some statistic
+		
+		if(lostPlayers.size() == 3) {
+			for(Player p: players) {
+				if(!lostPlayers.contains(p))
+					return p;
+			}
+
+			Exception e = new Exception("3 LOST PLAYERS BUT NO WINNER FOUND, BUG");
+			e.printStackTrace();
+		}
 
 		List<GameStaticObject> cities = map.getAllCities();
 		Player p = cities.get(0).owner;
@@ -481,7 +502,7 @@ public class GameController {
 		}
 		p.metal += totalIncome;
 		
-		if(totalIncome == 0 && p.metal < 75) //TODO: ahh hardcoded mine cost
+		if(totalIncome == 0 && p.metal < 50) //TODO: ahh hardcoded worker cost
 			lostPlayers.add(p);
 	}
 	

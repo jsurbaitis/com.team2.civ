@@ -494,6 +494,16 @@ public class GameMap {
 
 		return rtn;
 	}
+	
+	public ArrayList<GameStaticObject> getMetalNodes() {
+		ArrayList<GameStaticObject> rtn = new ArrayList<GameStaticObject>();
+
+		for (GameStaticObject obj : staticObjects.values())
+			if (obj.data.id.equals("METAL"))
+				rtn.add(obj);
+
+		return rtn;
+	}
 
 	public ArrayList<GameStaticObject> getAllCities() {
 		ArrayList<GameStaticObject> rtn = new ArrayList<GameStaticObject>();
