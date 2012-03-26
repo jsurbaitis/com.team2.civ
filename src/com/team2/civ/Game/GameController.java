@@ -43,6 +43,7 @@ public class GameController {
 	private GameGraphics graphics;
 
 	private List<Player> players = new ArrayList<Player>();
+	private List<Player> lostPlayers = new ArrayList<Player>();
 	private List<Player> militaryRankings = new ArrayList<Player>();
 	private List<Player> economyRankings = new ArrayList<Player>();
 	private List<Player> stratLocRankings = new ArrayList<Player>();
@@ -262,7 +263,7 @@ public class GameController {
 	private void startAttackMove(GameUnit actor, MapObject target) {
 		endCombatTargeting();
 		List<WalkableTile> path = map.findPath(actor, target, actor.owner, null,
-				true, true, -1);
+				true, true, actor.AP + 1);
 
 		if (path != null) {
 			int offset = 0;
@@ -376,6 +377,7 @@ public class GameController {
 		map.updatePathsAndStratLoc();
 		upkeep(currentPlayer);
 		globalUpkeep();
+		checkPlayersForCityLose();
 
 		Player winner = checkForWinner();
 		// TODO: do something if winner != null
@@ -384,8 +386,10 @@ public class GameController {
 		currentPlayer = players.get(nextPlayer);
 		
 		if(nextPlayer == 0) turnsLeft--;
-
-		if (currentPlayer != humanPlayer) {
+		
+		if(lostPlayers.contains(currentPlayer)) {
+			endTurnNormal();
+		} else if (currentPlayer != humanPlayer) {
 			toPerform.addAll(currentPlayer.ai.perform());
 			if(toPerform.size() > 0) performAction(toPerform.get(0));
 			
@@ -396,7 +400,8 @@ public class GameController {
 	private AI endTurnAIMode() {
 		map.updatePathsAndStratLoc();
 		upkeep(currentPlayer);
-		turnsLeft--;
+		globalUpkeep();
+		checkPlayersForCityLose();
 
 		Player winner = checkForWinner();
 		if (winner != null)
@@ -404,11 +409,15 @@ public class GameController {
 
 		int nextPlayer = (players.indexOf(currentPlayer) + 1) % players.size();
 		currentPlayer = players.get(nextPlayer);
-
-		List<GameAction> actions = currentPlayer.ai.perform();
+		if(nextPlayer == 0) turnsLeft--;
 		
-		currentPlayer.resetConditions();
-		performActions(actions);
+		if(!lostPlayers.contains(currentPlayer)) {
+			List<GameAction> actions = currentPlayer.ai.perform();
+		
+			currentPlayer.resetConditions();
+			performActions(actions);
+		}
+			
 		return endTurnAIMode();
 	}
 
@@ -461,13 +470,25 @@ public class GameController {
 		}
 
 		// p.powerCapability = 0;
+		int totalIncome = 0;
 		for (GameStaticObject so : map.getPlayerObjects(p)) {
 			so.active = true;
 			// p.powerCapability += so.data.powerGiven;
 
 			if (so.data.id.equals("MINE")) {
-				p.metal += getMineIncome(so);
+				totalIncome += getMineIncome(so);
 			}
+		}
+		p.metal += totalIncome;
+		
+		if(totalIncome == 0 && p.metal < 75) //TODO: ahh hardcoded mine cost
+			lostPlayers.add(p);
+	}
+	
+	private void checkPlayersForCityLose() {
+		for(Player p: players) {
+			if(map.getPlayerCities(p).size() == 0)
+				lostPlayers.add(p);
 		}
 	}
 	
