@@ -1,5 +1,5 @@
 WORKER
-HP 50
+HP 25
 AP 2
 BaseDmg 0
 Range 2
@@ -60,7 +60,7 @@ ENDUNIT
 
 
 ANTIAIR
-HP 200
+HP 100
 AP 2
 BaseDmg 20
 Range 2
@@ -97,7 +97,7 @@ UIActions
 ENDUNIT
 
 TANK
-HP 300
+HP 150
 AP 2
 BaseDmg 30
 Range 3
@@ -135,7 +135,7 @@ UIActions
 ENDUNIT
 
 AIR
-HP 120
+HP 80
 AP 5
 BaseDmg 30
 Range 2
