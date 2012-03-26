@@ -14,6 +14,7 @@ import javax.swing.SwingUtilities;
 
 import com.team2.civ.Team2Civ;
 import com.team2.civ.AI.AI;
+import com.team2.civ.AI.AIGameResult;
 import com.team2.civ.Data.GameStaticObjectData;
 import com.team2.civ.Data.GameUnitData;
 import com.team2.civ.Data.ResNotFoundException;
@@ -82,7 +83,7 @@ public class GameController {
 		ui = new UI(humanPlayer, map, graphics, this);
 	}
 
-	public AI runGame(AI a1, AI a2, AI a3, AI a4) {
+	public AIGameResult runGame(AI a1, AI a2, AI a3, AI a4) {
 		try {
 			initGame();
 		} catch (ResNotFoundException e) {
@@ -171,7 +172,7 @@ public class GameController {
 			} else {
 				if (gameTime % 5 == 0)
 					actionTimer++;
-				if (actionTimer > 4) {
+				if (actionTimer > 6) {
 					toShow.remove(0);
 					currentShowing = null;
 					actionTimer = 0;
@@ -240,6 +241,12 @@ public class GameController {
 		target.owner.powerCapability -= target.data.powerGiven;
 		target.owner = performer;
 		target.owner.powerCapability += target.data.powerGiven;
+		try {
+			target.getImage().setBitmap(res.getImage(target.data.id+"_"+performer.colour.toString()));
+			target.getImage().setFowImg(res.getImage(target.data.id+"_fow_"+performer.colour.toString()));
+		} catch (ResNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void startMovement(GameUnit actor, MapObject target) {
@@ -269,7 +276,7 @@ public class GameController {
 			int offset = 0;
 			for(int i = path.size() - 1; i >= 0; i--) {
 				if(!map.isTileFree(path.get(i), actor.owner)) {
-					offset = i;
+					offset = i + 1;
 				}
 			}
 			
@@ -300,6 +307,8 @@ public class GameController {
 	}
 
 	private void performCombat(GameUnit attacker, GameUnit target) {
+		if(attacker.AP < 1) return;
+		
 		target.takeDmg(calcCombatDmg(attacker, target));
 		if (target.getHP() <= 0) {
 			target.owner.updateLost(target);
@@ -394,7 +403,12 @@ public class GameController {
 		int nextPlayer = (players.indexOf(currentPlayer) + 1) % players.size();
 		currentPlayer = players.get(nextPlayer);
 		
-		if(nextPlayer == 0) turnsLeft--;
+		if(nextPlayer == 0) {
+			turnsLeft--;
+			if(turnsLeft == 0) {
+				System.out.println("No more turns left!");
+			}
+		}
 		
 		if(lostPlayers.contains(currentPlayer)) {
 			endTurnNormal();
@@ -406,7 +420,7 @@ public class GameController {
 		}
 	}
 
-	private AI endTurnAIMode() {
+	private AIGameResult endTurnAIMode() {
 		if(!lostPlayers.contains(currentPlayer)) {
 			map.updatePathsAndStratLoc();
 			upkeep(currentPlayer);
@@ -415,12 +429,28 @@ public class GameController {
 			
 			Player winner = checkForWinner();
 			if (winner != null)
-				return winner.ai;
+				return new AIGameResult(winner.ai);
 		}
 
 		int nextPlayer = (players.indexOf(currentPlayer) + 1) % players.size();
 		currentPlayer = players.get(nextPlayer);
-		if(nextPlayer == 0) turnsLeft--;
+		if(nextPlayer == 0) {
+			turnsLeft--;
+			
+			Player best = null;
+			int bestScore = Integer.MIN_VALUE;
+			int totalScore = 0;
+			for(Player p: players) {
+				int score = map.getPlayerCities(p).size();
+				totalScore += score;
+				if(score > bestScore) {
+					best = p;
+					bestScore = score;
+				}
+			}
+			
+			return new AIGameResult(best.ai, bestScore / totalScore / 5);
+		}
 		
 		if(!lostPlayers.contains(currentPlayer)) {
 			List<GameAction> actions = currentPlayer.ai.perform();
@@ -433,8 +463,10 @@ public class GameController {
 	}
 
 	private Player checkForWinner() {
-		if (turnsLeft < 1)
+		if (turnsLeft < 1) {
 			return players.get(0); // TODO: return by some statistic
+			
+		}
 		
 		if(lostPlayers.size() == 3) {
 			for(Player p: players) {
@@ -485,6 +517,8 @@ public class GameController {
 					captureObject(so, p);
 				} else if (so.data.destructible) {
 					so.owner.updateLost(so);
+					so.owner.powerCapability -= so.data.powerGiven;
+					graphics.removeLowImage(so.getImage());
 					map.removeStaticObj(so);
 				}
 			}
@@ -502,14 +536,18 @@ public class GameController {
 		}
 		p.metal += totalIncome;
 		
-		if(totalIncome == 0 && p.metal < 50) //TODO: ahh hardcoded worker cost
+		if(totalIncome == 0 && p.metal < 50) { //TODO: ahh hardcoded worker cost
 			lostPlayers.add(p);
+			if(Team2Civ.DEBUG_OUTPUT) System.out.println("AI lost!");
+		}
 	}
 	
 	private void checkPlayersForCityLose() {
 		for(Player p: players) {
-			if(map.getPlayerCities(p).size() == 0)
+			if(map.getPlayerCities(p).size() == 0) {
 				lostPlayers.add(p);
+				if(Team2Civ.DEBUG_OUTPUT) System.out.println("AI lost!");
+			}
 		}
 	}
 	

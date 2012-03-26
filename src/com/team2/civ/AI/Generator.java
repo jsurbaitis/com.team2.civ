@@ -13,31 +13,27 @@ public class Generator {
 		resume = false;
 	}
 
-	public Generator(File f) {
+	public Generator(int generations, File f) {
+		init_generations = generations;
 		pop = new Population(f);
 		resume = true;
 	}
 
 	public void generate() {
+		int current_generation = 0;
+		
 		if (resume) {
-			int current_generation = pop.getInitGeneration();
-			while (true) {
-				pop.competeAll();
-				pop.cullHerd();
-				current_generation++;
-				pop.writeAIs();
-				pop.writeMetadata(current_generation);
-			}
+			current_generation = pop.getInitGeneration();
 		} else {
 			pop.populate();
-			for (int i = 0; i < init_generations; i++) {
-				pop.competeAll();
-				pop.cullHerd();
-				pop.writeAIs();
-				pop.writeMetadata(i);
-			}
+		}
+		
+		for(int i = current_generation; i < init_generations; i++) {
+			pop.competeAll();
+			pop.cullHerd();
 			pop.writeAIs();
-			pop.writeMetadata(init_generations);
+			pop.writeMetadata(i);
+			System.out.println("\n\n\nGeneration "+i+" complete\n\n\n");
 		}
 	}
 

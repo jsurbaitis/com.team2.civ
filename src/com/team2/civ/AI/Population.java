@@ -27,10 +27,11 @@ import com.team2.civ.Game.GameController;
 public class Population {
 	private int population_size;
 	private AI[] genomes;
-	private HashMap<AI, Integer> fitness = new HashMap<AI, Integer>();
+	private HashMap<AI, Float> fitness = new HashMap<AI, Float>();
 	private HashMap<AI, Integer> times_used = new HashMap<AI, Integer>();
 	private double fitness_level = 0;
 	private int init_generation;
+	private int game = 0;
 
 	public Population(int pop_size) {
 		population_size = pop_size;
@@ -38,7 +39,7 @@ public class Population {
 		this.populate();
 	}
 
-	public Population(int pop_size, HashMap<AI, Integer> fit, AI[] genome_array) {
+	public Population(int pop_size, HashMap<AI, Float> fit, AI[] genome_array) {
 		population_size = pop_size;
 		genomes = genome_array;
 		fitness = fit;
@@ -75,7 +76,7 @@ public class Population {
 			AI a = new AI(new File(nFilename.getTextContent()));
 			ai.add(a);
 			Node nFitness = children.item(1);
-			fitness.put(a, Integer.parseInt(nFitness.getTextContent()));
+			fitness.put(a, Float.parseFloat(nFitness.getTextContent()));
 			Node nTimesUsed = children.item(2);
 			times_used.put(a, Integer.parseInt(nTimesUsed.getTextContent()));
 
@@ -89,7 +90,7 @@ public class Population {
 	public void populate() {
 		for (int i = 0; i < genomes.length; i++) {
 			genomes[i] = new AI();
-			fitness.put(genomes[i], 0);
+			fitness.put(genomes[i], 0f);
 		}
 	}
 
@@ -107,13 +108,16 @@ public class Population {
 			throw new Exception("AI has already competed 5 times.");
 		}
 
-		AI winner = (new GameController()).runGame(ai1, ai2, ai3, ai4);
-		fitness.put(winner, (fitness.get(winner) + 1));
+		AIGameResult winner = (new GameController()).runGame(ai1, ai2, ai3, ai4);
+		fitness.put(winner.winner, (fitness.get(winner.winner) + winner.score));
 		
 		incTimesUsed(ai1);
 		incTimesUsed(ai2);
 		incTimesUsed(ai3);
 		incTimesUsed(ai4);
+		
+		game++;
+		System.out.println("\nGame "+game+" completed\n");
 	}
 
 	private int getTimesUsed(AI ai) {
@@ -146,7 +150,7 @@ public class Population {
 
 	public void cullHerd() {
 		double fitsum = 0;
-		for (Integer i : fitness.values()) {
+		for (Float i : fitness.values()) {
 			fitsum += i;
 		}
 		this.fitness_level = fitsum / fitness.values().size();
@@ -160,7 +164,10 @@ public class Population {
 		}
 		int k = j;
 		Random random = new SecureRandom();
-		if (j < population_size) {
+		
+		if(k == 0) {
+			this.populate();
+		} else {
 			for (int t = j; t < genomes.length; t++) {
 				AI parent1 = newAI[random.nextInt(k)];
 				AI parent2 = newAI[random.nextInt(k)];
@@ -168,7 +175,10 @@ public class Population {
 				j++;
 			}
 		}
+
 		this.genomes = newAI;
+		this.fitness.clear();
+		this.times_used.clear();
 	}
 
 	public void writeAIs() {

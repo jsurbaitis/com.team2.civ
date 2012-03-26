@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.GameStaticObjectData;
 import com.team2.civ.Data.GameUnitData;
 import com.team2.civ.Data.ResNotFoundException;
@@ -142,20 +143,7 @@ public class AI {
 	}
 
 	private static byte[] generateNewGenome() {
-		byte[] genome = new byte[(int) (6 + (((int) Math.pow(2, condition_bits) * action_points) / 1.6))];// 1.6
-																											// may
-																											// need
-																											// to
-																											// be
-																											// changed
-																											// later,
-																											// but
-																											// should
-																											// correspond
-																											// adequately
-																											// to
-																											// 5bits/action
-																											// code
+		byte[] genome = new byte[(int) (6 + (((int) Math.pow(2, condition_bits) * action_points) / 1.6))];// 1.6 not smart
 		rnd.nextBytes(genome);
 		// tolerances:
 		genome[0] = (byte) rnd.nextInt(3); // stdev stratloc
@@ -260,13 +248,6 @@ public class AI {
 		return output;
 	}
 
-	/*
-	 * private static byte[] boolToBytes(boolean[] bools) { byte[] byteArray =
-	 * new byte[bools.length / 8]; for (int i = 0; i < (bools.length / 8); i++)
-	 * { for (int j = 0; j < 8; j++) { if (bools[i * 8 + j]) byteArray[i] |= (1
-	 * << j); else byteArray[i] &= (1 << j); } } return byteArray; }
-	 */
-
 	private static void BytesToFile(byte[] bytes, int genomeNumber) {
 		File f = new File("genome_" + genomeNumber);
 		if (f.exists())
@@ -299,15 +280,6 @@ public class AI {
 		}
 		return byteArray;
 	}
-
-	/*
-	 * private static boolean[] intToBits(int in) { String binaryString =
-	 * Integer.toBinaryString(in); char[] binaryArray =
-	 * binaryString.toCharArray(); boolean[] boolArray = new
-	 * boolean[binaryArray.length]; for (int i = 0; i < binaryString.length();
-	 * i++) { if (binaryArray[i] == '0') { boolArray[i] = false; } else if
-	 * (binaryArray[i] == '1') { boolArray[i] = true; } } return boolArray; }
-	 */
 
 	private static boolean[] intTo2Bits(int in) {
 		boolean[] rtn = new boolean[2];
@@ -400,18 +372,21 @@ public class AI {
 
 	public List<GameAction> perform() {
 		output.clear();
+		
+		if(Team2Civ.DEBUG_OUTPUT) {
+			System.out.println("Turn: "+game.turnsLeft+" / "+this.current_turns_threshold);
+			System.out.println("Turn threshold: "+this.init_turns_threshold);
+			System.out.println("Current strat loc: "+this.current_st_dev_strat_loc);
+			System.out.println("Current pcent win chance: "+this.current_combat_pcent_win_chance);
+			System.out.println("Queue: "+this.unitQueue.size()+" / "+this.init_queue_length);
+			System.out.println("Metal: "+owner.metal+" / "+this.init_resource_threshold);
+		}
 
 		byte[] b_responses = getResponseCodes(getEnvironmentalConditions());
 		for (byte b : b_responses) {
-			System.out.print(b + ": ");
-			try {
-				List<GameAction> ga = this.parseActionCode(b);
-				for (GameAction g : ga)
-					System.out.print(g + "  ");
-				output.addAll(ga);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			List<GameAction> ga = this.parseActionCode(b);
+			output.addAll(ga);
+			if(Team2Civ.DEBUG_OUTPUT) System.out.println(" RETURN");
 		}
 
 		if (unitQueue.size() > 0) {
@@ -437,7 +412,7 @@ public class AI {
 			}
 		}
 
-		System.out.println("\n-------");
+		if(Team2Civ.DEBUG_OUTPUT) System.out.println("\n-------");
 		output.removeAll(Collections.singleton(null));
 		return output;
 	}
@@ -477,6 +452,8 @@ public class AI {
 	}
 
 	private List<GameAction> BuildPowerplant() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("BuildPowerPlant -> ");
+		
 		List<GameAction> out = new ArrayList<GameAction>();
 		
 		ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner, "WORKER");
@@ -508,6 +485,8 @@ public class AI {
 	}
 
 	private List<GameAction> SeizeStrategicLocation() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("SeizeStrategicLocation -> ");
+		
 		List<GameAction> rtn = new ArrayList<GameAction>();
 
 		Collection<WalkableTile> walkableMap = map.getWalkableMap();
@@ -569,6 +548,8 @@ public class AI {
 	}
 
 	private List<GameAction> SeizeResource() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("SeizeResource -> ");
+		
 		List<GameAction> out = new ArrayList<GameAction>();
 		ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner,
 				"WORKER");
@@ -615,6 +596,8 @@ public class AI {
 	}
 
 	private List<GameAction> attackPlayer(Player p) {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("AttackPlayer -> ");
+		
 		List<GameAction> rtn = new ArrayList<GameAction>();
 		List<GameStaticObject> pCities = map.getPlayerCities(p);
 
@@ -652,6 +635,8 @@ public class AI {
 	}
 
 	private List<GameAction> AttackStrongestMilitary() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("AttackStrongMil -> ");
+		
 		List<Player> militaryRankings = game.getMilitaryRankings();
 		if (militaryRankings.get(0) == owner) {
 			return attackPlayer(militaryRankings.get(1));
@@ -661,6 +646,8 @@ public class AI {
 	}
 
 	private List<GameAction> AttackStrongestEconomy() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("AttackStrongEcon -> ");
+		
 		List<Player> economyRankings = game.getEconomyRankings();
 		if (economyRankings.get(0) == owner) {
 			return attackPlayer(economyRankings.get(1));
@@ -670,6 +657,8 @@ public class AI {
 	}
 
 	private List<GameAction> AttackWeakestMilitary() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("AttackWeakMil -> ");
+		
 		List<Player> militaryRankings = game.getMilitaryRankings();
 		if (militaryRankings.get(militaryRankings.size() - 1) == owner) {
 			return attackPlayer(militaryRankings
@@ -680,6 +669,8 @@ public class AI {
 	}
 
 	private List<GameAction> AttackWeakestEconomy() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("AttackWeakEcon -> ");
+		
 		List<Player> economyRankings = game.getEconomyRankings();
 		if (economyRankings.get(economyRankings.size() - 1) == owner) {
 			return attackPlayer(economyRankings.get(economyRankings.size() - 2));
@@ -689,6 +680,8 @@ public class AI {
 	}
 
 	private List<GameAction> harassPlayer(Player p) {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("HarassPlayer -> ");
+		
 		ArrayList<GameAction> out = new ArrayList<GameAction>();
 		int least_dist = Integer.MAX_VALUE;
 		GameStaticObject best_candidate = null;
@@ -714,6 +707,8 @@ public class AI {
 	}
 
 	private List<GameAction> harassStrongestMilitary() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("HarassStrongMil -> ");
+		
 		List<Player> militaryRankings = game.getMilitaryRankings();
 		if (militaryRankings.get(0) == owner) {
 			return harassPlayer(militaryRankings.get(1));
@@ -723,6 +718,8 @@ public class AI {
 	}
 
 	private List<GameAction> HarassStrongestEconomy() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("HarassStrongEcon -> ");
+		
 		List<Player> economyRankings = game.getEconomyRankings();
 		if (economyRankings.get(0) == owner) {
 			return harassPlayer(economyRankings.get(1));
@@ -732,6 +729,8 @@ public class AI {
 	}
 
 	private List<GameAction> HarassWeakestMilitary() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("HarassWeakMil -> ");
+		
 		List<Player> militaryRankings = game.getMilitaryRankings();
 		if (militaryRankings.get(militaryRankings.size() - 1) == owner) {
 			return harassPlayer(militaryRankings
@@ -742,6 +741,8 @@ public class AI {
 	}
 
 	private List<GameAction> harassWeakestEconomy() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("HarassWeakEcon -> ");
+		
 		List<Player> economyRankings = game.getEconomyRankings();
 		if (economyRankings.get(economyRankings.size() - 1) == owner) {
 			return harassPlayer(economyRankings.get(economyRankings.size() - 2));
@@ -751,6 +752,8 @@ public class AI {
 	}
 
 	private List<GameAction> makeRandomUnit() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("MakeRnd -> ");
+		
 		List<GameAction.OneAgentEvent> possibilities = new ArrayList<GameAction.OneAgentEvent>();
 
 		GameUnitData data;
@@ -776,6 +779,8 @@ public class AI {
 	}
 
 	private List<GameAction> makeWorker() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("MakeWorker -> ");
+		
 		List<GameAction> out = new ArrayList<GameAction>();
 		try {
 			if (owner.canAfford(res.getUnit("WORKER"))) {
@@ -805,18 +810,26 @@ public class AI {
 	}
 
 	private List<GameAction> makeTank() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("MakeTank -> ");
+		
 		return makeUnit(GameAction.OneAgentEvent.BUILD_TANK);
 	}
 
 	private List<GameAction> makeAir() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("MakeAir -> ");
+		
 		return makeUnit(GameAction.OneAgentEvent.BUILD_AIR);
 	}
 
 	private List<GameAction> makeAntiAir() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("MakeAntiAir -> ");
+		
 		return makeUnit(GameAction.OneAgentEvent.BUILD_ANTIAIR);
 	}
 
 	private List<GameAction> makeUnit(GameAction.OneAgentEvent buildEvent) {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("MakeUnit -> ");
+		
 		List<GameAction> out = new ArrayList<GameAction>();
 		
 		try {
@@ -841,6 +854,8 @@ public class AI {
 	}
 
 	private List<GameAction> FortifyLocation(WalkableTile location) {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("FortifyLocation -> ");
+		
 		ArrayList<GameAction> out = new ArrayList<GameAction>();
 		//&& !((GameStaticObject)location).data.id.equals("FORTIFICATION")
 		if (location instanceof GameStaticObject) {
@@ -859,7 +874,8 @@ public class AI {
 				}
 			}
 			
-			out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, closest, location));
+			if(closest != null)
+				out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, closest, location));
 		} 
 		else {
 			ArrayList<GameUnit> ourWorkers = map.getPlayerUnitsOfType(owner, "WORKER");
@@ -883,7 +899,9 @@ public class AI {
 							closest = unit;
 						}
 					}
-					out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, closest, location));
+					
+					if(closest != null)
+						out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, closest, location));
 					return out;
 					
 				}
@@ -894,6 +912,8 @@ public class AI {
 	}
 
 	private List<GameAction> FortifyStrategicLocation() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("FortifyStrategicLocation -> ");
+		
 		ArrayList<GameAction> out = new ArrayList<GameAction>();
 
 		WalkableTile worst_stratloc = null;
@@ -913,6 +933,8 @@ public class AI {
 	}
 
 	private List<GameAction> FortifyResource() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("FortifyResource -> ");
+		
 		List<GameAction> out = new ArrayList<GameAction>();
 		ArrayList<WalkableTile> locations = new ArrayList<WalkableTile>();
 		List<GameStaticObject> resources = map.getPlayerObjectsOfType(owner,
@@ -931,7 +953,7 @@ public class AI {
 		}
 
 		if (locations.size() > 0) {
-			return FortifyLocation(locations.get(rnd.nextInt(locations.size() - 1)));
+			return FortifyLocation(locations.get(rnd.nextInt(locations.size())));
 		}
 		if (rnd.nextBoolean()) {
 			out.addAll(this.SeizeResource());
@@ -942,6 +964,8 @@ public class AI {
 	}
 
 	private List<GameAction> FortifyCity() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("FortifyCity -> ");
+		
 		List<GameStaticObject> cities = map.getPlayerObjectsOfType(owner,
 				"CITY");
 		GameStaticObject worst_city = null;
@@ -964,6 +988,8 @@ public class AI {
 	}
 
 	private List<GameAction> ClearUnitQueue() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("ClearUnitQueue -> ");
+		
 		unitQueue.clear();
 		if (default_behavior_code != CLEAR_UNIT_QUEUE) {
 			try {
@@ -977,6 +1003,8 @@ public class AI {
 	}
 
 	private List<GameAction> CombatWinChanceTolerancePlus10() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("CombatPercPlus10 -> ");
+		
 		this.current_combat_pcent_win_chance *= 1.1;
 		if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10) {
 			return parseActionCode(this.default_behavior_code);
@@ -985,6 +1013,8 @@ public class AI {
 	}
 
 	private List<GameAction> CombatWinChanceToleranceMinus10() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("CombatPercMinus10 -> ");
+		
 		this.current_combat_pcent_win_chance *= .9;
 		if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10) {
 			return parseActionCode(this.default_behavior_code);
@@ -993,6 +1023,8 @@ public class AI {
 	}
 
 	private List<GameAction> CombatWinChanceToleranceResetToDefault() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("CombatPercReset -> ");
+		
 		this.current_combat_pcent_win_chance = this.init_combat_pcent_win_chance;
 		if (this.default_behavior_code != this.COMBAT_WIN_CHANCE_TOLERANCE_RESET_TO_DEFAULT) {
 			return parseActionCode(this.default_behavior_code);
@@ -1001,6 +1033,8 @@ public class AI {
 	}
 
 	private List<GameAction> TurnsLeftThresholdMinus20() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("TurnsThreshMinus20 -> ");
+		
 		this.current_turns_threshold *= .8;
 		if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_MINUS_20) {
 			return parseActionCode(this.default_behavior_code);
@@ -1009,6 +1043,8 @@ public class AI {
 	}
 
 	private List<GameAction> TurnsLeftThresholdPlus20() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("TurnsThreshPlus20 -> ");
+		
 		this.current_turns_threshold *= 1.2;
 		if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_PLUS_20) {
 			return parseActionCode(this.default_behavior_code);
@@ -1017,6 +1053,8 @@ public class AI {
 	}
 
 	private List<GameAction> TurnsLeftThresholdResetToDefault() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("TurnsThreshReset -> ");
+		
 		this.current_turns_threshold = this.init_turns_threshold;
 		if (this.default_behavior_code != this.TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT) {
 			return parseActionCode(this.default_behavior_code);
@@ -1025,6 +1063,8 @@ public class AI {
 	}
 
 	private List<GameAction> CreateNewCity() {
+		if(Team2Civ.DEBUG_OUTPUT) System.out.print("CreateNewCity -> ");
+		
 		try {
 			if (!owner.canAfford(res.getStaticObject("CITY"))) {
 				return this.SeizeResource();
