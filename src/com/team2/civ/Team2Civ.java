@@ -35,7 +35,7 @@ public class Team2Civ extends Thread {
 	private static final long FPS_WAIT = (long) (1.0 / FPS_LIMIT * 1000);
 	
 	public static final boolean AI_MODE = true;
-	public static final boolean DEBUG_OUTPUT = true;
+	public static final boolean DEBUG_OUTPUT = false;
 	
 	private long timeStartMillis;
 
@@ -162,11 +162,21 @@ public class Team2Civ extends Thread {
 			
 			Resources.init(config);
 			
-			int generations = Integer.parseInt(args[0]);
-			int populationSize = Integer.parseInt(args[1]);
+			Generator g = null;
+			String mode = args[0];
+			
+			if(mode.equals("-r")) {
+				int generations = Integer.parseInt(args[1]);
+				g = new Generator(generations, new File("population_metadata.xml"));
+			}
+			else if(mode.equals("-n")) {
+				int generations = Integer.parseInt(args[1]);
+				int populationSize = Integer.parseInt(args[2]);
+				g = new Generator(generations, populationSize);
+			} else {
+				System.out.println("INVALID PARAMETERS - use -r or -n");
+			}
 
-			//Generator g = new Generator(generations, populationSize);
-			Generator g = new Generator(generations, new File("population_metadata.xml"));
 			g.generate();
 		}
 	}

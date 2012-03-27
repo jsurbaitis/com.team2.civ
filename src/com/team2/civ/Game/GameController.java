@@ -480,7 +480,7 @@ public class GameController {
 		if(nextPlayer == 0) {
 			turnsLeft--;
 			
-			if(turnsLeft % 20 == 0)
+			if(turnsLeft % 80 == 0)
 				System.out.println("TURNS LEFT: "+turnsLeft);
 			if(turnsLeft == 0) {
 				return getBestResult();

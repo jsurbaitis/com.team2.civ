@@ -28,7 +28,7 @@ public class Generator {
 			pop.populate();
 		}
 		
-		for(int i = current_generation; i < init_generations; i++) {
+		for(int i = current_generation; i < current_generation + init_generations; i++) {
 			pop.competeAll();
 			pop.cullHerd();
 			pop.writeAIs();
