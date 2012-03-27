@@ -32,6 +32,7 @@ public class GameMap {
 	private HashMap<CoordObject, GameStaticObject> staticObjects = new HashMap<CoordObject, GameStaticObject>();
 
 	private List<Path> paths = new ArrayList<Path>();
+	private HashMap<WalkableTile, HashMap<Path, Double>> stratLocData = new HashMap<WalkableTile, HashMap<Path, Double>>();
 	private HashMap<WalkableTile, Double> stratLocValues = new HashMap<WalkableTile, Double>();
 	public double avgStratLocValue;
 	private int stratLocPathSum;
@@ -290,24 +291,42 @@ public class GameMap {
 		if (stratLocsNeedUpdate) {
 			List<WalkableTile> path;
 			stratLocValues.clear();
+			
 			for (Path p : paths) {
 				for (int i = 0; i < p.path.size(); i++) {
 					WalkableTile t = p.path.get(i);
 					double val = 0;
+					double score;
 					for (Path p2 : paths) {
-						if (p2 != p && p2.path.contains(t)) {
-							path = findPath(p2.startObj, p2.endObj, t, false);
-							if (path != null) {
-								val += path.size();
-							} else
-								val += 500;
+						if(p2.updated || stratLocData.get(t) == null || stratLocData.get(t).get(p2) == null) {
+							if (p2 != p && p2.path.contains(t)) {
+								path = findPath(p2.startObj, p2.endObj, t, false);
+								if (path != null) {
+									score = path.size();
+								} else
+									score = 500;
+							} else {
+								score = p2.path.size();
+							}
+							
+							HashMap<Path, Double> tileScores = stratLocData.get(t);
+							if(tileScores == null) {
+								tileScores = new HashMap<Path, Double>();
+								tileScores.put(p2, score);
+								stratLocData.put(t, tileScores);
+							} else {
+								tileScores.put(p2, score);
+							}
 						} else {
-							val += p2.path.size();
+							score = stratLocData.get(t).get(p2);
 						}
+						val += score;
 					}
 					stratLocValues.put(t, val / stratLocPathSum);
 				}
 			}
+			
+			for(Path p: paths) p.updated = false;
 		}
 		stratLocsNeedUpdate = false;
 		return stratLocValues;
@@ -382,6 +401,22 @@ public class GameMap {
 
 		return true;
 	}
+	
+	private Path getPath(GameStaticObject o1, GameStaticObject o2) {
+		for (Path p : paths) {
+			if ((p.startObj == o1 && p.endObj == o2)
+					|| (p.startObj == o2 && p.endObj == o1)) {
+				return p;
+			}
+		}
+		return null;
+	}
+	
+	private void removePath(Path p) {
+		paths.remove(p);
+		for(HashMap<Path, Double> h: stratLocData.values())
+			h.remove(p);
+	}
 
 	public void updatePathsAndStratLoc() {
 		List<GameStaticObject> mines = getObjectsOfType("MINE");
@@ -392,6 +427,8 @@ public class GameMap {
 		for (GameStaticObject c1 : cities) {
 			for (GameStaticObject c2 : cities) {
 				if (c1 != c2 && needToUpdatePath(c1, c2)) {
+					removePath(getPath(c1, c2));
+					
 					path = findPath(c1, c2, null, false);
 					if (path != null) {
 						paths.add(new Path(c1, c2, path));
@@ -402,6 +439,8 @@ public class GameMap {
 
 			for (GameStaticObject m : mines) {
 				if (needToUpdatePath(c1, m)) {
+					removePath(getPath(c1, m));
+					
 					path = findPath(c1, m, null, false);
 					if (path != null) {
 						paths.add(new Path(c1, m, path));
@@ -417,6 +456,7 @@ public class GameMap {
 	private class Path {
 		public GameStaticObject startObj, endObj;
 		public List<WalkableTile> path;
+		public boolean updated = true;
 
 		public Path(GameStaticObject startObj, GameStaticObject endObj,
 				List<WalkableTile> path) {

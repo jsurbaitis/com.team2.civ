@@ -67,7 +67,7 @@ public class Population {
 				in.next(); in.next();
 				
 				if(i != 0 && (i + 1) % 10 == 0)
-					System.out.println("Completed "+(i+1)+" AIs");
+					System.out.println("Loaded "+(i+1)+" AIs");
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
