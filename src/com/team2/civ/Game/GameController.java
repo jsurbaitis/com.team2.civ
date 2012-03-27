@@ -316,7 +316,22 @@ public class GameController {
 	}
 	
 	private void checkForAttack(GameUnit unit) {
-		if(unit.AP < 1) return;;
+		if(unit.AP < 1) return;
+		
+		GameStaticObject bestTarget = null;
+		for(GameStaticObject so: map.getFreeEnemyObjectsAround(unit)) {
+			if(so.data.id.equals("CITY")) {
+				bestTarget = so;
+			}
+			if(bestTarget == null) {
+				bestTarget = so;
+			}
+		}
+		
+		if(bestTarget != null) {
+			startMovement(unit, bestTarget);
+			return;
+		}
 		
 		for(GameUnit u: map.getUnits()) {
 			if(u.owner != unit.owner && unit.inCombatRange(u)) {
@@ -465,6 +480,8 @@ public class GameController {
 		if(nextPlayer == 0) {
 			turnsLeft--;
 			
+			if(turnsLeft % 20 == 0)
+				System.out.println("TURNS LEFT: "+turnsLeft);
 			if(turnsLeft == 0) {
 				return getBestResult();
 			}

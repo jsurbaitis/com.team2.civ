@@ -1,6 +1,5 @@
 package com.team2.civ.Game;
 
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -219,7 +218,7 @@ public class GameMap {
 				nextTile = walkableMap.get(new CoordObject(current.mapX
 						+ nextPos[i][0], current.mapY + nextPos[i][1]));
 
-				if ((nextTile == null || closedList.contains(nextTile))
+				if (nextTile == null || closedList.contains(nextTile)
 						|| exclude == nextTile)
 					continue;
 
@@ -434,6 +433,19 @@ public class GameMap {
 
 			return true;
 		}
+	}
+	
+	public List<GameStaticObject> getFreeEnemyObjectsAround(GameUnit loc) {
+		List<GameStaticObject> rtn = new ArrayList<GameStaticObject>();
+
+		for(int i = 0; i < nextPos.length; i++) {
+			GameStaticObject obj = staticObjects.get(
+					new CoordObject(loc.mapX + nextPos[i][0], loc.mapY + nextPos[i][1]));
+			if (obj != null && obj.owner != loc.owner && isTileFree(obj, loc.owner))
+				rtn.add(obj);
+		}
+
+		return rtn;
 	}
 	
 	public List<GameStaticObject> getPlayerObjects(Player p) {

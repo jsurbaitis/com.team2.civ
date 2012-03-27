@@ -386,7 +386,7 @@ public class AI {
 		int sum = 0;
 		for (GameUnit u : attackers) {
 			for (GameUnit chase : chases) {
-				if (chase.owner != owner)
+				if (chase.owner != owner && chase.getHP() != 0)
 					sum += game.calcCombatDmg(u, chase) / chase.getHP();
 			}
 		}
