@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -126,12 +125,11 @@ public class Population {
 		this.fitness.clear();
 		this.times_used.clear();
 		
-		Random random = new SecureRandom();
-		for (int i = genomes.length - 1; i > 1; i--) {
-			for (int j = 0; j < 2; j++) {
-				compete(genomes[i], genomes[random.nextInt(i)],
-						genomes[random.nextInt(i)],
-						genomes[random.nextInt(i)]);
+		Random random = new Random();
+		for(int i = 0; i < genomes.length; i++) {
+			for(int j = 0; j < 5; j++) {
+				compete(genomes[i], genomes[random.nextInt(genomes.length)],
+						genomes[random.nextInt(genomes.length)], genomes[random.nextInt(genomes.length)]);
 			}
 		}
 	}
@@ -151,7 +149,7 @@ public class Population {
 			}
 		}
 		int k = j;
-		Random random = new SecureRandom();
+		Random random = new Random();
 		
 		if(k == 0) {
 			this.populate();
