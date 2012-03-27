@@ -88,6 +88,7 @@ public class GameController {
 			if(genomes.length > 2) {
 				rndGenome = rnd.nextInt(genomes.length);
 				p.ai = new AI(new File("genomes/genome_"+rndGenome));
+				System.out.println("USING GENOME: "+"genome_"+rndGenome);
 			} else {
 				p.ai = new AI();
 			}
@@ -300,14 +301,16 @@ public class GameController {
 			int start = Math.max(offset, path.size() - actor.AP - 1);
 			List<WalkableTile> toWalk = path.subList((start < 0) ? 0 : start, path.size());
 			
-			actor.AP -= toWalk.size() - 1;
+			if(toWalk.size() > 0) {
+				actor.AP -= toWalk.size() - 1;
 
-			if (!Team2Civ.AI_MODE) {
-				actor.startMovement(toWalk);
-				showAction(new ActionToShow(actor, true));
-			} else {
-				actor.setPos(toWalk.get(0).mapX, toWalk.get(0).mapY);
-				checkForAttack(actor);
+				if (!Team2Civ.AI_MODE) {
+					actor.startMovement(toWalk);
+					showAction(new ActionToShow(actor, true));
+				} else {
+					actor.setPos(toWalk.get(0).mapX, toWalk.get(0).mapY);
+					checkForAttack(actor);
+				}
 			}
 		}
 	}

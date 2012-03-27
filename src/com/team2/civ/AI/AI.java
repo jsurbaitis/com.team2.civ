@@ -99,7 +99,6 @@ public class AI {
 		this.init_turns_threshold = ((int) this.genome[4]) * 10;
 		this.current_turns_threshold = this.init_turns_threshold;
 		this.default_behavior_code = genome[5];
-		this.WriteSelf(0);
 	}
 
 	public AI(AI parent1, AI parent2) {
@@ -211,7 +210,21 @@ public class AI {
 			for (int i = 0; i < parent1.length; i++) {
 				rng = rnd.nextInt(15);
 				if (rng == 1)
+					if (i == 0){
+						parent1[i] = (byte) rnd.nextInt(4);// stdev stratloc
+					} else if (i == 1){
+						parent1[1] = (byte) rnd.nextInt(16); // win%tol
+					} else if (i == 2){
+						parent1[2] = (byte) rnd.nextInt(8); // max queue length
+					} else if (i == 3){
+						parent1[3] = (byte) rnd.nextInt(64); // banked resources (*40 later)
+					} else if (i == 4){	
+						parent1[4] = (byte) rnd.nextInt(64); // turns left (*10 later)
+					} else if (i == 5){	
+						parent1[5] = (byte) rnd.nextInt(31); // default action
+					} else {
 					parent1[i] = (byte) rnd.nextInt();
+					}
 			}
 		}
 	}
@@ -505,19 +518,21 @@ public class AI {
 		return out;
 	}
 
-	private List<GameAction> SeizeStrategicLocation() {
+	private List<GameAction> SeizeStrategicLocation(Double stdev) {
 		if(Team2Civ.DEBUG_OUTPUT) System.out.print("SeizeStrategicLocation -> ");
 		
 		List<GameAction> rtn = new ArrayList<GameAction>();
 
-		Collection<WalkableTile> walkableMap = map.getWalkableMap();
-		double stdev = 0;
-		for (Double d : map.getStratLocValues().values()) {
-			stdev += Math.pow(d - map.avgStratLocValue, 2);
-		}
+		if(stdev == null) {
+			Collection<WalkableTile> walkableMap = map.getWalkableMap();
+			double new_stdev = 0;
+			for (Double d : map.getStratLocValues().values()) {
+				new_stdev += Math.pow(d - map.avgStratLocValue, 2);
+			}
 
-		stdev /= walkableMap.size();
-		stdev = Math.sqrt(stdev);
+			new_stdev /= walkableMap.size();
+			stdev = Math.sqrt(new_stdev);
+		}
 
 		List<WalkableTile> stratLocs = new ArrayList<WalkableTile>();
 		HashMap<WalkableTile, Double> stratLocValues = map.getStratLocValues();
@@ -530,7 +545,7 @@ public class AI {
 		if (stratLocs.size() == 0) {
 			if (this.current_st_dev_strat_loc > 1) {
 				this.current_st_dev_strat_loc--;
-				return SeizeStrategicLocation();
+				return SeizeStrategicLocation(stdev);
 			} else if (this.default_behavior_code != this.SEIZE_STRATEGIC_LOCATION) {
 				rtn.addAll(this.parseActionCode(this.default_behavior_code));
 				return rtn;
@@ -882,7 +897,7 @@ public class AI {
 		return out;
 	}
 
-	private List<GameAction> FortifyLocation(WalkableTile location) {
+	private List<GameAction> FortifyLocation(WalkableTile location) { //THIS COULD BE PROBLEM - JUST REALLY SLOW
 		if(Team2Civ.DEBUG_OUTPUT) System.out.print("FortifyLocation -> ");
 		
 		ArrayList<GameAction> out = new ArrayList<GameAction>();
@@ -917,25 +932,27 @@ public class AI {
 				if (!isUnitUsed(u)) {
 					freeworkers.add(u);
 				}
-				if ((freeworkers.size() > 0)
-						&& (map.getObjBelowUnit(u) == null)) {
-					GameUnit closest = null;
-					int closestDist = Integer.MAX_VALUE;
-					for(GameUnit unit: freeworkers) {
+			}
+			
+			if ((freeworkers.size() > 0)) {
+				GameUnit closest = null;
+				int closestDist = Integer.MAX_VALUE;
+				for(GameUnit unit: freeworkers) {
+					if(Math.abs(unit.mapX - location.mapX) < 10 && Math.abs(unit.mapY - location.mapY) < 10) {
 						int dist = map.getDistBetween(unit, location);
 						if(dist < closestDist) {
 							closestDist = dist;
 							closest = unit;
 						}
 					}
-					
-					if(closest != null)
-						out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, closest, location));
-					return out;
-					
 				}
-				out.addAll(this.makeWorker());
+				
+				if(closest != null)
+					out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_ATTACK_MOVE, owner, closest, location));
+				return out;
+				
 			}
+			out.addAll(this.makeWorker());
 		}
 		return out;
 	}
@@ -1161,7 +1178,7 @@ public class AI {
 		List<GameAction> rtn = new ArrayList<GameAction>();
 
 		if (b == SEIZE_STRATEGIC_LOCATION) {
-			rtn.addAll(this.SeizeStrategicLocation());
+			rtn.addAll(this.SeizeStrategicLocation(null));
 		} else if (b == SEIZE_RESOURCE) {
 			rtn.addAll(this.SeizeResource());
 		} else if (b == ATTACK_PLAYER_1) {

@@ -24,7 +24,7 @@ public class Population {
 	private HashMap<AI, Integer> times_used = new HashMap<AI, Integer>();
 	private double fitness_level = 0;
 	private int init_generation;
-	private int game = 0;
+	private int gameNumber = 0;
 
 	public Population(int pop_size) {
 		population_size = pop_size;
@@ -65,6 +65,9 @@ public class Population {
 				times_used.put(genomes[i], timesUsed);
 				
 				in.next(); in.next();
+				
+				if(i != 0 && (i + 1) % 10 == 0)
+					System.out.println("Completed "+(i+1)+" AIs");
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -86,7 +89,7 @@ public class Population {
 				|| getTimesUsed(ai3) > 5 || getTimesUsed(ai4) > 5) {
 			return;
 		}
-
+		
 		AIGameResult winner = (new GameController()).runGame(ai1, ai2, ai3, ai4);
 		fitness.put(winner.winner, (getFitness(winner.winner) + winner.score));
 		
@@ -95,10 +98,10 @@ public class Population {
 		incTimesUsed(ai3);
 		incTimesUsed(ai4);
 		
-		game++;
-		System.out.println("\nGame "+game+" completed\n");
+		gameNumber++;
+		System.out.println("\nGame "+gameNumber+" completed\n");
 	}
-	
+
 	public float getFitness(AI ai) {
 		if(!fitness.containsKey(ai))
 			return 0;
@@ -125,7 +128,7 @@ public class Population {
 		
 		Random random = new SecureRandom();
 		for (int i = genomes.length - 1; i > 1; i--) {
-			for (int j = 0; j < 5; j++) {
+			for (int j = 0; j < 2; j++) {
 				compete(genomes[i], genomes[random.nextInt(i)],
 						genomes[random.nextInt(i)],
 						genomes[random.nextInt(i)]);
