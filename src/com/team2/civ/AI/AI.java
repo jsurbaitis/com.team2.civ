@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -83,7 +82,7 @@ public class AI {
 	private GameMap map;
 	private Player owner;
 	private Resources res;
-	private static Random rnd = new SecureRandom();
+	private static Random rnd = new Random();
 
 	private List<String> unitQueue = new ArrayList<String>();
 	private List<GameAction> output = new ArrayList<GameAction>();
