@@ -6,9 +6,12 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import javax.swing.SwingUtilities;
@@ -44,11 +47,12 @@ public class GameController {
 	private GameMap map;
 	private GameGraphics graphics;
 
-	private List<Player> players = new ArrayList<Player>();
-	private List<Player> lostPlayers = new ArrayList<Player>();
-	private List<Player> militaryRankings = new ArrayList<Player>();
-	private List<Player> economyRankings = new ArrayList<Player>();
-	private List<Player> stratLocRankings = new ArrayList<Player>();
+	private Iterator<Player> playersIt;
+	private Set<Player> players = new HashSet<Player>();
+	private Set<Player> lostPlayers = new HashSet<Player>();
+	private Set<Player> militaryRankings = new TreeSet<Player>(Player.militaryComparator);
+	private Set<Player> economyRankings = new TreeSet<Player>(Player.economyComparator);
+	private Set<Player> stratLocRankings = new TreeSet<Player>(Player.stratLocComparator);
 	public Player humanPlayer;
 	private Player currentPlayer;
 	private MapObject target;
@@ -73,7 +77,8 @@ public class GameController {
 			e.printStackTrace();
 		}
 
-		humanPlayer = players.get(0);
+		Iterator<Player> pIt = players.iterator();
+		humanPlayer = pIt.next();
 		
 		File folder = new File("genomes/");
 		if(!folder.exists()) folder.mkdir();
@@ -82,8 +87,8 @@ public class GameController {
 		Random rnd = new Random();
 		int rndGenome;
 		
-		for (int i = 1; i < players.size(); i++) {
-			Player p = players.get(i);
+		while(pIt.hasNext()) {
+			Player p = pIt.next();
 			
 			if(genomes.length > 2) {
 				rndGenome = rnd.nextInt(genomes.length);
@@ -108,10 +113,11 @@ public class GameController {
 		}
 
 		humanPlayer = null;
-		players.get(0).ai = a1;
-		players.get(1).ai = a2;
-		players.get(2).ai = a3;
-		players.get(3).ai = a4;
+		Iterator<Player> pIt = players.iterator();
+		pIt.next().ai = a1;
+		pIt.next().ai = a2;
+		pIt.next().ai = a3;
+		pIt.next().ai = a4;
 
 		for (Player p : players)
 			p.ai.setGameVars(this, map, p);
@@ -143,11 +149,11 @@ public class GameController {
 			playerIndex++;
 		}
 		
-		economyRankings = new ArrayList<Player>(players);
-		militaryRankings = new ArrayList<Player>(players);
-		stratLocRankings = new ArrayList<Player>(players);
+		economyRankings = new HashSet<Player>(players);
+		militaryRankings = new HashSet<Player>(players);
+		stratLocRankings = new HashSet<Player>(players);
 
-		currentPlayer = players.get(0);
+		currentPlayer = players.iterator().next();
 	}
 
 	public void update(long timeElapsedMillis) {
@@ -185,8 +191,6 @@ public class GameController {
 					checkForAttack(u);	
 					toShow.remove(0);
 					currentShowing = null;
-				} else {
-					System.out.println("UNIT IS MOVING");
 				}
 			} else {
 				if (gameTime % 5 == 0)
@@ -438,17 +442,17 @@ public class GameController {
 			// TODO: do something if winner != null
 		}
 
-		int nextPlayer = (players.indexOf(currentPlayer) + 1) % players.size();
-		currentPlayer = players.get(nextPlayer);
-		
-		if(nextPlayer == 0) {
+		if(playersIt == null || !playersIt.hasNext())  {
 			turnsLeft--;
 			if(turnsLeft == 0) {
 				System.out.println("No more turns left!");
 				return;
 			}
+			playersIt = players.iterator();
 		}
-		
+			
+		currentPlayer = playersIt.next();
+
 		if(lostPlayers.contains(currentPlayer)) {
 			endTurnNormal();
 		} else if (currentPlayer != humanPlayer) {
@@ -475,9 +479,7 @@ public class GameController {
 				return winner;
 		}
 
-		int nextPlayer = (players.indexOf(currentPlayer) + 1) % players.size();
-		currentPlayer = players.get(nextPlayer);
-		if(nextPlayer == 0) {
+		if(playersIt == null || !playersIt.hasNext())  {
 			turnsLeft--;
 			
 			if(turnsLeft % 80 == 0)
@@ -485,7 +487,10 @@ public class GameController {
 			if(turnsLeft == 0) {
 				return getBestResult();
 			}
+			playersIt = players.iterator();
 		}
+			
+		currentPlayer = playersIt.next();
 		
 		if(!lostPlayers.contains(currentPlayer)) {
 			List<GameAction> actions = currentPlayer.ai.perform();
@@ -563,7 +568,7 @@ public class GameController {
 	}
 
 	public int getMineIncome(GameStaticObject mine) {
-		return (int) (50 / Math.pow((map.getDistToClosestCity(mine, mine.owner) - 1), 2));
+		return (int) (50 / Math.pow((map.getDistToClosestCity(mine, mine.owner)), 2));
 	}
 	
 	public int getPlayerMineIncome(Player p) {
@@ -606,7 +611,7 @@ public class GameController {
 		}
 		p.metal += totalIncome;
 		
-		if(totalIncome == 0 && p.metal < 50) { //TODO: ahh hardcoded worker cost
+		if(!lostPlayers.contains(p) && totalIncome == 0 && p.metal < 50) { //TODO: ahh hardcoded worker cost
 			lostPlayers.add(p);
 			if(Team2Civ.DEBUG_OUTPUT) System.out.println("AI lost!");
 		}
@@ -614,7 +619,7 @@ public class GameController {
 	
 	private void checkPlayersForCityLose() {
 		for(Player p: players) {
-			if(map.getPlayerCities(p).size() == 0) {
+			if(!lostPlayers.contains(p) && map.getPlayerCities(p).size() == 0) {
 				lostPlayers.add(p);
 				if(Team2Civ.DEBUG_OUTPUT) System.out.println("AI lost!");
 			}
@@ -634,10 +639,6 @@ public class GameController {
 			
 			p.scoreStratLoc = map.getPlayerStratLocScore(p);
 		}
-		
-		Collections.sort(militaryRankings, Player.militaryComparator);
-		Collections.sort(economyRankings, Player.economyComparator);
-		Collections.sort(stratLocRankings, Player.stratLocComparator);
 	}
 
 	private void addUnitToPlayer(Player p, GameStaticObject city,
@@ -849,18 +850,7 @@ public class GameController {
 			return;
 
 		if (ev.getID() == KeyEvent.KEY_PRESSED) {
-			if (ev.getKeyCode() == KeyEvent.VK_F1) {
-				GameUnitData data;
-				try {
-					data = res.getUnit("WORKER");
-					this.addUnitToPlayer(players.get(1),
-							(GameStaticObject) target, data);
-				} catch (ResNotFoundException e) {
-					e.printStackTrace();
-				}
-
-			}
-			else if(ev.getKeyCode() == KeyEvent.VK_ENTER) {
+			if(ev.getKeyCode() == KeyEvent.VK_ENTER) {
 				this.performEvent(new UIEvent(UIEvent.Event.END_TURN));
 			}
 		}
@@ -884,18 +874,18 @@ public class GameController {
 	}
 	
 	public List<Player> getPlayers() {
-		return players;
+		return new ArrayList<Player>(players);
 	}
 	
 	public List<Player> getMilitaryRankings() {
-		return militaryRankings;
+		return new ArrayList<Player>(militaryRankings);
 	}
 	
 	public List<Player> getEconomyRankings() {
-		return economyRankings;
+		return new ArrayList<Player>(economyRankings);
 	}
 	
 	public List<Player> getStratLocRankings() {
-		return stratLocRankings;
+		return new ArrayList<Player>(stratLocRankings);
 	}
 }

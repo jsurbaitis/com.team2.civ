@@ -1131,7 +1131,7 @@ public class AI {
 		}
 		
 		WalkableTile current_candidate = getBestCityTile();
-		if(current_candidate == null) return null;
+		if(current_candidate == null) return new ArrayList<GameAction>();
 		
 		List<GameAction> out = new ArrayList<GameAction>();
 		GameUnit closest_worker = null;

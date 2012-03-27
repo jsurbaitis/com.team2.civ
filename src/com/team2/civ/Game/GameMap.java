@@ -670,7 +670,7 @@ public class GameMap {
 	}
 	
 	public void removeStaticObj(GameStaticObject obj) {
-		staticObjects.remove(obj);
+		staticObjects.remove(new CoordObject(obj.mapX, obj.mapY));
 	}
 	
 	public void removeUnit(GameUnit unit) {
@@ -684,7 +684,7 @@ public class GameMap {
 	public int getDistBetween(CoordObject obj1, CoordObject obj2, Player p) {
 		List<WalkableTile> path = findPath(obj1, obj2, p);
 		if (path != null) {
-			return path.size();
+			return path.size() - 1;
 		}
 		return -1;
 	}
@@ -692,7 +692,7 @@ public class GameMap {
 	public int getDistBetween(CoordObject obj1, CoordObject obj2) {
 		List<WalkableTile> path = findPath(obj1, obj2);
 		if (path != null) {
-			return path.size();
+			return path.size() - 1;
 		}
 		return -1;
 	}
@@ -744,6 +744,6 @@ public class GameMap {
 			}
 		}
 
-		return smallestDist;
+		return smallestDist - 1;
 	}
 }
