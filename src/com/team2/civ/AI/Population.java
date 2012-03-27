@@ -126,10 +126,11 @@ public class Population {
 		this.times_used.clear();
 		
 		Random random = new Random();
-		for(int i = 0; i < genomes.length; i++) {
-			for(int j = 0; j < 5; j++) {
-				compete(genomes[i], genomes[random.nextInt(genomes.length)],
-						genomes[random.nextInt(genomes.length)], genomes[random.nextInt(genomes.length)]);
+		for (int i = genomes.length - 1; i > 1; i--) {
+			for (int j = 0; j < 5; j++) {
+				compete(genomes[i], genomes[random.nextInt(i)],
+						genomes[random.nextInt(i)],
+						genomes[random.nextInt(i)]);
 			}
 		}
 	}
