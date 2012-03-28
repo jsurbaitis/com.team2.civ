@@ -1,0 +1,22 @@
+
+Team2Civ (AKA StratLoc)
+
+Turn-based strategy game allowing for up to one (1) player and up to three (3) AI opponents.
+Uses a genetic algorithm for AI generation.
+
+How to use:
+------------------
+Normal mode:
+-normal to select
+will load 3 random AIs from /genomes or generate them if needed
+------------------
+AI mode:
+-ai to select
+-n <generations> <pop_size> to start a new population
+-r <generations> to resume old population from population_metadata.xml
+-m <threads> to run multiple games at once
+HIGHLY recommended VM command:
+-Xmx<megabytes>m to increase heap size (around 2048 for 50-80 AIs)
+------------------
+-o for detailed AI output
+------------------
