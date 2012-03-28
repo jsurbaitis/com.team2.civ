@@ -1,181 +1,113 @@
 package com.team2.civ;
 
-import java.awt.Canvas;
-import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
-import java.awt.Toolkit;
-import java.awt.Transparency;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.image.BufferStrategy;
-import java.awt.image.BufferedImage;
 import java.io.File;
-
-import javax.swing.JFrame;
-import javax.swing.WindowConstants;
 
 import com.team2.civ.AI.Generator;
 import com.team2.civ.Data.Resources;
-import com.team2.civ.Game.GameController;
 
-/* MAIN ENTRY POINT - There should be no need to modify this file
- * 
- * Creates the window and main update thread
- * Handles the framerate limit
- * Calls game updateAll method
- * 
- * Need to separate game logic and graphics thread so that logic isn't slowed down by fps limits?
- */
-
-public class Team2Civ extends Thread {
-	public static final int WINDOW_WIDTH = 1024;
-	public static final int WINDOW_HEIGHT = 768;
-	public static final int FPS_LIMIT = 60;
-	private static final long FPS_WAIT = (long) (1.0 / FPS_LIMIT * 1000);
+public class Team2Civ {
 	
-	public static final boolean AI_MODE = true;
-	public static final boolean DEBUG_OUTPUT = false;
-	
-	private long timeStartMillis;
+	public static Boolean AI_MODE;
+	public static boolean DEBUG_OUTPUT = false;
+	public static boolean MULTITHREADED = false;
+	public static int NUM_OF_THREADS = 2;
+	private static int generations = -1;
+	private static int populationSize = -1;
 
-	private GraphicsConfiguration config =
-    		GraphicsEnvironment.getLocalGraphicsEnvironment()
-							   .getDefaultScreenDevice()
-							   .getDefaultConfiguration();
-	
-	private boolean isRunning = true;
-	private JFrame frame;
-	private BufferStrategy strategy;
-	private Graphics2D graphics;
-	private Graphics2D backgroundGraphics;
-	private BufferedImage background;
-	private Canvas canvas;
-	
-	private GameController game;
-
-	public Team2Civ() {
-		frame = new JFrame();
-		frame.addWindowListener(new WindowClose());
-		frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-		frame.setResizable(false);
-        frame.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-
-		Resources.init(config);
-
-        canvas = new Canvas(config);
-        canvas.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-
-        game = new GameController();
-        game.runGame();
-        
-        canvas.addKeyListener(new KeyboardInput(game));
-        canvas.addMouseListener(new MouseInput(game));
-        canvas.addMouseMotionListener(new MouseMotionInput(game));
-        canvas.addMouseWheelListener(new MouseWheelInput(game));
-        
-        frame.add(canvas, 0);
-        background = create(WINDOW_WIDTH, WINDOW_HEIGHT, false);
-        canvas.createBufferStrategy(2);
-        do {
-                strategy = canvas.getBufferStrategy();
-        } while (strategy == null);
-
-        start();
-	}
-
-	public final BufferedImage create(final int width, final int height, final boolean alpha) {
-		return config.createCompatibleImage(width, height, alpha ? Transparency.TRANSLUCENT : Transparency.OPAQUE);
-	}
-	
-	public void run() {
-		timeStartMillis = System.currentTimeMillis();
-		backgroundGraphics = (Graphics2D) background.getGraphics();
-		while(isRunning) {
-			long renderStart = System.nanoTime();
-			
-			game.update(System.currentTimeMillis() - timeStartMillis);
-			
-			do {
-				Graphics2D g = getBuffer();
-				//Break isRunning loop here if bool has changed?
-				game.draw(backgroundGraphics);
+	private static void parseArgs(String args[]) {
+		int index = 0;
+		String token;
+		while (index < args.length) {
+			token = args[index];
+			if(token.equals("-normal")) {
+				if(AI_MODE != null && AI_MODE) {
+					System.out.println("Cannot use both -normal and -ai");
+					break;
+				}
 				
-				g.drawImage(background, 0, 0, null);
-				g.dispose();
-			} while(!updateScreen());
-			
-			long renderTime = (System.nanoTime() - renderStart) / 1000000;
-            try {
-                    Thread.sleep(Math.max(0, FPS_WAIT - renderTime));
-            } catch (InterruptedException e) {
-                    Thread.interrupted();
-                    break;
-            }
-            //System.out.println(""+(1000.0/renderTime));
-		}
-		frame.dispose();
-	}
-	
-	private Graphics2D getBuffer() {
-        if(graphics == null) {
-        	try {
-            	graphics = (Graphics2D) strategy.getDrawGraphics();
-        	} catch (IllegalStateException e) {
-        		return null;
-        	}
-        }
-        return graphics;
-    }
-	
-	private boolean updateScreen() {
-        graphics.dispose();
-        graphics = null;
-        try {
-        	strategy.show();
-        	Toolkit.getDefaultToolkit().sync();
-        	return (!strategy.contentsLost());
-        } catch (NullPointerException e) {
-                return true;
-        } catch (IllegalStateException e) {
-                return true;
-        }
-    }
-	
-	private class WindowClose extends WindowAdapter {
-        @Override
-    	public void windowClosing(final WindowEvent e) {
-            isRunning = false;
-        }
-    }
-	
-	public static void main(String args[]) {
-		if(!AI_MODE)
-			new Team2Civ();
-		else {
-			GraphicsConfiguration config =
-		    		GraphicsEnvironment.getLocalGraphicsEnvironment()
-									   .getDefaultScreenDevice()
-									   .getDefaultConfiguration();
-			
-			Resources.init(config);
-			
-			Generator g = null;
-			String mode = args[0];
-			
-			if(mode.equals("-r")) {
-				int generations = Integer.parseInt(args[1]);
-				g = new Generator(generations, new File("population_metadata.xml"));
-			}
-			else if(mode.equals("-n")) {
-				int generations = Integer.parseInt(args[1]);
-				int populationSize = Integer.parseInt(args[2]);
-				g = new Generator(generations, populationSize);
+				AI_MODE = false;
+			} else if (token.equals("-ai")) {
+				if(AI_MODE != null && !AI_MODE) {
+					System.out.println("Cannot use both -normal and -ai");
+					break;
+				}
+				
+				AI_MODE = true;
+			} else if (token.equals("-r")) {
+				if(generations != -1) {
+					System.out.println("Cannot use both -r and -n");
+					break;
+				}
+				
+				index++;
+				generations = Integer.parseInt(args[index]);
+			} else if (token.equals("-n")) {
+				if(generations != -1) {
+					System.out.println("Cannot use both -r and -n");
+					break;
+				}
+				
+				index++;
+				generations = Integer.parseInt(args[index]);
+				index++;
+				populationSize = Integer.parseInt(args[index]);
+			} else if (token.equals("-m")) {
+				Team2Civ.MULTITHREADED = true;
+				index++;
+				Team2Civ.NUM_OF_THREADS = Integer.parseInt(args[index]);
+			} else if (token.equals("-o")) {
+				DEBUG_OUTPUT = true;
 			} else {
-				System.out.println("INVALID PARAMETERS - use -r or -n");
+				System.out.println("Invalid token "+token);
+				break;
 			}
+			index++;
+		}
+	}
+
+	public static void main(String args[]) {
+		if(args.length == 0) {
+			System.out.println("How to use:");
+			System.out.println("------------------");
+			System.out.println("Normal mode:");
+			System.out.println("-normal to select");
+			System.out.println("will load 3 random AIs from /genomes or generate them if needed");
+			System.out.println("------------------");
+			System.out.println("AI mode:");
+			System.out.println("-ai to select");
+			System.out.println("-n <generations> <pop_size> to start a new population");
+			System.out.println("-r <generations> to resume old population from population_metadata.xml");
+			System.out.println("-m <threads> (threads defaults to 2) to run multiple games at once");
+			System.out.println("HIGHLY recommended VM command:");
+			System.out.println("-Xmx<megabytes>m to increase heap size (around 2048 for 50-80 AIs)");
+			System.out.println("------------------");
+			System.out.println("-o for detailed AI output");
+			System.out.println("------------------");
+			return;
+		}
+		
+		parseArgs(args);
+		
+		if(AI_MODE == null)
+			System.out.println("You must use -ai or -normal");
+		else if(AI_MODE && generations == -1)
+			System.out.println("-ai mode needs -n <generations> <pop_size> or -r <generations>");
+		else if (!AI_MODE)
+			new GameWindow();
+		else {
+			GraphicsConfiguration config = GraphicsEnvironment
+					.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+					.getDefaultConfiguration();
+
+			Resources.init(config);
+
+			Generator g = null;
+			if(populationSize != -1)
+				g = new Generator(generations, populationSize);
+			else
+				g = new Generator(generations, new File("population_metadata.xml"));
 
 			g.generate();
 		}

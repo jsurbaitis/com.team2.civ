@@ -22,7 +22,7 @@ public class GameMap {
 	public static final int MAP_WIDTH = 50;
 	public static final int MAP_HEIGHT = 50;
 	
-	private final int[][] nextPos = { { -1, 1 }, { 0, 1 }, { 1, 0 }, { 1, -1 },
+	private static final int[][] nextPos = { { -1, 1 }, { 0, 1 }, { 1, 0 }, { 1, -1 },
 			{ 0, -1 }, { -1, 0 } };
 	
 	private HashMap<CoordObject, WallTile> unwalkableMap = new HashMap<CoordObject, WallTile>();

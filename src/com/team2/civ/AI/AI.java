@@ -86,6 +86,9 @@ public class AI {
 
 	private List<String> unitQueue = new ArrayList<String>();
 	private List<GameAction> output = new ArrayList<GameAction>();
+	private boolean city_queued = false;
+	private GameUnit city_building_worker = null;
+	private WalkableTile city_target_tile = null;
 
 	public AI() {
 		this.genome = generateNewGenome();
@@ -101,12 +104,15 @@ public class AI {
 	}
 
 	public AI(AI parent1, AI parent2) {
-		int num = rnd.nextInt(2);
+		int num = rnd.nextInt(3);
 		if (num == 0) {
 			this.genome = mate1(parent1.genome, parent2.genome);
 			mutation(this.genome);
-		} else {
+		} else if (num == 1) {
 			this.genome = mate2(parent1.genome, parent2.genome);
+			mutation(this.genome);
+		} else {
+			this.genome = mate3(parent1.genome, parent2.genome);
 			mutation(this.genome);
 		}
 		this.init_st_dev_strat_loc = (int) this.genome[0];
@@ -119,6 +125,7 @@ public class AI {
 		this.current_turns_threshold = this.init_turns_threshold;
 		this.default_behavior_code = genome[5];
 	}
+
 
 	public AI(File f) {
 		this.genome = FileToBytes(f);
@@ -203,6 +210,30 @@ public class AI {
 		return out;
 	}
 
+	private byte[] mate3(byte[] parent1, byte[] parent2) {
+		// TODO Auto-generated method stub
+		byte[] new_genome = new byte[parent1.length];
+		boolean male = rnd.nextBoolean();
+		if (male){
+			for (int i = 0; i < parent1.length; i++){
+				if (i % 2 == 0){
+					new_genome[i] = parent1[i];
+				} else {
+					new_genome[i] = parent2[i];
+				}
+			}
+		} else {
+			for (int i = 0; i < parent1.length; i++){
+				if (i % 2 == 0){
+					new_genome[i] = parent2[i];
+				} else {
+					new_genome[i] = parent1[i];
+				}
+			}
+		}
+		return new_genome;
+	}
+	
 	private static void mutation(byte[] parent1) {
 		int rng = rnd.nextInt(20);
 		if (rng == 1) {
@@ -403,6 +434,8 @@ public class AI {
 			System.out.println("Queue: "+this.unitQueue.size()+" / "+this.init_queue_length);
 			System.out.println("Metal: "+owner.metal+" / "+this.init_resource_threshold);
 		}
+		
+		if (this.city_queued) output.addAll(this.execute_city_queue());
 
 		byte[] b_responses = getResponseCodes(getEnvironmentalConditions());
 		for (byte b : b_responses) {
@@ -1145,12 +1178,41 @@ public class AI {
 			if (closest_worker_distance == 0) {
 				out.add(new GameAction(GameAction.OneAgentEvent.BUILD_CITY,
 						owner, closest_worker));
+				this.city_queued = false;
+				this.city_building_worker = null;
+				this.city_target_tile = null;
 				return out;
 			}
 		}
 		out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE, owner,
 				closest_worker, current_candidate));
+		this.city_queued = true;
+		this.city_building_worker = closest_worker;
+		this.city_target_tile = current_candidate;
 		return out;
+	}
+	
+	private List<GameAction> execute_city_queue(){
+		ArrayList<GameAction> out = new ArrayList<GameAction>();
+		if (map.getUnits().contains(this.city_building_worker) && map.getDistBetween(this.city_building_worker, this.city_target_tile, owner) != -1){
+			if (map.getDistBetween(this.city_building_worker, this.city_target_tile, owner) == 0){
+				out.add(new GameAction(GameAction.OneAgentEvent.BUILD_CITY, owner, this.city_building_worker));
+				this.city_queued = false;
+				this.city_building_worker = null;
+				this.city_target_tile = null;
+				return out;
+			} else {
+				out.add(new GameAction(GameAction.TwoAgentEvent.ACTION_MOVE, owner,
+						this.city_building_worker, this.city_target_tile));
+				return out;
+			}
+		} else {
+			this.city_queued = false;
+			this.city_building_worker = null;
+			this.city_target_tile = null;
+			return out;
+		}
+		
 	}
 
 	private WalkableTile getBestCityTile() {
@@ -1175,71 +1237,77 @@ public class AI {
 
 	private List<GameAction> parseActionCode(byte b) {
 		List<GameAction> rtn = new ArrayList<GameAction>();
-
-		if (b == SEIZE_STRATEGIC_LOCATION) {
-			rtn.addAll(this.SeizeStrategicLocation(null));
-		} else if (b == SEIZE_RESOURCE) {
-			rtn.addAll(this.SeizeResource());
-		} else if (b == ATTACK_PLAYER_1) {
-			rtn.addAll(this.attackPlayer(owner.getPlayer(1, game)));
-		} else if (b == ATTACK_PLAYER_2) {
-			rtn.addAll(this.attackPlayer(owner.getPlayer(2, game)));
-		} else if (b == ATTACK_PLAYER_3) {
-			rtn.addAll(this.attackPlayer(owner.getPlayer(3, game)));
-		} else if (b == ATTACK_STRONGEST_MILITARY) {
-			rtn.addAll(this.AttackStrongestMilitary());
-		} else if (b == ATTACK_STRONGEST_ECONOMY) {
-			rtn.addAll(this.AttackStrongestEconomy());
-		} else if (b == ATTACK_WEAKEST_MILITARY) {
-			rtn.addAll(this.AttackWeakestMilitary());
-		} else if (b == ATTACK_WEAKEST_ECONOMY) {
-			rtn.addAll(this.AttackWeakestEconomy());
-		} else if (b == HARASS_PLAYER_1) {
-			rtn.addAll(this.harassPlayer(owner.getPlayer(1, game)));
-		} else if (b == HARASS_PLAYER_2) {
-			rtn.addAll(this.harassPlayer(owner.getPlayer(2, game)));
-		} else if (b == HARASS_PLAYER_3) {
-			rtn.addAll(this.harassPlayer(owner.getPlayer(3, game)));
-		} else if (b == HARASS_STRONGEST_MILITARY) {
-			rtn.addAll(this.harassStrongestMilitary());
-		} else if (b == HARASS_STRONGEST_ECONOMY) {
-			rtn.addAll(this.HarassStrongestEconomy());
-		} else if (b == HARASS_WEAKEST_MILITARY) {
-			rtn.addAll(this.HarassWeakestMilitary());
-		} else if (b == HARASS_WEAKEST_ECONOMY) {
-			rtn.addAll(this.harassWeakestEconomy());
-		} else if (b == MAKE_WORKER) {
-			rtn.addAll(this.makeWorker());
-		} else if (b == MAKE_TANK) {
-			rtn.addAll(this.makeTank());
-		} else if (b == MAKE_AIR) {
-			rtn.addAll(this.makeAir());
-		} else if (b == MAKE_ANIAIR) {
-			rtn.addAll(this.makeAntiAir());
-		} else if (b == FORTIFY_STRATEGIC_LOCATION) {
-			rtn.addAll(this.FortifyStrategicLocation());
-		} else if (b == FORTIFY_RESOURCE) {
-			rtn.addAll(this.FortifyResource());
-		} else if (b == FORTIFY_CITY) {
-			rtn.addAll(this.FortifyCity());
-		} else if (b == CLEAR_UNIT_QUEUE) {
-			rtn.addAll(this.ClearUnitQueue());
-		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10) {
-			rtn.addAll(this.CombatWinChanceTolerancePlus10());
-		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10) {
-			rtn.addAll(this.CombatWinChanceToleranceMinus10());
-		} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_RESET_TO_DEFAULT) {
-			rtn.addAll(this.CombatWinChanceToleranceResetToDefault());
-		} else if (b == TURNS_LEFT_THRESHOLD_MINUS_20) {
-			rtn.addAll(this.TurnsLeftThresholdMinus20());
-		} else if (b == TURNS_LEFT_THRESHOLD_PLUS_20) {
-			rtn.addAll(this.TurnsLeftThresholdPlus20());
-		} else if (b == TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT) {
-			rtn.addAll(this.TurnsLeftThresholdResetToDefault());
-		} else if (b == CREATE_NEW_CITY) {
-			rtn.addAll(this.CreateNewCity());			
-		} else if (b != NO_ACTION) {
-			Exception e = new Exception("No action found for byte: " + b);
+		try {
+			if (rnd.nextInt(1000) == 1 && owner.canAfford(res.getStaticObject("CITY"))) {
+				rtn.addAll(this.CreateNewCity());
+			}
+			if (b == SEIZE_STRATEGIC_LOCATION) {
+				rtn.addAll(this.SeizeStrategicLocation(null));
+			} else if (b == SEIZE_RESOURCE) {
+				rtn.addAll(this.SeizeResource());
+			} else if (b == ATTACK_PLAYER_1) {
+				rtn.addAll(this.attackPlayer(owner.getPlayer(1, game)));
+			} else if (b == ATTACK_PLAYER_2) {
+				rtn.addAll(this.attackPlayer(owner.getPlayer(2, game)));
+			} else if (b == ATTACK_PLAYER_3) {
+				rtn.addAll(this.attackPlayer(owner.getPlayer(3, game)));
+			} else if (b == ATTACK_STRONGEST_MILITARY) {
+				rtn.addAll(this.AttackStrongestMilitary());
+			} else if (b == ATTACK_STRONGEST_ECONOMY) {
+				rtn.addAll(this.AttackStrongestEconomy());
+			} else if (b == ATTACK_WEAKEST_MILITARY) {
+				rtn.addAll(this.AttackWeakestMilitary());
+			} else if (b == ATTACK_WEAKEST_ECONOMY) {
+				rtn.addAll(this.AttackWeakestEconomy());
+			} else if (b == HARASS_PLAYER_1) {
+				rtn.addAll(this.harassPlayer(owner.getPlayer(1, game)));
+			} else if (b == HARASS_PLAYER_2) {
+				rtn.addAll(this.harassPlayer(owner.getPlayer(2, game)));
+			} else if (b == HARASS_PLAYER_3) {
+				rtn.addAll(this.harassPlayer(owner.getPlayer(3, game)));
+			} else if (b == HARASS_STRONGEST_MILITARY) {
+				rtn.addAll(this.harassStrongestMilitary());
+			} else if (b == HARASS_STRONGEST_ECONOMY) {
+				rtn.addAll(this.HarassStrongestEconomy());
+			} else if (b == HARASS_WEAKEST_MILITARY) {
+				rtn.addAll(this.HarassWeakestMilitary());
+			} else if (b == HARASS_WEAKEST_ECONOMY) {
+				rtn.addAll(this.harassWeakestEconomy());
+			} else if (b == MAKE_WORKER) {
+				rtn.addAll(this.makeWorker());
+			} else if (b == MAKE_TANK) {
+				rtn.addAll(this.makeTank());
+			} else if (b == MAKE_AIR) {
+				rtn.addAll(this.makeAir());
+			} else if (b == MAKE_ANIAIR) {
+				rtn.addAll(this.makeAntiAir());
+			} else if (b == FORTIFY_STRATEGIC_LOCATION) {
+				rtn.addAll(this.FortifyStrategicLocation());
+			} else if (b == FORTIFY_RESOURCE) {
+				rtn.addAll(this.FortifyResource());
+			} else if (b == FORTIFY_CITY) {
+				rtn.addAll(this.FortifyCity());
+			} else if (b == CLEAR_UNIT_QUEUE) {
+				rtn.addAll(this.ClearUnitQueue());
+			} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_PLUS_10) {
+				rtn.addAll(this.CombatWinChanceTolerancePlus10());
+			} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_MINUS_10) {
+				rtn.addAll(this.CombatWinChanceToleranceMinus10());
+			} else if (b == COMBAT_WIN_CHANCE_TOLERANCE_RESET_TO_DEFAULT) {
+				rtn.addAll(this.CombatWinChanceToleranceResetToDefault());
+			} else if (b == TURNS_LEFT_THRESHOLD_MINUS_20) {
+				rtn.addAll(this.TurnsLeftThresholdMinus20());
+			} else if (b == TURNS_LEFT_THRESHOLD_PLUS_20) {
+				rtn.addAll(this.TurnsLeftThresholdPlus20());
+			} else if (b == TURNS_LEFT_THRESHOLD_RESET_TO_DEFAULT) {
+				rtn.addAll(this.TurnsLeftThresholdResetToDefault());
+			} else if (b == CREATE_NEW_CITY) {
+				rtn.addAll(this.CreateNewCity());			
+			} else if (b != NO_ACTION) {
+				Exception e = new Exception("No action found for byte: " + b);
+				e.printStackTrace();
+			}
+		} catch (ResNotFoundException e) {
 			e.printStackTrace();
 		}
 

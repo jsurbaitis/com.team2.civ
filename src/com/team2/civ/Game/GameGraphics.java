@@ -5,7 +5,7 @@ import java.awt.Graphics2D;
 import java.util.Collections;
 import java.util.Vector;
 
-import com.team2.civ.Team2Civ;
+import com.team2.civ.GameWindow;
 import com.team2.civ.Map.MapObjectImage;
 import com.team2.civ.Map.WalkableTile;
 import com.team2.civ.Map.WallTile;
@@ -47,11 +47,11 @@ public class GameGraphics {
 	}
 	
 	public int getShowingWidth() {
-		return (int) (Team2Civ.WINDOW_WIDTH * (1 / scale));
+		return (int) (GameWindow.WINDOW_WIDTH * (1 / scale));
 	}
 	
 	public int getShowingHeight() {
-		return (int) (Team2Civ.WINDOW_HEIGHT * (1 / scale));
+		return (int) (GameWindow.WINDOW_HEIGHT * (1 / scale));
 	}
 	
 	public int getOffsetX() {
@@ -137,7 +137,7 @@ public class GameGraphics {
 	
 	public void draw(Graphics2D g) {
 		g.setColor(Color.BLACK);
-		g.fillRect(0, 0, Team2Civ.WINDOW_WIDTH, Team2Civ.WINDOW_HEIGHT);
+		g.fillRect(0, 0, GameWindow.WINDOW_WIDTH, GameWindow.WINDOW_HEIGHT);
 
 		g.scale(scale, scale);
 

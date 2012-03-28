@@ -3,7 +3,7 @@ package com.team2.civ.Map;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
-import com.team2.civ.Team2Civ;
+import com.team2.civ.GameWindow;
 import com.team2.civ.Data.Resources;
 
 public class MapObjectImage implements Comparable<MapObjectImage> {
@@ -48,8 +48,8 @@ public class MapObjectImage implements Comparable<MapObjectImage> {
 	}
 	
 	protected boolean checkVisibility(int offsetX, int offsetY, double scale) {
-		if(parent.x + offsetX + getWidth() > 0 && parent.x + offsetX < Team2Civ.WINDOW_WIDTH * (1/scale) && 
-		   parent.y + offsetY + getHeight() > 0 && parent.y + offsetY < Team2Civ.WINDOW_HEIGHT * (1/scale))
+		if(parent.x + offsetX + getWidth() > 0 && parent.x + offsetX < GameWindow.WINDOW_WIDTH * (1/scale) && 
+		   parent.y + offsetY + getHeight() > 0 && parent.y + offsetY < GameWindow.WINDOW_HEIGHT * (1/scale))
 			return true;
 		else
 			return false;

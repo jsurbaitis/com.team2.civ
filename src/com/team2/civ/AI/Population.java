@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Random;
 import java.util.Scanner;
 
+import com.team2.civ.Team2Civ;
 import com.team2.civ.Game.GameController;
 
 
@@ -24,6 +25,7 @@ public class Population {
 	private double fitness_level = 0;
 	private int init_generation;
 	private int gameNumber = 0;
+	private Random rnd = new Random();
 
 	public Population(int pop_size) {
 		population_size = pop_size;
@@ -83,24 +85,6 @@ public class Population {
 		}
 	}
 
-	public void compete(AI ai1, AI ai2, AI ai3, AI ai4) {
-		if (getTimesUsed(ai1) > 5 || getTimesUsed(ai2) > 5
-				|| getTimesUsed(ai3) > 5 || getTimesUsed(ai4) > 5) {
-			return;
-		}
-		
-		AIGameResult winner = (new GameController()).runGame(ai1, ai2, ai3, ai4);
-		fitness.put(winner.winner, (getFitness(winner.winner) + winner.score));
-		
-		incTimesUsed(ai1);
-		incTimesUsed(ai2);
-		incTimesUsed(ai3);
-		incTimesUsed(ai4);
-		
-		gameNumber++;
-		System.out.println("\nGame "+gameNumber+" completed\n");
-	}
-
 	public float getFitness(AI ai) {
 		if(!fitness.containsKey(ai))
 			return 0;
@@ -120,19 +104,124 @@ public class Population {
 		else
 			times_used.put(ai, times_used.get(ai) + 1);
 	}
+	
+	private class GameThread extends Thread {
+		
+		public AI a1, a2, a3, a4;
+		private AIGameResult winner;
+		private boolean isDone = false;
+		
+		public GameThread(AI a1, AI a2, AI a3, AI a4) {
+			this.a1 = a1;
+			this.a2 = a2;
+			this.a3 = a3;
+			this.a4 = a4;
+		}
+		
+		public AIGameResult getWinner() {
+			return winner;
+		}
+		
+		public boolean isDone() {
+			return isDone;
+		}
+		
+		@Override
+		public void run() {
+			winner = (new GameController()).runGame(a1, a2, a3, a4);
+			isDone = true;
+		}
+	}
+	
+	public void compete(AI ai1, AI ai2, AI ai3, AI ai4) {
+		AIGameResult winner = (new GameController()).runGame(ai1, ai2, ai3, ai4);
+		updateStats(winner, ai1, ai2, ai3, ai4);
+	}
+	
+	private boolean aiValidForGame(AI ai1, AI ai2, AI ai3, AI ai4) {
+		return (getTimesUsed(ai1) <= 5 || getTimesUsed(ai2) <= 5
+				|| getTimesUsed(ai3) <= 5 || getTimesUsed(ai4) <= 5);
+	}
+	
+	public void updateStats(GameThread thread) {
+		updateStats(thread.getWinner(), thread.a1, thread.a2, thread.a3, thread.a4);
+	}
+	
+	public void updateStats(AIGameResult winner, AI ai1, AI ai2, AI ai3, AI ai4) {
+		fitness.put(winner.winner, (getFitness(winner.winner) + winner.score));
+		
+		incTimesUsed(ai1);
+		incTimesUsed(ai2);
+		incTimesUsed(ai3);
+		incTimesUsed(ai4);
+		
+		gameNumber++;
+		System.out.println("\nGame "+gameNumber+" completed\n");
+	}
 
 	public void competeAll() {
 		this.fitness.clear();
 		this.times_used.clear();
 		
-		Random random = new Random();
-		for (int i = genomes.length - 1; i > 1; i--) {
-			for (int j = 0; j < 5; j++) {
-				compete(genomes[i], genomes[random.nextInt(i)],
-						genomes[random.nextInt(i)],
-						genomes[random.nextInt(i)]);
+		AI a1, a2, a3, a4;
+		for(int j = 0; j < 5; j++) {
+			if(!Team2Civ.MULTITHREADED) {
+				for (int i = 0; i < genomes.length; i += 4) {
+					a1 = genomes[i];
+					a2 = genomes[i+1];
+					a3 = genomes[i+2];
+					a4 = genomes[i+3];
+					if(this.aiValidForGame(a1, a2, a3, a4))
+						compete(a1, a2, a3, a4);
+				}
 			}
+			else {
+				GameThread[] threads = new GameThread[Team2Civ.NUM_OF_THREADS];
+
+				for (int i = 0; i < genomes.length; i += 4*threads.length) {
+					for(int z = 0; z < threads.length; z++) {
+						a1 = genomes[i+z*4];
+						a2 = genomes[i+z*4+1];
+						a3 = genomes[i+z*4+2];
+						a4 = genomes[i+z*4+3];
+						if(this.aiValidForGame(a1, a2, a3, a4)) {
+							threads[j] = new GameThread(a1, a2, a3, a4);
+							threads[j].setPriority(Thread.MAX_PRIORITY);
+							threads[j].start();
+						}
+					}
+					while(!threadsComplete(threads)) {}
+					
+					for(int z = 0; z < threads.length; z++)
+						if(threads[z] != null)
+							updateStats(threads[z]);
+				}
+				
+				
+			}
+			
+			this.shuffleGenomes();
 		}
+	}
+	
+	private void shuffleGenomes() {
+		AI temp;
+		int next;
+		for(int i = 0; i < genomes.length; i++) {
+			next = rnd.nextInt(genomes.length);
+			temp = genomes[next];
+			genomes[next] = genomes[i];
+			genomes[i] = temp;
+		}
+	}
+	
+	private boolean threadsComplete(GameThread[] threads) {
+		for(int i = 0; i < threads.length; i++) {
+			if(threads[i] != null && !threads[i].isDone())
+				return false;
+		}
+
+		return true;
 	}
 
 	public void cullHerd() {
@@ -150,15 +239,18 @@ public class Population {
 			}
 		}
 		int k = j;
-		Random random = new Random();
 		
 		if(k == 0) {
 			this.populate();
 		} else {
 			for (int t = j; t < genomes.length; t++) {
-				AI parent1 = newAI[random.nextInt(k)];
-				AI parent2 = newAI[random.nextInt(k)];
-				newAI[j] = new AI(parent1, parent2);
+				if (rnd.nextInt(50) == 1){
+					AI parent1 = newAI[rnd.nextInt(k)];
+					AI parent2 = newAI[rnd.nextInt(k)];
+					newAI[j] = new AI(parent1, parent2);
+				} else {
+					newAI[j] = new AI();
+				}
 				j++;
 			}
 			

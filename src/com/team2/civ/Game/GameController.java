@@ -6,16 +6,15 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.Vector;
 
 import javax.swing.SwingUtilities;
 
+import com.team2.civ.GameWindow;
 import com.team2.civ.Team2Civ;
 import com.team2.civ.AI.AI;
 import com.team2.civ.AI.AIGameResult;
@@ -48,11 +47,11 @@ public class GameController {
 	private GameGraphics graphics;
 
 	private Iterator<Player> playersIt;
-	private Set<Player> players = new HashSet<Player>();
-	private Set<Player> lostPlayers = new HashSet<Player>();
-	private Set<Player> militaryRankings = new TreeSet<Player>(Player.militaryComparator);
-	private Set<Player> economyRankings = new TreeSet<Player>(Player.economyComparator);
-	private Set<Player> stratLocRankings = new TreeSet<Player>(Player.stratLocComparator);
+	private List<Player> players = new ArrayList<Player>();
+	private List<Player> lostPlayers = new ArrayList<Player>();
+	private List<Player> militaryRankings = new ArrayList<Player>();
+	private List<Player> economyRankings = new ArrayList<Player>();
+	private List<Player> stratLocRankings = new ArrayList<Player>();
 	public Player humanPlayer;
 	private Player currentPlayer;
 	private MapObject target;
@@ -77,8 +76,7 @@ public class GameController {
 			e.printStackTrace();
 		}
 
-		Iterator<Player> pIt = players.iterator();
-		humanPlayer = pIt.next();
+		humanPlayer = players.get(0);
 		
 		File folder = new File("genomes/");
 		if(!folder.exists()) folder.mkdir();
@@ -87,9 +85,7 @@ public class GameController {
 		Random rnd = new Random();
 		int rndGenome;
 		
-		while(pIt.hasNext()) {
-			Player p = pIt.next();
-			
+		for(Player p: players) {
 			if(genomes.length > 2) {
 				rndGenome = rnd.nextInt(genomes.length);
 				p.ai = new AI(new File("genomes/genome_"+rndGenome));
@@ -113,11 +109,10 @@ public class GameController {
 		}
 
 		humanPlayer = null;
-		Iterator<Player> pIt = players.iterator();
-		pIt.next().ai = a1;
-		pIt.next().ai = a2;
-		pIt.next().ai = a3;
-		pIt.next().ai = a4;
+		players.get(0).ai = a1;
+		players.get(1).ai = a2;
+		players.get(2).ai = a3;
+		players.get(3).ai = a4;
 
 		for (Player p : players)
 			p.ai.setGameVars(this, map, p);
@@ -141,19 +136,21 @@ public class GameController {
 
 			if (!Team2Civ.AI_MODE && playerIndex == 1) {
 				graphics = new GameGraphics(map);
-				int offsetX = -city.x + Team2Civ.WINDOW_WIDTH / 2;
-				int offsetY = -city.y + Team2Civ.WINDOW_HEIGHT / 2;
+				int offsetX = -city.x + GameWindow.WINDOW_WIDTH / 2;
+				int offsetY = -city.y + GameWindow.WINDOW_HEIGHT / 2;
 				graphics.setOffsets(offsetX, offsetY);
 			}
 
 			playerIndex++;
 		}
 		
-		economyRankings = new HashSet<Player>(players);
-		militaryRankings = new HashSet<Player>(players);
-		stratLocRankings = new HashSet<Player>(players);
+		for(Player p: players) {
+			economyRankings.add(p);
+			militaryRankings.add(p);
+			stratLocRankings.add(p);
+		}
 
-		currentPlayer = players.iterator().next();
+		currentPlayer = players.get(0);
 	}
 
 	public void update(long timeElapsedMillis) {
@@ -181,8 +178,8 @@ public class GameController {
 			if(currentShowing == null)
 				currentShowing = toShow.get(0);
 			
-			int offsetX = -currentShowing.target.x + Team2Civ.WINDOW_WIDTH / 2;
-			int offsetY = -currentShowing.target.y + Team2Civ.WINDOW_HEIGHT / 2;
+			int offsetX = -currentShowing.target.x + GameWindow.WINDOW_WIDTH / 2;
+			int offsetY = -currentShowing.target.y + GameWindow.WINDOW_HEIGHT / 2;
 			graphics.setOffsets(offsetX, offsetY);
 			
 			if (currentShowing.movement) {
@@ -334,6 +331,7 @@ public class GameController {
 		
 		if(bestTarget != null) {
 			startMovement(unit, bestTarget);
+			unit.AP = 0;
 			return;
 		}
 		
@@ -360,7 +358,7 @@ public class GameController {
 
 	public int calcCombatDmg(GameUnit attacker, GameUnit target) {
 		GameStaticObject so = map.getStaticObj(target);
-		int dmg = attacker.getDmgToDeal(target.data.id);
+		double dmg = attacker.getDmgToDeal(target.data.id);
 		if (so != null)
 			dmg *= (1 - so.data.defensiveBonus / 100);
 
@@ -368,7 +366,7 @@ public class GameController {
 		double modif = (80 + rnd.nextInt(40)) / 100;
 		dmg *= modif;
 
-		return dmg;
+		return (int) Math.round(dmg);
 	}
 
 	private void startCombatTargeting() {
@@ -639,6 +637,10 @@ public class GameController {
 			
 			p.scoreStratLoc = map.getPlayerStratLocScore(p);
 		}
+		
+		Collections.sort(militaryRankings, Player.militaryComparator);
+		Collections.sort(economyRankings, Player.economyComparator);
+		Collections.sort(stratLocRankings, Player.stratLocComparator);
 	}
 
 	private void addUnitToPlayer(Player p, GameStaticObject city,
@@ -874,18 +876,18 @@ public class GameController {
 	}
 	
 	public List<Player> getPlayers() {
-		return new ArrayList<Player>(players);
+		return players;
 	}
 	
 	public List<Player> getMilitaryRankings() {
-		return new ArrayList<Player>(militaryRankings);
+		return militaryRankings;
 	}
 	
 	public List<Player> getEconomyRankings() {
-		return new ArrayList<Player>(economyRankings);
+		return economyRankings;
 	}
 	
 	public List<Player> getStratLocRankings() {
-		return new ArrayList<Player>(stratLocRankings);
+		return stratLocRankings;
 	}
 }
