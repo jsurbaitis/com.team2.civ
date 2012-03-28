@@ -6,6 +6,7 @@ import java.io.File;
 
 import com.team2.civ.AI.Generator;
 import com.team2.civ.Data.Resources;
+import com.team2.civ.Game.GameMap;
 
 public class Team2Civ {
 	
@@ -21,7 +22,10 @@ public class Team2Civ {
 		String token;
 		while (index < args.length) {
 			token = args[index];
-			if(token.equals("-normal")) {
+			
+			if(token.equals("-fowoff")) {
+				GameMap.FOW_ON = false;
+			} else if(token.equals("-normal")) {
 				if(AI_MODE != null && AI_MODE) {
 					System.out.println("Cannot use both -normal and -ai");
 					break;
@@ -79,16 +83,20 @@ public class Team2Civ {
 			System.out.println("-ai to select");
 			System.out.println("-n <generations> <pop_size> to start a new population");
 			System.out.println("-r <generations> to resume old population from population_metadata.xml");
-			System.out.println("-m <threads> (threads defaults to 2) to run multiple games at once");
+			System.out.println("-m <threads> to run multiple games at once");
 			System.out.println("HIGHLY recommended VM command:");
 			System.out.println("-Xmx<megabytes>m to increase heap size (around 2048 for 50-80 AIs)");
 			System.out.println("------------------");
 			System.out.println("-o for detailed AI output");
+			System.out.println("-fowoff to turn off fog of war");
 			System.out.println("------------------");
 			return;
 		}
 		
 		parseArgs(args);
+		
+		File folder = new File("genomes/");
+		if(!folder.exists()) folder.mkdir();
 		
 		if(AI_MODE == null)
 			System.out.println("You must use -ai or -normal");

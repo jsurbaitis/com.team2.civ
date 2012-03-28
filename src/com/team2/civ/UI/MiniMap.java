@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 
-import com.team2.civ.Team2Civ;
+import com.team2.civ.GameWindow;
 import com.team2.civ.Data.Resources;
 import com.team2.civ.Game.GameGraphics;
 import com.team2.civ.Game.GameMap;
@@ -78,8 +78,8 @@ public class MiniMap extends UIElement {
     	// Unscrambling magic numbers;
     	mx=mx-this.x+width/5;
     	my=my-this.y-height*2/5-5;
-    	my=my*minimapY/2-Team2Civ.WINDOW_HEIGHT/2;
-    	mx=mx*minimapX-Team2Civ.WINDOW_WIDTH/2;
+    	my=my*minimapY/2-GameWindow.WINDOW_HEIGHT/2;
+    	mx=mx*minimapX-GameWindow.WINDOW_WIDTH/2;
     	graphics.setOffsets(-mx, -my);
     	
     }

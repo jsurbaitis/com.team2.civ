@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
+import com.team2.civ.Game.GameMap;
 import com.team2.civ.Game.Player;
 
 
@@ -13,7 +14,7 @@ public class MapObject extends CoordObject {
 	public boolean selected = false;
 	public boolean highlighted = false;
 	
-	public boolean seen = false;
+	public boolean seen = GameMap.FOW_ON ? false : true;
 	public boolean beingSeen = true;
 	
 	protected MapObjectImage image;
@@ -28,6 +29,7 @@ public class MapObject extends CoordObject {
 		beingSeen = true;
 		seen = true;
 		
+		//TODO:
 		//check if it has been destroyed
 		//if yes, finally stop drawing it since player is aware of the change
 	}

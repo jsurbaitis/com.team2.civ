@@ -79,7 +79,6 @@ public class GameController {
 		humanPlayer = players.get(0);
 		
 		File folder = new File("genomes/");
-		if(!folder.exists()) folder.mkdir();
 		String[] genomes = folder.list();
 		
 		Random rnd = new Random();
@@ -123,7 +122,8 @@ public class GameController {
 	private void initGame() throws ResNotFoundException {
 		map = new GameMap();
 		
-		Player.Color[] colors = { Player.Color.RED, Player.Color.GREEN, Player.Color.BLUE, Player.Color.PINK };
+		Player.PlayerColor[] colors = { Player.PlayerColor.RED, Player.PlayerColor.GREEN, 
+				Player.PlayerColor.BLUE, Player.PlayerColor.PINK };
 		int playerIndex = 1;
 
 		for (GameStaticObject city : map.getAllCities()) {
@@ -479,9 +479,7 @@ public class GameController {
 
 		if(playersIt == null || !playersIt.hasNext())  {
 			turnsLeft--;
-			
-			if(turnsLeft % 80 == 0)
-				System.out.println("TURNS LEFT: "+turnsLeft);
+
 			if(turnsLeft == 0) {
 				return getBestResult();
 			}
@@ -728,7 +726,7 @@ public class GameController {
 			startCombatTargeting();
 		else if (event.e == UIEvent.Event.ACTION_DESTROY) {
 			destroyUnit((GameUnit) target);
-			target = null;
+			detarget();
 		} else if (event.e == UIEvent.Event.ACTION_FORTIFY)
 			fortifyUnit((GameUnit) target);
 		else if (event.e == UIEvent.Event.END_TURN) {

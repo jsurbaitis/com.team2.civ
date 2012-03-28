@@ -17,8 +17,12 @@ AI mode:
 -m <threads> to run multiple games at once
 HIGHLY recommended VM command:
 -Xmx<megabytes>m to increase heap size (around 2048 for 50-80 AIs)
+
+pop_size must be divisible by 4
+threads*4 must be less than or equal to pop_size
 ------------------
 -o for detailed AI output
+-fowoff to turn off fog of war
 ------------------
 
 Example command:

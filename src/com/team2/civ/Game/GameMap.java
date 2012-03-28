@@ -17,7 +17,7 @@ import com.team2.civ.Map.WallTile;
 
 public class GameMap {
 	
-	private static final boolean FOW_ON = false;
+	public static boolean FOW_ON = true;
 
 	public static final int MAP_WIDTH = 50;
 	public static final int MAP_HEIGHT = 50;

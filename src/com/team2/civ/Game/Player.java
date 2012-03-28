@@ -1,5 +1,6 @@
 package com.team2.civ.Game;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Comparator;
 
@@ -8,10 +9,10 @@ import com.team2.civ.Data.GameStaticObjectData;
 import com.team2.civ.Data.GameUnitData;
 
 public class Player {
-	public static enum Color { RED, BLUE, GREEN, PINK };
+	public static enum PlayerColor { RED, BLUE, GREEN, PINK };
 	
 	public String name;
-	public Color colour;
+	public PlayerColor colour;
 	
 	public int scoreMilitary = 0;
 	public int scoreEconomy = 0;
@@ -31,10 +32,21 @@ public class Player {
 	public ArrayList<GameUnit> units = new ArrayList<GameUnit>();
 	public ArrayList<GameStaticObject> objects = new ArrayList<GameStaticObject>();
 	
-	public Player(String name, Color colour, AI ai) {
+	public Player(String name, PlayerColor colour, AI ai) {
 		this.name = name;
 		this.colour = colour;
 		this.ai = ai;
+	}
+	
+	public Color getColor() {
+		switch(colour) {
+		case RED: return Color.RED;
+		case BLUE: return Color.blue;
+		case GREEN: return Color.GREEN;
+		case PINK: return Color.pink;
+		}
+		
+		return null;
 	}
 	
 	public boolean canAfford(GameUnitData data) {
