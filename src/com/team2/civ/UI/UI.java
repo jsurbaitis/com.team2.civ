@@ -7,7 +7,7 @@ import java.util.Vector;
 
 import javax.swing.SwingUtilities;
 
-import com.team2.civ.GameWindow;
+import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.ResNotFoundException;
 import com.team2.civ.Data.Resources;
 import com.team2.civ.Game.GameController;
@@ -23,8 +23,8 @@ public class UI {
 	private Player player;
 	MiniMap miniMap;
 	UIButton endButton;
-	final int WW = GameWindow.WINDOW_WIDTH;
-	final int WH = GameWindow.WINDOW_HEIGHT;
+	final int WW = Team2Civ.WINDOW_WIDTH;
+	final int WH = Team2Civ.WINDOW_HEIGHT;
 	private Vector<UISlider> sliders = new Vector<UISlider>();
 	UIText curmetal;
 	UIText curpop;
@@ -365,6 +365,7 @@ public class UI {
 				if (temp != null)
 					event = temp;
 			}
+
 			if (event!=null&&event.actor!=null){
 				if(event.actor instanceof GameUnit) 
 				showUnitInfo((GameUnit) event.actor);
@@ -376,8 +377,6 @@ public class UI {
 			if (ev.getX() > miniMap.x && ev.getX() < miniMap.x + miniMap.width
 					&& ev.getY() < miniMap.height + miniMap.y
 					&& ev.getY() > miniMap.y) {
-				closeVSlide();
-				closeHSlide();
 
 				miniMap.pickedcrd(ev);
 
@@ -398,8 +397,9 @@ public class UI {
 				return (new UIEvent(UIEvent.Event.END_TURN));
 			}
 		}
-		closeHSlide();
-		closeVSlide();
+		if (choiceSlider !=null && !choiceSlider.picked(ev.getX(),ev.getY())) 		
+		{closeHSlide();
+		closeVSlide();}
 		return event;
 	}
 
