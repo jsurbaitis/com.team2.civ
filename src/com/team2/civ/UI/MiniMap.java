@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 
-import com.team2.civ.GameWindow;
+import com.team2.civ.Team2Civ;
 import com.team2.civ.Data.Resources;
 import com.team2.civ.Game.GameGraphics;
 import com.team2.civ.Game.GameMap;
@@ -35,29 +35,36 @@ public class MiniMap extends UIElement {
 		int mapW = 2*maxX;
 		int minimapX = (x*(this.width) / (mapW))+1 ;
 		int minimapY = (y* this.height / (mapH))+1 ;
-		g.setColor(Color.blue);
+		g.setColor(Color.black);
 		g.fillRect(x, y, width, height);
-		g.setColor(Color.gray);
 		
 		for(WallTile wt: map.getUnwalkableMap()) {
+			if (wt.type.equals(WallTile.Type.MOUNTAIN)) g.setColor(Color.gray);
+			else g.setColor(Color.blue);
+			if (wt.seen)
 			g.fillRect(wt.x/minimapX+this.x-width/5, 2*wt.y/minimapY+ height*2/5+5+this.y, 7, 3);
 		}
-		g.setColor(Color.green);
+		g.setColor( new Color (102,205,170));
 		for (WalkableTile wt:map.getWalkableMap()){
+			if (wt.seen)
 			g.fillRect(wt.x/minimapX+this.x-width/5, 2*wt.y/minimapY+ height*2/5+5+this.y, 7, 3);
 		}
 		
 		for (GameStaticObject wt:map.getAllCities()){
-			if (wt.owner.ai==null) g.setColor(Color.white);
-			else g.setColor(Color.red);
+		 g.setColor(wt.owner.getColor());
+		 if (wt.beingSeen)
 			g.fillRect(wt.x/minimapX+this.x-width/5, 2*wt.y/minimapY+ height*2/5+5+this.y, 7, 3);
 		}
 		
 		for (GameUnit wt:map.getUnits()){
-			if (wt.owner.ai==null) g.setColor(Color.yellow);
-			else g.setColor(Color.red);
+			 g.setColor(wt.owner.getColor());
+			 if (wt.beingSeen)
 			g.fillRect(wt.x/minimapX+this.x-width/5, 2*wt.y/minimapY+ height*2/5+5+this.y, 7, 3);
 		}
+		g.setColor(Color.white);
+		int tempx= -graphics.getOffsetX();
+		int tempy= -graphics.getOffsetY();
+		g.drawRect(tempx/minimapX+this.x-width/5, 2*tempy/minimapY+ height*2/5+10+this.y, graphics.getShowingWidth()/minimapX, graphics.getShowingHeight()/minimapY);
 
 	}
     public void pickedcrd (MouseEvent ev){
@@ -71,8 +78,8 @@ public class MiniMap extends UIElement {
     	// Unscrambling magic numbers;
     	mx=mx-this.x+width/5;
     	my=my-this.y-height*2/5-5;
-    	my=my*minimapY/2-GameWindow.WINDOW_HEIGHT/2;
-    	mx=mx*minimapX-GameWindow.WINDOW_WIDTH/2;
+    	my=my*minimapY/2-Team2Civ.WINDOW_HEIGHT/2;
+    	mx=mx*minimapX-Team2Civ.WINDOW_WIDTH/2;
     	graphics.setOffsets(-mx, -my);
     	
     }
