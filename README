@@ -20,3 +20,8 @@ HIGHLY recommended VM command:
 ------------------
 -o for detailed AI output
 ------------------
+
+Example command:
+	java -jar -Xmx480m team2civ.jar -n 10 20   <- Will generate 10 ais and run 20 generations using them
+
+http://team2civ.chasestevens.com
