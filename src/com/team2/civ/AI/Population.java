@@ -167,6 +167,9 @@ public class Population {
 		for(int j = 0; j < 5; j++) {
 			if(!Team2Civ.MULTITHREADED) {
 				for (int i = 0; i < genomes.length; i += 4) {
+					if(i+3 >= genomes.length)
+						continue;
+					
 					a1 = genomes[i];
 					a2 = genomes[i+1];
 					a3 = genomes[i+2];
@@ -180,6 +183,9 @@ public class Population {
 
 				for (int i = 0; i < genomes.length; i += 4*threads.length) {
 					for(int z = 0; z < threads.length; z++) {
+						if(i+z*4+3 >= genomes.length)
+							continue;
+						
 						a1 = genomes[i+z*4];
 						a2 = genomes[i+z*4+1];
 						a3 = genomes[i+z*4+2];
