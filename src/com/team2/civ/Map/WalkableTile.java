@@ -11,5 +11,6 @@ public class WalkableTile extends MapObject {
 
 	public WalkableTile(int mapX, int mapY, String imgId, Player owner) {
 		super(mapX, mapY, imgId, owner);
+		updateFowImage(imgId);
 	}
 }

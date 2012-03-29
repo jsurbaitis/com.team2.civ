@@ -14,7 +14,6 @@ import java.util.Vector;
 
 import javax.swing.SwingUtilities;
 
-import com.team2.civ.GameWindow;
 import com.team2.civ.Team2Civ;
 import com.team2.civ.AI.AI;
 import com.team2.civ.AI.AIGameResult;
@@ -136,9 +135,7 @@ public class GameController {
 
 			if (!Team2Civ.AI_MODE && playerIndex == 1) {
 				graphics = new GameGraphics(map);
-				int offsetX = -city.x + GameWindow.WINDOW_WIDTH / 2;
-				int offsetY = -city.y + GameWindow.WINDOW_HEIGHT / 2;
-				graphics.setOffsets(offsetX, offsetY);
+				graphics.centerOn(city);
 			}
 
 			playerIndex++;
@@ -177,10 +174,8 @@ public class GameController {
 		if(toShow.size() > 0) {
 			if(currentShowing == null)
 				currentShowing = toShow.get(0);
-			
-			int offsetX = -currentShowing.target.x + GameWindow.WINDOW_WIDTH / 2;
-			int offsetY = -currentShowing.target.y + GameWindow.WINDOW_HEIGHT / 2;
-			graphics.setOffsets(offsetX, offsetY);
+
+			graphics.centerOn(currentShowing.target);
 			
 			if (currentShowing.movement) {
 				GameUnit u = (GameUnit) currentShowing.target;

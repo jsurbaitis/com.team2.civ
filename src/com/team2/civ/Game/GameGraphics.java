@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Vector;
 
 import com.team2.civ.GameWindow;
+import com.team2.civ.Map.MapObject;
 import com.team2.civ.Map.MapObjectImage;
 import com.team2.civ.Map.WalkableTile;
 import com.team2.civ.Map.WallTile;
@@ -75,6 +76,10 @@ public class GameGraphics {
 	public void setOffsets(int offsetX, int offsetY) {
 		this.offsetX = offsetX;
 		this.offsetY = offsetY;
+	}
+	
+	public void centerOn(MapObject obj) {
+		setOffsets(getShowingWidth()/2 - obj.x, getShowingHeight()/2 - obj.y);
 	}
 	
 	public void addToOffsets(int dx, int dy) {

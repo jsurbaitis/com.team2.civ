@@ -9,6 +9,7 @@ public class WallTile extends MapObject {
 	public WallTile(int mapX, int mapY, String imgId, Type type) {
 		super(mapX, mapY, imgId, null);
 		this.type = type;
+		updateFowImage(imgId);
 	}
 
 }

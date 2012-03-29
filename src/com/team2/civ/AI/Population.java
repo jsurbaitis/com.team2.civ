@@ -181,7 +181,7 @@ public class Population {
 			else {
 				GameThread[] threads = new GameThread[Team2Civ.NUM_OF_THREADS];
 
-				for (int i = 0; i < genomes.length; i += 4*threads.length) {
+				for (int i = 0; i < genomes.length; i += 4*threads.length) {					
 					for(int z = 0; z < threads.length; z++) {
 						if(i+z*4+3 >= genomes.length)
 							continue;
