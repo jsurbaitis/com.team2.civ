@@ -1222,8 +1222,8 @@ public class AI {
 		for(WalkableTile wt: map.getWalkableMap()) {
 			if(!(wt instanceof GameStaticObject)) {
 				int dist = map.getDistToClosestCity(wt, owner);
-				if(dist > 2 && dist < 20) {
-					int score = map.getTileResourceScore(wt, owner);
+				if(dist > 2 && dist < 100) {
+					int score = map.getTileResourceScore(wt, owner) / dist;
 					if(score > bestScore) {
 						bestScore = score;
 						best = wt;
