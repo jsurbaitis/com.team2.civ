@@ -5,7 +5,7 @@ MovementCost 1
 FoWRange 3
 Destructable false
 Capturable true
-PowerGiven 2
+PowerGiven 3
 
 name
 {
