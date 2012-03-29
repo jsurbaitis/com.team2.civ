@@ -164,7 +164,7 @@ public class Population {
 		this.times_used.clear();
 		
 		AI a1, a2, a3, a4;
-		for(int j = 0; j < 5; j++) {
+		for(int generationPass = 0; generationPass < 5; generationPass++) {
 			if(!Team2Civ.MULTITHREADED) {
 				for (int i = 0; i < genomes.length; i += 4) {
 					if(i+3 >= genomes.length)
@@ -191,9 +191,9 @@ public class Population {
 						a3 = genomes[i+z*4+2];
 						a4 = genomes[i+z*4+3];
 						if(this.aiValidForGame(a1, a2, a3, a4)) {
-							threads[j] = new GameThread(a1, a2, a3, a4);
-							threads[j].setPriority(Thread.MAX_PRIORITY);
-							threads[j].start();
+							threads[z] = new GameThread(a1, a2, a3, a4);
+							threads[z].setPriority(Thread.MAX_PRIORITY);
+							threads[z].start();
 						}
 					}
 					while(!threadsComplete(threads)) {}

@@ -19,7 +19,7 @@ public class Player {
 	public int scoreStratLoc = 0;
 	
 	public int powerUsage = 0;
-	public int powerCapability = 2;
+	public int powerCapability = 0;
 	public int metal = 125;
 	public int population = 0;
 	

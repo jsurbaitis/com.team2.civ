@@ -132,6 +132,7 @@ public class GameController {
 			city.owner = p;
 			city.updateImage("CITY");
 			city.updateFowImage("CITY");
+			p.powerCapability += city.data.powerGiven;
 
 			if (!Team2Civ.AI_MODE && playerIndex == 1) {
 				graphics = new GameGraphics(map);
@@ -154,8 +155,7 @@ public class GameController {
 		gameTime++;
 
 		ui.update(gameTime);
-
-		graphics.updateZoom();
+		graphics.update(gameTime);
 
 		if(toPerform.size() > 0) {
 			updateActionShowing();
@@ -341,7 +341,8 @@ public class GameController {
 	private void performCombat(GameUnit attacker, GameUnit target) {
 		if(attacker.AP < 1) return;
 		
-		target.takeDmg(calcCombatDmg(attacker, target));
+		int dmg = calcCombatDmg(attacker, target);
+		target.takeDmg(dmg);
 		if (target.getHP() <= 0) {
 			target.owner.updateLost(target);
 			unitDead(target);
@@ -349,6 +350,11 @@ public class GameController {
 		target.owner.updateAttacked(attacker.owner, this);
 		attacker.AP = 0;
 		showAction(new ActionToShow(attacker, false));
+		
+		if(!Team2Civ.AI_MODE) {
+			graphics.addCombatText(new CombatText(target.mapX, target.mapY, ""+dmg));
+			graphics.addParticle(new Particle(attacker.mapX, attacker.mapY, target));
+		}
 	}
 
 	public int calcCombatDmg(GameUnit attacker, GameUnit target) {
@@ -579,12 +585,18 @@ public class GameController {
 				if (so.data.capturable) {
 					so.owner.updateLost(so);
 					captureObject(so, p);
+					
+					if (!Team2Civ.AI_MODE) {
+						graphics.addCombatText(new CombatText(so.mapX, so.mapY, "Captured!"));
+					}					
 				} else if (so.data.destructible) {
 					so.owner.updateLost(so);
 					so.owner.powerCapability -= so.data.powerGiven;
 					
-					if (!Team2Civ.AI_MODE)
+					if (!Team2Civ.AI_MODE) {
 						graphics.removeLowImage(so.getImage());
+						graphics.addCombatText(new CombatText(so.mapX, so.mapY, "Destroyed!"));
+					}
 					map.removeStaticObj(so);
 				}
 			}

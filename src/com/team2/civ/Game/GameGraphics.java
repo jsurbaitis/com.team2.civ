@@ -2,7 +2,10 @@ package com.team2.civ.Game;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 
 import com.team2.civ.GameWindow;
@@ -27,6 +30,9 @@ public class GameGraphics {
 	private double oldScale = scale;
 	private boolean zoomingIn = false;
 	private boolean zoomingOut = false;
+	
+	private List<CombatText> floatingText = new ArrayList<CombatText>();
+	private List<Particle> particles = new ArrayList<Particle>();
 	
 	private Vector<MapObjectImage> unitDraw = new Vector<MapObjectImage>();
 	private Vector<MapObjectImage> lowDraw = new Vector<MapObjectImage>();
@@ -95,7 +101,17 @@ public class GameGraphics {
 		return (int) (my * (1 / scale) - offsetY);
 	}
 	
-	public void updateZoom() {
+	public void update(long gameTime) {
+		updateZoom();
+		
+		for(CombatText ct: this.floatingText)
+			ct.update(gameTime);
+		
+		for(Particle p: this.particles)
+			p.update(gameTime);
+	}
+	
+	private void updateZoom() {
 		if (zoomingIn || zoomingOut) {
 			int oldWidth = getShowingWidth();
 			int oldHeight = getShowingHeight();
@@ -156,6 +172,20 @@ public class GameGraphics {
 			for (MapObjectImage i : unitDraw)
 				i.draw(g, (int) (offsetX), (int) (offsetY), scale);
 		}
+		
+		Iterator<CombatText> ctIt = floatingText.iterator();
+		while(ctIt.hasNext()) {
+			CombatText ct = ctIt.next();
+			ct.draw(g, offsetX, offsetY);
+			if(ct.isDone()) ctIt.remove();
+		}
+		
+		Iterator<Particle> pIt = particles.iterator();
+		while(pIt.hasNext()) {
+			Particle p = pIt.next();
+			p.draw(g, offsetX, offsetY);
+			if(p.isComplete()) pIt.remove();
+		}
 
 		g.scale(1 / scale, 1 / scale);
 	}
@@ -175,5 +205,13 @@ public class GameGraphics {
 	
 	public void addUnitImage(MapObjectImage img) {
 		unitDraw.add(img);
+	}
+	
+	public void addParticle(Particle p) {
+		particles.add(p);
+	}
+	
+	public void addCombatText(CombatText ct) {
+		floatingText.add(ct);
 	}
 }
