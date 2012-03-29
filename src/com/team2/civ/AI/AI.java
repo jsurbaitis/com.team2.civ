@@ -435,6 +435,11 @@ public class AI {
 			System.out.println("Metal: "+owner.metal+" / "+this.init_resource_threshold);
 		}
 		
+		if (game.turnsLeft >= 627){
+			output.addAll(this.SeizeResource());
+			return output;
+		}
+		
 		if (this.city_queued) output.addAll(this.execute_city_queue());
 
 		byte[] b_responses = getResponseCodes(getEnvironmentalConditions());
