@@ -64,6 +64,11 @@ public class MovingMapObject extends MapObject {
 		return isMoving;
 	}
 	
+	public boolean movementNotFinished() {
+		if(path == null) return false;
+		return path.size() > 0;
+	}
+	
 	public void update(long gameTime) {
 		if(isMoving) {
 			//movingAnim.update(img, gameTime);
@@ -72,40 +77,62 @@ public class MovingMapObject extends MapObject {
 	}
 
 	public void startMovement(List<WalkableTile> path) {
-		if(!isMoving) {
-			if(path.size() == 0) return;
-			
-			this.path = new ArrayList<WalkableTile>(path);
+		if(!isMoving && path.size() > 0) {
+			if(this.path != null) {
+				for(WalkableTile wt : path)
+					wt.highlighted = false;
+			}
+	
 			if(path != null) {
+				this.path = new ArrayList<WalkableTile>(path);
 				//movingAnim.reset();
 				
-				for(WalkableTile wt : path)
+				for(WalkableTile wt : this.path)
 					wt.highlighted = true;
 				
 				speedX = 0;
 				speedY = 0;
 				isMoving = true;
-				target = path.get(path.size() - 1);
+				target = this.path.get(this.path.size() - 1);
+				determineSpeed();
+				setOrientationImage();
 			}
+		}
+	}
+	
+	public void startMovement() {
+		if(!isMoving && path.size() > 0) {
+			for(WalkableTile wt : path)
+				wt.highlighted = true;
+				
+			speedX = 0;
+			speedY = 0;
+			isMoving = true;
+			target = path.get(path.size() - 1);
+			determineSpeed();
+			setOrientationImage();
+		}
+	}
+	
+	protected void onArriveAtTile() {
+		setPos(target.mapX, target.mapY);
+
+		target.highlighted = false;
+		path.remove(target);
+		
+		if(path.size() > 0) {	
+			target = path.get(path.size() - 1);
+			determineSpeed();
+			setOrientationImage();
+		}
+		else {
+			isMoving = false;
 		}
 	}
 	
 	private void updateMovement() {
 		if(speedX == 0 && speedY == 0) {
-			setPos(target.mapX, target.mapY);
-
-			target.highlighted = false;
-			path.remove(target);
-			
-			if(path.size() > 0) {	
-				target = path.get(path.size() - 1);
-				determineSpeed();
-				setOrientationImage();
-			}
-			else {
-				isMoving = false;
-				//img.resetImg();
-			}
+			onArriveAtTile();
 		}
 		else
 		{
@@ -122,8 +149,8 @@ public class MovingMapObject extends MapObject {
 	}
 	
 	private void determineSpeed() {
-		int dx = x - target.x;
-		int dy = y - target.y;
+		float dx = x - target.x;
+		float dy = y - target.y;
 		
 		if(dx == 0) {
 			if(dy < 0)

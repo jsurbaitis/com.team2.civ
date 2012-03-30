@@ -29,7 +29,7 @@ public class GameUnit extends MovingMapObject {
 		Random rnd = new Random();
 		name = data.names.get(rnd.nextInt(data.names.size()));
 	}
-	
+
 	public boolean isFortified() {
 		return fortifyBonus > 0;
 	}

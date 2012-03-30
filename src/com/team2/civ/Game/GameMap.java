@@ -37,11 +37,7 @@ public class GameMap {
 	public double avgStratLocValue;
 	private int stratLocPathSum;
 	private boolean stratLocsNeedUpdate = true;
-	
-	private ArrayList<WalkableTile> openList = new ArrayList<WalkableTile>();
-	private ArrayList<WalkableTile> closedList = new ArrayList<WalkableTile>();
-	private ArrayList<WalkableTile> returnList = new ArrayList<WalkableTile>();
-	
+
 	private Resources res;
 	
 	public GameMap() {
@@ -180,9 +176,9 @@ public class GameMap {
 		if (exclude == startObj || exclude == targetObj)
 			return null;
 
-		openList.clear();
-		closedList.clear();
-		returnList.clear();
+		ArrayList<WalkableTile> openList = new ArrayList<WalkableTile>();
+		ArrayList<WalkableTile> closedList = new ArrayList<WalkableTile>();
+		ArrayList<WalkableTile> returnList = new ArrayList<WalkableTile>();
 
 		boolean nextToTarget = true;
 		if (walkOnTarget)
@@ -248,11 +244,9 @@ public class GameMap {
 			}
 
 			minTile = null;
-			for (int i = 0; i < openList.size(); i++) {
-				if (minTile == null
-						|| minTile.cost + minTile.heuristic > openList.get(i).cost
-								+ openList.get(i).heuristic)
-					minTile = openList.get(i);
+			for (WalkableTile wt: openList) {
+				if(minTile == null || (minTile.cost + minTile.heuristic > wt.cost + wt.heuristic))
+					minTile = wt;
 			}
 
 			current = minTile;
@@ -266,6 +260,8 @@ public class GameMap {
 			returnList.add(target);
 			target = target.parent;
 		}
+		
+		returnList.remove(returnList.size() - 1);
 
 		if (lengthLimit == -1)
 			return returnList;
@@ -684,7 +680,7 @@ public class GameMap {
 	public int getDistBetween(CoordObject obj1, CoordObject obj2, Player p) {
 		List<WalkableTile> path = findPath(obj1, obj2, p);
 		if (path != null) {
-			return path.size() - 1;
+			return path.size();
 		}
 		return -1;
 	}
@@ -692,7 +688,7 @@ public class GameMap {
 	public int getDistBetween(CoordObject obj1, CoordObject obj2) {
 		List<WalkableTile> path = findPath(obj1, obj2);
 		if (path != null) {
-			return path.size() - 1;
+			return path.size();
 		}
 		return -1;
 	}
@@ -744,6 +740,6 @@ public class GameMap {
 			}
 		}
 
-		return smallestDist - 1;
+		return smallestDist;
 	}
 }

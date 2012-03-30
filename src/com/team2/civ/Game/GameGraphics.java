@@ -16,10 +16,10 @@ import com.team2.civ.Map.WallTile;
 
 public class GameGraphics {
 
-	private int offsetX = 0;
-	private int offsetY = 0;
+	private float offsetX = 0;
+	private float offsetY = 0;
 	
-	private int oldOffsetX, oldOffsetY;
+	private float oldOffsetX, oldOffsetY;
 	
 	private static final double SCALE_MAX = 1.0;
 	private static final double SCALE_MIN = 0.2;
@@ -61,11 +61,11 @@ public class GameGraphics {
 		return (int) (GameWindow.WINDOW_HEIGHT * (1 / scale));
 	}
 	
-	public int getOffsetX() {
+	public float getOffsetX() {
 		return offsetX;
 	}
 	
-	public int getOffsetY() {
+	public float getOffsetY() {
 		return offsetY;
 	}
 	
@@ -79,7 +79,7 @@ public class GameGraphics {
 		offsetY = oldOffsetY;
 	}
 	
-	public void setOffsets(int offsetX, int offsetY) {
+	public void setOffsets(float offsetX, float offsetY) {
 		this.offsetX = offsetX;
 		this.offsetY = offsetY;
 	}

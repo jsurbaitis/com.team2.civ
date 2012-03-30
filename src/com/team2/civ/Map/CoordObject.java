@@ -3,7 +3,7 @@ package com.team2.civ.Map;
 import com.team2.civ.Data.Resources;
 
 public class CoordObject implements Comparable<CoordObject> {
-	public int x, y;
+	public float x, y;
 	public int mapX, mapY;
 	
 	public CoordObject(int mapX, int mapY) {

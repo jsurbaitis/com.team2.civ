@@ -38,13 +38,13 @@ public class Particle extends CoordObject {
 			complete = true;
 	}
 	
-	public void draw(Graphics2D g, int offsetX, int offsetY) {		
-		g.drawImage(img, null, x + offsetX, y + offsetY - (img.getHeight() - Resources.TILE_HEIGHT));
+	public void draw(Graphics2D g, float offsetX, float offsetY) {		
+		g.drawImage(img, null, (int)(x + offsetX), (int)(y + offsetY - (img.getHeight() - Resources.TILE_HEIGHT)));
 	}
 	
 	private void determineSpeed() {
-		int dx = x - target.x;
-		int dy = y - target.y;
+		float dx = x - target.x;
+		float dy = y - target.y;
 		
 		if(dx == 0) {
 			if(dy < 0)

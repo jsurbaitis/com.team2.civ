@@ -427,7 +427,7 @@ public class AI {
 		output.clear();
 		
 		if(Team2Civ.DEBUG_OUTPUT) {
-			System.out.println("Turn: "+game.turnsLeft+" / "+this.current_turns_threshold);
+			System.out.println("Turn: "+game.getTurnsLeft()+" / "+this.current_turns_threshold);
 			System.out.println("Turn threshold: "+this.init_turns_threshold);
 			System.out.println("Current strat loc: "+this.current_st_dev_strat_loc);
 			System.out.println("Current pcent win chance: "+this.current_combat_pcent_win_chance);
@@ -435,8 +435,9 @@ public class AI {
 			System.out.println("Metal: "+owner.metal+" / "+this.init_resource_threshold);
 		}
 		
-		if (game.turnsLeft >= 627){
+		if (game.getTurnsLeft() >= 626) {
 			output.addAll(this.SeizeResource());
+			if(Team2Civ.DEBUG_OUTPUT) System.out.println("\n-------");
 			return output;
 		}
 		
@@ -1199,6 +1200,7 @@ public class AI {
 	
 	private List<GameAction> execute_city_queue(){
 		ArrayList<GameAction> out = new ArrayList<GameAction>();
+		
 		if (map.getUnits().contains(this.city_building_worker) && map.getDistBetween(this.city_building_worker, this.city_target_tile, owner) != -1){
 			if (map.getDistBetween(this.city_building_worker, this.city_target_tile, owner) == 0){
 				out.add(new GameAction(GameAction.OneAgentEvent.BUILD_CITY, owner, this.city_building_worker));
@@ -1243,7 +1245,7 @@ public class AI {
 	private List<GameAction> parseActionCode(byte b) {
 		List<GameAction> rtn = new ArrayList<GameAction>();
 		try {
-			if (rnd.nextInt(1000) == 1 && owner.canAfford(res.getStaticObject("CITY"))) {
+			if (rnd.nextInt(500) == 1 && owner.canAfford(res.getStaticObject("CITY"))) {
 				rtn.addAll(this.CreateNewCity());
 			}
 			if (b == SEIZE_STRATEGIC_LOCATION) {
@@ -1353,7 +1355,7 @@ public class AI {
 	}
 
 	private boolean isTurnOverThresh() {
-		return (game.turnsLeft > current_turns_threshold);
+		return (game.getTurnsLeft() > current_turns_threshold);
 	}
 
 	private boolean isUnitsQueuedOverThresh() {

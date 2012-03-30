@@ -62,7 +62,7 @@ public class GameController {
 
 	private Vector<GameUnit> combatTargets = new Vector<GameUnit>();
 
-	public int turnsLeft = 630;
+	private int turnsLeft = 630;
 
 	public GameController() {
 		this.res = Resources.getInstance();
@@ -218,6 +218,11 @@ public class GameController {
 			if (unit.owner != action.target.owner && unit.inCombatRange((GameUnit) action.target)) {
 				performCombat((GameUnit) action.actor, (GameUnit) action.target);
 			}
+		} else if (action.event == GameAction.Event.CONTINUE_MOVE) {
+			endCombatTargeting();
+			GameUnit u = (GameUnit) action.actor;
+			u.startMovement();
+			showAction(new ActionToShow(u, true));
 		} else if (action.event == GameAction.Event.ACTION_CHECK_ATTACK) {
 			checkForAttack((GameUnit) action.actor);
 		} else if (action.event == GameAction.Event.ACTION_DESTROY_SELF) {
@@ -264,13 +269,18 @@ public class GameController {
 	}
 
 	private void startMovement(GameUnit actor, MapObject target) {
+		if(actor.AP < 1) return;
+		
 		endCombatTargeting();
+		
+		int limit = (actor.owner == humanPlayer) ? -1 : (actor.AP + 1);
+		
 		List<WalkableTile> path = map.findPath(actor, target, actor.owner, null,
-				true, false, actor.AP + 1);
+				true, false, limit);
+		
+		actor.AP -= path.size();
 
 		if (path != null && path.size() > 0) {
-			actor.AP -= path.size() - 1;
-
 			if (!Team2Civ.AI_MODE) {
 				actor.startMovement(path);
 				showAction(new ActionToShow(actor, true));
@@ -282,6 +292,8 @@ public class GameController {
 	}
 	
 	private void startAttackMove(GameUnit actor, MapObject target) {
+		if(actor.AP < 1) return;
+		
 		endCombatTargeting();
 		List<WalkableTile> path = map.findPath(actor, target, actor.owner, null,
 				true, true, actor.AP + 1);
@@ -294,12 +306,12 @@ public class GameController {
 				}
 			}
 			
-			int start = Math.max(offset, path.size() - actor.AP - 1);
+			int start = Math.max(offset, path.size() - actor.AP);
 			List<WalkableTile> toWalk = path.subList((start < 0) ? 0 : start, path.size());
 			
+			actor.AP -= toWalk.size();
+			
 			if(toWalk.size() > 0) {
-				actor.AP -= toWalk.size() - 1;
-
 				if (!Team2Civ.AI_MODE) {
 					actor.startMovement(toWalk);
 					showAction(new ActionToShow(actor, true));
@@ -438,7 +450,6 @@ public class GameController {
 					System.out.println("Human player "+winner.colour.toString()+" won!");
 				return;
 			}
-			// TODO: do something if winner != null
 		}
 
 		if(playersIt == null || !playersIt.hasNext())  {
@@ -577,6 +588,13 @@ public class GameController {
 	}
 
 	private void upkeep(Player p) {
+		/*if(p == humanPlayer) {
+			for (GameUnit u : map.getPlayerUnits(p)) {
+				if(u.AP > 0 && u.movementNotFinished())
+					toPerform.add(new GameAction(GameAction.OneAgentEvent.CONTINUE_MOVE, p, u));
+			}
+		}*/
+		
 		for (GameUnit u : map.getPlayerUnits(p)) {
 			u.AP = u.data.AP;
 			
@@ -894,5 +912,9 @@ public class GameController {
 	
 	public List<Player> getStratLocRankings() {
 		return stratLocRankings;
+	}
+	
+	public int getTurnsLeft() {
+		return turnsLeft;
 	}
 }

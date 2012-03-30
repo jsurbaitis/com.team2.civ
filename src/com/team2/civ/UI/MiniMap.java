@@ -42,28 +42,28 @@ public class MiniMap extends UIElement {
 			if (wt.type.equals(WallTile.Type.MOUNTAIN)) g.setColor(Color.gray);
 			else g.setColor(Color.blue);
 			if (wt.seen)
-			g.fillRect(wt.x/minimapX+this.x-width/5, 2*wt.y/minimapY+ height*2/5+5+this.y, 7, 3);
+			g.fillRect((int)(wt.x/minimapX+this.x-width/5), (int)(2*wt.y/minimapY+ height*2/5+5+this.y), 7, 3);
 		}
 		g.setColor( new Color (102,205,170));
 		for (WalkableTile wt:map.getWalkableMap()){
 			if (wt.seen)
-			g.fillRect(wt.x/minimapX+this.x-width/5, 2*wt.y/minimapY+ height*2/5+5+this.y, 7, 3);
+			g.fillRect((int)(wt.x/minimapX+this.x-width/5), (int)(2*wt.y/minimapY+ height*2/5+5+this.y), 7, 3);
 		}
 		
 		for (GameStaticObject wt:map.getAllCities()){
 		 g.setColor(wt.owner.getColor());
 		 if (wt.beingSeen)
-			g.fillRect(wt.x/minimapX+this.x-width/5, 2*wt.y/minimapY+ height*2/5+5+this.y, 7, 3);
+			g.fillRect((int)(wt.x/minimapX+this.x-width/5), (int)(2*wt.y/minimapY+ height*2/5+5+this.y), 7, 3);
 		}
 		
 		for (GameUnit wt:map.getUnits()){
 			 g.setColor(wt.owner.getColor());
 			 if (wt.beingSeen)
-			g.fillRect(wt.x/minimapX+this.x-width/5, 2*wt.y/minimapY+ height*2/5+5+this.y, 7, 3);
+			g.fillRect((int)(wt.x/minimapX+this.x-width/5), (int)(2*wt.y/minimapY+ height*2/5+5+this.y), 7, 3);
 		}
 		g.setColor(Color.white);
-		int tempx= -graphics.getOffsetX();
-		int tempy= -graphics.getOffsetY();
+		int tempx= (int) -graphics.getOffsetX();
+		int tempy= (int) -graphics.getOffsetY();
 		g.drawRect(tempx/minimapX+this.x-width/5, 2*tempy/minimapY+ height*2/5+10+this.y, graphics.getShowingWidth()/minimapX, graphics.getShowingHeight()/minimapY);
 
 	}
