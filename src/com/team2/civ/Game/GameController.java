@@ -276,11 +276,9 @@ public class GameController {
 		if(actor.AP < 1) return;
 		
 		endCombatTargeting();
-		
-		int limit = (actor.owner == humanPlayer) ? -1 : (actor.AP + 1);
-		
+
 		List<WalkableTile> path = map.findPath(actor, target, actor.owner, null,
-				true, false, limit);
+				true, false, actor.AP);
 
 		if (path != null && path.size() > 0) {
 			actor.AP -= path.size();
@@ -300,7 +298,7 @@ public class GameController {
 		
 		endCombatTargeting();
 		List<WalkableTile> path = map.findPath(actor, target, actor.owner, null,
-				true, true, actor.AP + 1);
+				true, true, actor.AP);
 
 		if (path != null && path.size() > 0) {
 			int offset = 0;
