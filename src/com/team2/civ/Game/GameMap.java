@@ -35,7 +35,7 @@ public class GameMap {
 	private HashMap<WalkableTile, HashMap<Path, Double>> stratLocData = new HashMap<WalkableTile, HashMap<Path, Double>>();
 	private HashMap<WalkableTile, Double> stratLocValues = new HashMap<WalkableTile, Double>();
 	public double avgStratLocValue;
-	private int stratLocPathSum;
+	private double stratLocPathSum;
 	private boolean stratLocsNeedUpdate = true;
 
 	private Resources res;

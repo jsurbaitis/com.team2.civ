@@ -75,7 +75,8 @@ public class GameController {
 			e.printStackTrace();
 		}
 
-		humanPlayer = players.get(0);
+		if(!Team2Civ.NO_HUMAN_PLAYER)
+			humanPlayer = players.get(0);
 		
 		File folder = new File("genomes/");
 		String[] genomes = folder.list();
@@ -96,7 +97,10 @@ public class GameController {
 		}
 
 		if(!Team2Civ.AI_MODE)
-			ui = new UI(humanPlayer, map, graphics, this);
+			ui = new UI(players.get(0), map, graphics, this);
+		
+		if(humanPlayer == null)
+			endTurnNormal();
 	}
 
 	public AIGameResult runGame(AI a1, AI a2, AI a3, AI a4) {
@@ -277,10 +281,10 @@ public class GameController {
 		
 		List<WalkableTile> path = map.findPath(actor, target, actor.owner, null,
 				true, false, limit);
-		
-		actor.AP -= path.size();
 
 		if (path != null && path.size() > 0) {
+			actor.AP -= path.size();
+			
 			if (!Team2Civ.AI_MODE) {
 				actor.startMovement(path);
 				showAction(new ActionToShow(actor, true));
@@ -308,10 +312,10 @@ public class GameController {
 			
 			int start = Math.max(offset, path.size() - actor.AP);
 			List<WalkableTile> toWalk = path.subList((start < 0) ? 0 : start, path.size());
-			
-			actor.AP -= toWalk.size();
-			
+
 			if(toWalk.size() > 0) {
+				actor.AP -= toWalk.size();
+				
 				if (!Team2Civ.AI_MODE) {
 					actor.startMovement(toWalk);
 					showAction(new ActionToShow(actor, true));
@@ -365,7 +369,7 @@ public class GameController {
 		
 		if(!Team2Civ.AI_MODE) {
 			graphics.addCombatText(new CombatText(target.mapX, target.mapY, ""+dmg));
-			graphics.addParticle(new Particle(attacker.mapX, attacker.mapY, target));
+			//graphics.addParticle(new Particle(attacker.mapX, attacker.mapY, target));
 		}
 	}
 
@@ -373,10 +377,10 @@ public class GameController {
 		GameStaticObject so = map.getStaticObj(target);
 		double dmg = attacker.getDmgToDeal(target.data.id);
 		if (so != null)
-			dmg *= (1 - so.data.defensiveBonus / 100);
+			dmg *= (1 - so.data.defensiveBonus / 100.0);
 
 		Random rnd = new Random();
-		double modif = (80 + rnd.nextInt(40)) / 100;
+		double modif = (80 + rnd.nextInt(40)) / 100.0;
 		dmg *= modif;
 
 		return (int) Math.round(dmg);
@@ -691,7 +695,11 @@ public class GameController {
 		if (!Team2Civ.AI_MODE)
 			graphics.addLowImage(so.getImage());
 
-		destroyUnit(unit);
+		unit.owner.powerUsage -= unit.data.powerUsage;
+
+		if (!Team2Civ.AI_MODE)
+			graphics.removeUnitImage(unit.getImage());
+		map.removeUnit(unit);
 	}
 
 	private void addObjectToPlayer(Player p, CoordObject location,
@@ -717,6 +725,7 @@ public class GameController {
 			GameUnitData data = res.getUnit(objId);
 			if (so.active && so.data.buildIDs.contains(objId)
 					&& p.canAfford(data)) {
+				so.active = false;
 				showAction(new ActionToShow(so, false));
 				addUnitToPlayer(p, so, data);
 			} else if(p.ai != null) {

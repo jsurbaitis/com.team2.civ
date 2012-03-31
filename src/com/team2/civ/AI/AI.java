@@ -435,7 +435,7 @@ public class AI {
 			System.out.println("Metal: "+owner.metal+" / "+this.init_resource_threshold);
 		}
 		
-		if (game.getTurnsLeft() >= 626) {
+		if (game.getTurnsLeft() >= 625) {
 			output.addAll(this.SeizeResource());
 			if(Team2Civ.DEBUG_OUTPUT) System.out.println("\n-------");
 			return output;

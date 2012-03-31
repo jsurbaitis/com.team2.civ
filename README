@@ -8,7 +8,9 @@ How to use:
 ------------------
 Normal mode:
 -normal to select
-will load 3 random AIs from /genomes or generate them if needed
+-fowoff to turn off fog of war
+-auto to watch 4 AIs play
+will load 3-4 random AIs from /genomes or generate them if needed
 ------------------
 AI mode:
 -ai to select
@@ -22,7 +24,6 @@ pop_size must be divisible by 4
 threads*4 must be less than or equal to pop_size
 ------------------
 -o for detailed AI output
--fowoff to turn off fog of war
 ------------------
 
 Example command:

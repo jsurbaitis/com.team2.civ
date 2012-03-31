@@ -10,6 +10,7 @@ import com.team2.civ.Game.GameMap;
 
 public class Team2Civ {
 	
+	public static boolean NO_HUMAN_PLAYER = false;
 	public static Boolean AI_MODE;
 	public static boolean DEBUG_OUTPUT = false;
 	public static boolean MULTITHREADED = false;
@@ -25,6 +26,8 @@ public class Team2Civ {
 			
 			if(token.equals("-fowoff")) {
 				GameMap.FOW_ON = false;
+			} else if(token.equals("-auto")) {
+				Team2Civ.NO_HUMAN_PLAYER = true;
 			} else if(token.equals("-normal")) {
 				if(AI_MODE != null && AI_MODE) {
 					System.out.println("Cannot use both -normal and -ai");
@@ -77,7 +80,9 @@ public class Team2Civ {
 			System.out.println("------------------");
 			System.out.println("Normal mode:");
 			System.out.println("-normal to select");
-			System.out.println("will load 3 random AIs from /genomes or generate them if needed");
+			System.out.println("-auto to watch 4 AIs play");
+			System.out.println("-fowoff to turn off fog of war");
+			System.out.println("will load 3-4 random AIs from /genomes or generate them if needed");
 			System.out.println("------------------");
 			System.out.println("AI mode:");
 			System.out.println("-ai to select");
@@ -88,7 +93,6 @@ public class Team2Civ {
 			System.out.println("-Xmx<megabytes>m to increase heap size (around 2048 for 50-80 AIs)");
 			System.out.println("------------------");
 			System.out.println("-o for detailed AI output");
-			System.out.println("-fowoff to turn off fog of war");
 			System.out.println("------------------");
 			return;
 		}
